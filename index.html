@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset='utf-8'>
+    <title>Prototype 1</title>
+    <script src='https://unpkg.com/vue'></script>
+    <script src='https://code.jquery.com/jquery-3.1.1.slim.js'></script>
+    <script src='levels/level0.js'></script>
+    <script src='script.js'></script>
+    <link rel="stylesheet" href="style.css">
+  </head>
+  <body>
+    <main>
+      
+      <div id='leftpanel' class='panel'>
+        
+        <div id='selected-unit' v-if='showUnitInfo'>
+          <div id='unit-info' class='ui'>
+            <p class='heading'>{{ unit.name }}</p>
+            <p>HP: {{ unit.hp }}</p>
+            <p>Damage: {{ unit.damage }}</p>
+            <p>Range: {{ unit.range }}</p>
+            <p>Movement: {{ unit.moves }} / {{ unit.movement }}</p>
+          </div>
+          <div id='unit-actions' class='ui' v-if="unit.faction === 'Player'">
+            <p class='heading'>Actions</p>
+            <p v-if='unit.moves > 0'><button @click='moveInit(unit)'>Move (M)</button></p>
+            <p><button>Attack (A)</button></p>
+          </div>
+        </div>
+        
+        <div id='selected-terrain' v-if='showTerrInfo'>
+          <div id='terrain-info' class='ui'>
+            <p class='heading'>{{ terrain.name }}</p>
+            <p>Movement cost: {{ terrain.moveCost }}</p>
+          </div>
+        </div>
+        
+      </div>
+      
+      <div id='map' class='panel' @click='deselectUnit'>
+        <div id='grid'></div>
+      </div>
+      
+      <div id='rightpanel' class='panel'></div>
+      
+      <div id='bottompanel' class='panel'></div>
+      
+    </main>
+  </body>
+</html>

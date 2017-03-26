@@ -1,1 +1,1 @@
-# strategy-game
+# Strategy Game
