@@ -1,6 +1,5 @@
-function generateMap(mapPlan) {
-  var y, x, row, string,
-      mapData = [];
+function generateMap (mapPlan) {
+  var y, x, row, string, mapData = [];
   for (y = 0; y < mapPlan.length; y++) {
     row = [];
     string = mapPlan[y].replace(/\s/g, '');
@@ -14,7 +13,7 @@ function generateMap(mapPlan) {
   return mapData;
 }
 
-function drawGrid() {
+function drawGrid () {
   var y, x, row, divs = '';
   for (y = 0; y < 16; y++) {
     row = "<div class='row'>";
@@ -24,20 +23,29 @@ function drawGrid() {
     row += "</div>";
     divs += row;
   }
-  $('#grid').append(divs);
+  $(divs).appendTo('#grid');
 }
 
-function drawUnits(units) {
-  var id, src, y, x, img, space;
-  for (var p = 0; p < units.player.length; p++) {
-    img = $( "<img id='" + units.player[p].id + "' src='" + units.player[p].sprite + "' @click='selectUnit'>" );
-    space = $( '#grid :nth-child(' + units.player[p].posY + ') :nth-child(' + units.player[p].posX + ')' );
-    $(img).appendTo(space);
+function drawUnits (units) {
+  var f, u, img, space, faction,
+      factions = [units.player, units.enemy];
+  for (f = 0; f < factions.length; f++) {
+    faction = factions[f];
+    for (u = 0; u < faction.length; u++) {
+      img = $( "<img id='" + faction[u].id + "' src='" + faction[u].sprite + "' @click='selectUnit'>" );
+      space = $( '#grid :nth-child(' + faction[u].posY + ') :nth-child(' + faction[u].posX + ')' );
+      $(img).appendTo(space);
+    }
   }
-  for (var e = 0; e < units.enemy.length; e++) {
-    img = $( "<img id='" + units.enemy[e].id + "' src='" + units.enemy[e].sprite + "' @click='selectUnit'>" );
-    space = $( '#grid :nth-child(' + units.enemy[e].posY + ') :nth-child(' + units.enemy[e].posX + ')' );
-    $(img).appendTo(space);
+}
+
+function shuffle (array) {
+  var i, j, temp;
+  for (i = array.length - 1; i > 0; i--) {
+    j = Math.floor(Math.random() * (i + 1));
+    temp = array[i];
+    array[i] = array[j];
+    array[j] = temp;
   }
 }
 
@@ -57,7 +65,7 @@ var leftpanel = new Vue ({
   },
   methods: {
     
-    moveInit: function(unit) {
+    moveInit: function (unit) {
       map.calculateMoveRange(unit.posY - 1, unit.posX - 1, unit.moves, '');
     }
     
@@ -77,36 +85,40 @@ var map = new Vue ({
           x = $(event.currentTarget).index();
       leftpanel.terrain = this.terrain[y][x];
       leftpanel.showTerrInfo = true;
+      console.log(this.terrain[y][x].pathTo); //Developer mode!
     },
     
     selectUnit: function (event) {
       var id = event.target.id,
           index = Number(id.slice(-1));
-      if (id.charAt(0) === 'p') {
-        leftpanel.unit = this.units.player[index];
-      }
-      else if (id.charAt(0) === 'e') {
-        leftpanel.unit = this.units.enemy[index];
-      }
+      if (id[0] === 'p')      { leftpanel.unit = this.units.player[index]; }
+      else if (id[0] === 'e') { leftpanel.unit = this.units.enemy[index]; }
       leftpanel.showUnitInfo = true;
     },
     
     deselectUnit: function (event) {
-      if ($(event.target).is('div')) {
-        leftpanel.showUnitInfo = false;
-      }
+      if ($(event.target).is('div')) { leftpanel.showUnitInfo = false; }
     },
     
     calculateMoveRange: function (y, x, moves, path) {
-      var east = this.terrain[y][x+1];
-      if (east.moveCost <= moves) {
-        path += 'e';
-        east.pathTo = path;
-        console.log(east);
-        moves -= east.moveCost;
-        this.calculateMoveRange(y, x+1, moves, path);
-      }
-      console.log('Movement range calculated.');
+      var origin = this.terrain[y][x],
+          east   = this.terrain[y][x + 1],
+          south  = this.terrain[y + 1][x],
+          west   = this.terrain[y][x - 1],
+          north  = this.terrain[y - 1][x],
+          explore = [],
+          goEast  = function () { map.calculateMoveRange(y, x + 1, moves - east.moveCost,  path + 'e') },
+          goSouth = function () { map.calculateMoveRange(y + 1, x, moves - south.moveCost, path + 's') },
+          goWest  = function () { map.calculateMoveRange(y, x - 1, moves - west.moveCost,  path + 'w') },
+          goNorth = function () { map.calculateMoveRange(y - 1, x, moves - north.moveCost, path + 'n') };
+      if (!origin.pathTo) { origin.pathTo = 'o' }
+      if (east.moveCost  <= moves && (!east.pathTo  || path.length + 1 < east.pathTo.length))  { east.pathTo  = path + 'e'; explore.push(goEast) }
+      if (south.moveCost <= moves && (!south.pathTo || path.length + 1 < south.pathTo.length)) { south.pathTo = path + 's'; explore.push(goSouth) }
+      if (west.moveCost  <= moves && (!west.pathTo  || path.length + 1 < west.pathTo.length))  { west.pathTo  = path + 'w'; explore.push(goWest) }
+      if (north.moveCost <= moves && (!north.pathTo || path.length + 1 < north.pathTo.length)) { north.pathTo = path + 'n'; explore.push(goNorth) }
+      shuffle(explore);
+      console.log('Currently at ' + y + ',' + x + ' and exploring ' + explore.length + ' nearby spaces.');
+      explore.forEach( function (go) { go(); });
     }
     
   }

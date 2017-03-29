@@ -37,7 +37,7 @@ function Unit(id, sprite, faction, name, hp, damage, range, movement, posY, posX
   this.posX = posX;
 }
 
-var player0 = new Unit('player0', 'player.png', 'Player', 'Player Unit', 10, 1, 1, 5, 10, 5),
+var player0 = new Unit('player0', 'player.png', 'Player', 'Player Unit', 10, 1, 1, 5, 9, 6),
     enemy0 = new Unit('enemy0', 'enemy.png', 'Enemy', 'Enemy Unit', 10, 1, 1, 5, 7, 12);
     
 var units = {
