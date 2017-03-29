@@ -67,6 +67,7 @@ var leftpanel = new Vue ({
     
     moveInit: function (unit) {
       map.calculateMoveRange(unit.posY - 1, unit.posX - 1, unit.moves, '');
+      map.showMoveRange();
     }
     
   }
@@ -117,8 +118,18 @@ var map = new Vue ({
       if (west.moveCost  <= moves && (!west.pathTo  || path.length + 1 < west.pathTo.length))  { west.pathTo  = path + 'w'; explore.push(goWest) }
       if (north.moveCost <= moves && (!north.pathTo || path.length + 1 < north.pathTo.length)) { north.pathTo = path + 'n'; explore.push(goNorth) }
       shuffle(explore);
-      console.log('Currently at ' + y + ',' + x + ' and exploring ' + explore.length + ' nearby spaces.');
       explore.forEach( function (go) { go(); });
+    },
+    
+    showMoveRange: function () {
+      var y, x;
+      for (y = 0; y < 16; y++) {
+        for (x = 0; x < 16; x++) {
+          if (this.terrain[y][x].pathTo) {
+            $( '#grid :nth-child(' + (y + 1) + ') :nth-child(' + (x + 1) + ')' ).addClass( 'movable' );
+          }
+        }
+      }
     }
     
   }
