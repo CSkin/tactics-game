@@ -6,7 +6,7 @@ function loadMap (mapPlan) {
     for (x = 0; x < string.length; x++) {
       if (string[x] === '-') { row.push(new Space(y, x, waste)) }
       if (string[x] === 'g') { row.push(new Space(y, x, grass)) }
-      if (string[x] === 'r') { row.push(new Space(y, x, road)) }
+      if (string[x] === 's') { row.push(new Space(y, x, street)) }
     }
     mapData.push(row);
   }
@@ -42,6 +42,64 @@ function shuffle (array) {
 
 $( document ).ready( function () {
 
+var Terrain = {
+  // To use terrain sprites instead of map image, set v-if to true.
+  template: "<div v-if='false' class='terrain space' :class='terrain.type'></div>",
+  props: ['terrain']
+};
+
+var Highlight = {
+  template: "<div v-show='pathTo || inRange' class='highlight space'></div>",
+  props: ['pathTo', 'inRange']
+};
+
+var Unit = {
+  template: "<img v-if='unit' class='unit space' :src='unit.sprite'></img>",
+  props: ['unit']
+};
+
+var Space = {
+  template: `
+    <div class='space'>
+      <terrain :terrain='space.terrain'></terrain>
+      <highlight :pathTo='space.pathTo' :inRange='space.inRange'></highlight>
+      <unit :unit='space.unit'></unit>
+    </div>
+  `,
+  props: ['space'],
+  components: {
+    'terrain': Terrain,
+    'highlight': Highlight,
+    'unit': Unit
+  }
+};
+
+var Row = {
+  template: `
+  <div class='row'>
+    <space v-for='space in row' :key='space' :space='space'></space>
+  </div>
+  `,
+  props: ['row'],
+  components: {
+    'space': Space
+  }
+};
+
+var Map = new Vue ({
+  el:'#map',
+  data: {
+    mapImage: mapImage,
+    gameData: loadLevel()
+  },
+  methods: {
+    
+  },
+  components: {
+    'row': Row
+  }
+});
+
 var Leftpanel = new Vue ({
   el: '#leftpanel',
   data: {
@@ -49,17 +107,6 @@ var Leftpanel = new Vue ({
     showTerrInfo: false,
     unit: null,
     showUnitInfo: false
-  },
-  methods: {
-    
-  }
-});
-
-var Map = new Vue ({
-  el:'#map',
-  data: {
-    mapImage: mapImage,
-    gameData: loadLevel()
   },
   methods: {
     

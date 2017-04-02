@@ -1,4 +1,4 @@
-var mapImage = { backgroundImage: 'maps/level0.png' };
+var mapImage = { 'background-image': "url('maps/level0.png')" };
 
 var mapPlan = [
   ' - - - - - - - - - - - - - - - - ',
@@ -8,8 +8,8 @@ var mapPlan = [
   ' - - - - - - - - - - - - - - - - ',
   ' - - - - - - - - - - - - - - - - ',
   ' - - - - g g g g g g g g - - - - ',
-  ' - - - - g r r r r r r g - - - - ',
-  ' - - - - g r r r r r r g - - - - ',
+  ' - - - - g s s s s s s g - - - - ',
+  ' - - - - g s s s s s s g - - - - ',
   ' - - - - g g g g g g g g - - - - ',
   ' - - - - - - - - - - - - - - - - ',
   ' - - - - - - - - - - - - - - - - ',
@@ -19,15 +19,15 @@ var mapPlan = [
   ' - - - - - - - - - - - - - - - - ',
 ];
 
-function Terrain(name, moveCost, sprite) {
+function Terrain(type, name, moveCost) {
+  this.type = type;
   this.name = name;
   this.moveCost = moveCost;
-  this.sprite = sprite ? 'sprites/' + sprite : null;
 }
 
-var waste = new Terrain('Waste', 99),
-    grass = new Terrain('Grass', 1),
-    road  = new Terrain('Road', 1);
+var waste = new Terrain('waste', 'Waste', 99),
+    grass = new Terrain('grass', 'Grass', 1),
+    street = new Terrain('street', 'Street', 1);
 
 function Space(posY, posX, terrain) {
   this.posY = posY;
@@ -35,7 +35,7 @@ function Space(posY, posX, terrain) {
   this.terrain = terrain;
   this.unit = null;
   this.pathTo = '';
-  this.attackable = null;
+  this.inRange = null;
 }
 
 function Unit(id, sprite, faction, name, hp, damage, range, movement) {
