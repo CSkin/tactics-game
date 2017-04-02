@@ -1,42 +1,33 @@
-function generateMap (mapPlan) {
+function loadMap (mapPlan) {
   var y, x, row, string, mapData = [];
   for (y = 0; y < mapPlan.length; y++) {
     row = [];
     string = mapPlan[y].replace(/\s/g, '');
     for (x = 0; x < string.length; x++) {
-      if (string[x] === '-') { row.push(new Terrain('Waste', 99)) }
-      if (string[x] === 'g') { row.push(new Terrain('Grass', 1)) }
-      if (string[x] === 'r') { row.push(new Terrain('Road', 1)) }
+      if (string[x] === '-') { row.push(new Space(y, x, waste)) }
+      if (string[x] === 'g') { row.push(new Space(y, x, grass)) }
+      if (string[x] === 's') { row.push(new Space(y, x, street)) }
     }
     mapData.push(row);
   }
   return mapData;
 }
 
-function drawGrid () {
-  var y, x, row, divs = '';
-  for (y = 0; y < 16; y++) {
-    row = "<div class='row'>";
-    for (x = 0; x < 16; x++) {
-      row += "<div class='space' @click='selectTerrain'></div>";
-    }
-    row += "</div>";
-    divs += row;
+function loadUnits (mapData, unitPlan) {
+  var u, y, x, unit;
+  for (u = 0; u < unitPlan.length; u++) {
+    y = unitPlan[u].startY;
+    x = unitPlan[u].startX;
+    unit = unitPlan[u].unit;
+    mapData[y][x].unit = unit;
   }
-  $(divs).appendTo('#grid');
+  return mapData;
 }
 
-function drawUnits (units) {
-  var f, u, img, space, faction,
-      factions = [units.player, units.enemy];
-  for (f = 0; f < factions.length; f++) {
-    faction = factions[f];
-    for (u = 0; u < faction.length; u++) {
-      img = $( "<img id='" + faction[u].id + "' src='" + faction[u].sprite + "' @click='selectUnit'>" );
-      space = $( '#grid :nth-child(' + faction[u].posY + ') :nth-child(' + faction[u].posX + ')' );
-      $(img).appendTo(space);
-    }
-  }
+function loadLevel () {
+  var mapData = loadMap(mapPlan),
+      levelData = loadUnits(mapData, unitPlan);
+  return levelData;
 }
 
 function shuffle (array) {
@@ -51,86 +42,73 @@ function shuffle (array) {
 
 $( document ).ready( function () {
 
-drawGrid();
+var Terrain = {
+  // To use terrain sprites instead of map image, set v-if to true.
+  template: "<div v-if='false' class='terrain space' :class='terrain.type'></div>",
+  props: ['terrain']
+};
 
-drawUnits(units);
+var Highlight = {
+  template: "<div v-show='pathTo || inRange' class='highlight space'></div>",
+  props: ['pathTo', 'inRange']
+};
 
-var leftpanel = new Vue ({
-  el: '#leftpanel',
+var Unit = {
+  template: "<img v-if='unit' class='unit space' :src='unit.sprite'></img>",
+  props: ['unit']
+};
+
+var Space = {
+  template: `
+    <div class='space'>
+      <terrain :terrain='space.terrain'></terrain>
+      <highlight :pathTo='space.pathTo' :inRange='space.inRange'></highlight>
+      <unit :unit='space.unit'></unit>
+    </div>
+  `,
+  props: ['space'],
+  components: {
+    'terrain': Terrain,
+    'highlight': Highlight,
+    'unit': Unit
+  }
+};
+
+var Row = {
+  template: `
+  <div class='row'>
+    <space v-for='space in row' :key='space' :space='space'></space>
+  </div>
+  `,
+  props: ['row'],
+  components: {
+    'space': Space
+  }
+};
+
+var Map = new Vue ({
+  el:'#map',
   data: {
-    terrain: undefined,
-    showTerrInfo: false,
-    unit: undefined,
-    showUnitInfo: false
+    mapImage: mapImage,
+    gameData: loadLevel()
   },
   methods: {
     
-    moveInit: function (unit) {
-      map.calculateMoveRange(unit.posY - 1, unit.posX - 1, unit.moves, '');
-      map.showMoveRange();
-    }
-    
+  },
+  components: {
+    'row': Row
   }
 });
 
-var map = new Vue ({
-  el:'#map',
+var Leftpanel = new Vue ({
+  el: '#leftpanel',
   data: {
-    terrain: generateMap(mapPlan),
-    units: units
+    terrain: null,
+    showTerrInfo: false,
+    unit: null,
+    showUnitInfo: false
   },
   methods: {
-    
-    selectTerrain: function (event) {
-      var y = $(event.currentTarget).parent().index(),
-          x = $(event.currentTarget).index();
-      leftpanel.terrain = this.terrain[y][x];
-      leftpanel.showTerrInfo = true;
-      console.log(this.terrain[y][x].pathTo); //Developer mode!
-    },
-    
-    selectUnit: function (event) {
-      var id = event.target.id,
-          index = Number(id.slice(-1));
-      if (id[0] === 'p')      { leftpanel.unit = this.units.player[index]; }
-      else if (id[0] === 'e') { leftpanel.unit = this.units.enemy[index]; }
-      leftpanel.showUnitInfo = true;
-    },
-    
-    deselectUnit: function (event) {
-      if ($(event.target).is('div')) { leftpanel.showUnitInfo = false; }
-    },
-    
-    calculateMoveRange: function (y, x, moves, path) {
-      var origin = this.terrain[y][x],
-          east   = this.terrain[y][x + 1],
-          south  = this.terrain[y + 1][x],
-          west   = this.terrain[y][x - 1],
-          north  = this.terrain[y - 1][x],
-          explore = [],
-          goEast  = function () { map.calculateMoveRange(y, x + 1, moves - east.moveCost,  path + 'e') },
-          goSouth = function () { map.calculateMoveRange(y + 1, x, moves - south.moveCost, path + 's') },
-          goWest  = function () { map.calculateMoveRange(y, x - 1, moves - west.moveCost,  path + 'w') },
-          goNorth = function () { map.calculateMoveRange(y - 1, x, moves - north.moveCost, path + 'n') };
-      if (!origin.pathTo) { origin.pathTo = 'o' }
-      if (east.moveCost  <= moves && (!east.pathTo  || path.length + 1 < east.pathTo.length))  { east.pathTo  = path + 'e'; explore.push(goEast) }
-      if (south.moveCost <= moves && (!south.pathTo || path.length + 1 < south.pathTo.length)) { south.pathTo = path + 's'; explore.push(goSouth) }
-      if (west.moveCost  <= moves && (!west.pathTo  || path.length + 1 < west.pathTo.length))  { west.pathTo  = path + 'w'; explore.push(goWest) }
-      if (north.moveCost <= moves && (!north.pathTo || path.length + 1 < north.pathTo.length)) { north.pathTo = path + 'n'; explore.push(goNorth) }
-      shuffle(explore);
-      explore.forEach( function (go) { go(); });
-    },
-    
-    showMoveRange: function () {
-      var y, x;
-      for (y = 0; y < 16; y++) {
-        for (x = 0; x < 16; x++) {
-          if (this.terrain[y][x].pathTo) {
-            $( '#grid :nth-child(' + (y + 1) + ') :nth-child(' + (x + 1) + ')' ).addClass( 'movable' );
-          }
-        }
-      }
-    }
     
   }
 });

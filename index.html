@@ -2,7 +2,7 @@
 <html>
   <head>
     <meta charset='utf-8'>
-    <title>Prototype 1</title>
+    <title>Prototype 2</title>
     <script src='https://unpkg.com/vue'></script>
     <script src='https://code.jquery.com/jquery-3.1.1.js'></script>
     <script src='levels/level0.js'></script>
@@ -24,7 +24,7 @@
           </div>
           <div id='unit-actions' class='ui' v-if="unit.faction === 'Player'">
             <p class='heading'>Actions</p>
-            <p v-if='unit.moves > 0'><button @click='moveInit(unit)'>Move (M)</button></p>
+            <p v-if='unit.moves > 0'><button>Move (M)</button></p>
             <p><button>Attack (A)</button></p>
           </div>
         </div>
@@ -38,8 +38,8 @@
         
       </div>
       
-      <div id='map' class='panel' @click='deselectUnit'>
-        <div id='grid'></div>
+      <div id='map' class='panel' :style='mapImage'>
+        <row v-for='row in gameData' :key='row' :row='row'></row>
       </div>
       
       <div id='rightpanel' class='panel'></div>
