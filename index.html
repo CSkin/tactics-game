@@ -2,7 +2,7 @@
 <html>
   <head>
     <meta charset='utf-8'>
-    <title>Prototype 2</title>
+    <title>Tactics Game</title>
     <script src='https://unpkg.com/vue'></script>
     <script src='https://code.jquery.com/jquery-3.1.1.js'></script>
     <script src='levels/level0.js'></script>
@@ -14,7 +14,7 @@
       
       <div id='leftpanel' class='panel'>
         
-        <div id='selected-unit' v-if='showUnitInfo'>
+        <div id='selected-unit' v-if='unitSelected'>
           <div id='unit-info' class='ui'>
             <p class='heading'>{{ unit.name }}</p>
             <p>HP: {{ unit.hp }}</p>
@@ -29,7 +29,7 @@
           </div>
         </div>
         
-        <div id='selected-terrain' v-if='showTerrInfo'>
+        <div id='selected-terrain' v-if='terrSelected'>
           <div id='terrain-info' class='ui'>
             <p class='heading'>{{ terrain.name }}</p>
             <p>Movement cost: {{ terrain.moveCost }}</p>

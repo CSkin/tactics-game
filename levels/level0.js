@@ -19,15 +19,17 @@ var mapPlan = [
   ' - - - - - - - - - - - - - - - - ',
 ];
 
-function Terrain(type, name, moveCost) {
+function Terrain(type, moveCost) {
   this.type = type;
-  this.name = name;
+  var name = type.split('');
+  name[0] = name[0].toUpperCase();
+  this.name = name.join('');
   this.moveCost = moveCost;
 }
 
-var waste = new Terrain('waste', 'Waste', 99),
-    grass = new Terrain('grass', 'Grass', 1),
-    street = new Terrain('street', 'Street', 1);
+var waste = new Terrain('waste', 99),
+    grass = new Terrain('grass', 1),
+    street = new Terrain('street', 1);
 
 function Space(posY, posX, terrain) {
   this.posY = posY;

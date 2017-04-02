@@ -60,13 +60,33 @@ var Unit = {
 
 var Space = {
   template: `
-    <div class='space'>
+    <div class='space' @click='clickHandler'>
       <terrain :terrain='space.terrain'></terrain>
       <highlight :pathTo='space.pathTo' :inRange='space.inRange'></highlight>
       <unit :unit='space.unit'></unit>
     </div>
   `,
   props: ['space'],
+  methods: {
+    clickHandler: function () {
+      var terrain = this.space.terrain,
+          unit = this.space.unit;
+      this.selectTerrain(terrain);
+      if (unit) { this.selectUnit(unit) } else { this.deselectUnit() }
+    },
+    selectTerrain: function (terrain) {
+      Leftpanel.terrain = terrain;
+      Leftpanel.terrSelected = true;
+    },
+    selectUnit: function (unit) {
+      Leftpanel.unit = unit;
+      Leftpanel.unitSelected = true;
+    },
+    deselectUnit: function () {
+      Leftpanel.unit = null;
+      Leftpanel.unitSelected = false;
+    }
+  },
   components: {
     'terrain': Terrain,
     'highlight': Highlight,
@@ -104,9 +124,9 @@ var Leftpanel = new Vue ({
   el: '#leftpanel',
   data: {
     terrain: null,
-    showTerrInfo: false,
+    terrSelected: false,
     unit: null,
-    showUnitInfo: false
+    unitSelected: false
   },
   methods: {
     
