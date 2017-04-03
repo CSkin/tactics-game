@@ -36,11 +36,11 @@ function Space(posY, posX, terrain) {
   this.posX = posX;
   this.terrain = terrain;
   this.unit = null;
-  this.pathTo = '';
+  this.pathTo = null;
   this.inRange = null;
 }
 
-function Unit(id, sprite, faction, name, hp, damage, range, movement) {
+function Unit(id, sprite, faction, name, hp, damage, range, movement, posY, posX) {
   this.id = id;
   this.sprite = 'sprites/' + sprite;
   this.faction = faction;
@@ -50,17 +50,11 @@ function Unit(id, sprite, faction, name, hp, damage, range, movement) {
   this.range = range;
   this.movement = movement;
   this.moves = movement;
+  this.posY = posY;
+  this.posX = posX;
 }
 
-var player0 = new Unit('player0', 'player.png', 'Player', 'Player Unit', 10, 1, 1, 5),
-    enemy0  = new Unit('enemy0', 'enemy.png', 'Enemy', 'Enemy Unit', 10, 1, 1, 5);
+var player0 = new Unit('player0', 'player.png', 'Player', 'Player Unit', 10, 1, 1, 5, 9, 4),
+    enemy0  = new Unit('enemy0', 'enemy.png', 'Enemy', 'Enemy Unit', 10, 1, 1, 5, 6, 11);
     
-var unitPlan = [
-  { unit: player0, startY: 9, startX: 4 },
-  { unit: enemy0, startY: 6, startX: 11 }
-];
-
-var unitList = {
-  player: [player0],
-  enemy: [enemy0]
-};
+var unitPlan = [ player0, enemy0 ];
