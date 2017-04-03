@@ -16,9 +16,9 @@ function loadMap (mapPlan) {
 function loadUnits (mapData, unitPlan) {
   var u, y, x, unit;
   for (u = 0; u < unitPlan.length; u++) {
-    y = unitPlan[u].startY;
-    x = unitPlan[u].startX;
-    unit = unitPlan[u].unit;
+    y = unitPlan[u].posY;
+    x = unitPlan[u].posX;
+    unit = unitPlan[u];
     mapData[y][x].unit = unit;
   }
   return mapData;
@@ -49,12 +49,17 @@ var Terrain = {
 };
 
 var Highlight = {
-  template: "<div v-show='pathTo || inRange' class='highlight space'></div>",
-  props: ['pathTo', 'inRange']
+  template: "<div v-show='pathTo || inRange' class='highlight space' :class='movable'></div>",
+  props: ['pathTo', 'inRange'],
+  computed: {
+    movable: function () {
+      return { movable: this.pathTo && this.pathTo !== 'o' };
+    }
+  }
 };
 
 var Unit = {
-  template: "<img v-if='unit' class='unit space' :src='unit.sprite'></img>",
+  template: "<img v-if='unit' class='unit space' :src='unit.sprite' tabindex=0></img>",
   props: ['unit']
 };
 
@@ -76,15 +81,13 @@ var Space = {
     },
     selectTerrain: function (terrain) {
       Leftpanel.terrain = terrain;
-      Leftpanel.terrSelected = true;
+      console.log(this.space.pathTo); // Developer mode
     },
     selectUnit: function (unit) {
       Leftpanel.unit = unit;
-      Leftpanel.unitSelected = true;
     },
     deselectUnit: function () {
       Leftpanel.unit = null;
-      Leftpanel.unitSelected = false;
     }
   },
   components: {
@@ -113,7 +116,25 @@ var Map = new Vue ({
     gameData: loadLevel()
   },
   methods: {
-    
+    showMoveRange: function (y, x, moves, path) {
+      var origin = this.gameData[y][x],
+          east   = this.gameData[y][Math.min(x + 1, 15)],
+          south  = this.gameData[Math.min(y + 1, 15)][x],
+          west   = this.gameData[y][Math.max(x - 1, 0)],
+          north  = this.gameData[Math.max(y - 1, 0)][x],
+          explore = [],
+          goEast  = function () { Map.showMoveRange(y, Math.min(x + 1, 15), moves - east.terrain.moveCost,  path + 'e') },
+          goSouth = function () { Map.showMoveRange(Math.min(y + 1, 15), x, moves - south.terrain.moveCost, path + 's') },
+          goWest  = function () { Map.showMoveRange(y, Math.max(x - 1, 0), moves - west.terrain.moveCost,  path + 'w') },
+          goNorth = function () { Map.showMoveRange(Math.max(y - 1, 0), x, moves - north.terrain.moveCost, path + 'n') };
+      if (!origin.pathTo) { origin.pathTo = 'o' }
+      if (east.terrain.moveCost  <= moves && (!east.pathTo  || path.length + 1 < east.pathTo.length))  { east.pathTo  = path + 'e'; explore.push(goEast) }
+      if (south.terrain.moveCost <= moves && (!south.pathTo || path.length + 1 < south.pathTo.length)) { south.pathTo = path + 's'; explore.push(goSouth) }
+      if (west.terrain.moveCost  <= moves && (!west.pathTo  || path.length + 1 < west.pathTo.length))  { west.pathTo  = path + 'w'; explore.push(goWest) }
+      if (north.terrain.moveCost <= moves && (!north.pathTo || path.length + 1 < north.pathTo.length)) { north.pathTo = path + 'n'; explore.push(goNorth) }
+      shuffle(explore);
+      explore.forEach( function (go) { go(); });
+    },
   },
   components: {
     'row': Row
@@ -124,13 +145,26 @@ var Leftpanel = new Vue ({
   el: '#leftpanel',
   data: {
     terrain: null,
-    terrSelected: false,
     unit: null,
-    unitSelected: false
   },
   methods: {
-    
+    moveUnit: function () {
+      Map.showMoveRange(this.unit.posY, this.unit.posX, this.unit.moves, '');
+    }
   }
 });
+
+function keyHandler () {
+  console.log('keyCode: ' + event.keyCode); // Developer mode
+  if (Leftpanel.unit && Leftpanel.unit.faction === 'Player') {
+    switch (event.keyCode) {
+      case 77:
+        $( '#btn-move' ).trigger( 'click' );
+      break;
+    }
+  }
+}
+
+$( document ).keyup( keyHandler );
 
 });
