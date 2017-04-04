@@ -49,7 +49,11 @@ var Terrain = {
 };
 
 var Highlight = {
-  template: "<div v-show='pathTo || inRange' class='highlight space' :class='movable'></div>",
+  template: `
+  <transition name='fade'>
+    <div v-show='pathTo || inRange' class='highlight space' :class='movable'></div>
+  </transition>
+  `,
   props: ['pathTo', 'inRange'],
   computed: {
     movable: function () {
@@ -146,10 +150,24 @@ var Leftpanel = new Vue ({
   data: {
     terrain: null,
     unit: null,
+    moving: false
   },
   methods: {
     moveUnit: function () {
       Map.showMoveRange(this.unit.posY, this.unit.posX, this.unit.moves, '');
+      this.moving = true;
+    },
+    cancelMove: function () {
+      this.hideMoveRange();
+      this.moving = false;
+    },
+    hideMoveRange: function () {
+      var y, x;
+      for (y = 0; y < 16; y++) {
+        for (x = 0; x < 16; x++) {
+          Map.gameData[y][x].pathTo = null;
+        }
+      }
     }
   }
 });
