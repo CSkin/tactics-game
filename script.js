@@ -51,7 +51,7 @@ var Terrain = {
 var Highlight = {
   template: `
   <transition name='fade'>
-    <div v-show='pathTo || inRange' class='highlight space' :class='movable'></div>
+    <div v-if='pathTo || inRange' class='highlight space' :class='movable'></div>
   </transition>
   `,
   props: ['pathTo', 'inRange'],
@@ -63,7 +63,11 @@ var Highlight = {
 };
 
 var Unit = {
-  template: "<img v-if='unit' class='unit space' :src='unit.sprite' tabindex=0></img>",
+  template: `
+  <transition name='moveEast'>
+    <img v-if='unit' class='unit space' :src='unit.sprite' tabindex=0></img>
+  </transition>
+  `,
   props: ['unit']
 };
 
@@ -79,9 +83,13 @@ var Space = {
   methods: {
     clickHandler: function () {
       var terrain = this.space.terrain,
-          unit = this.space.unit;
+          unit = this.space.unit,
+          pathTo = this.space.pathTo;
       this.selectTerrain(terrain);
-      if (unit) { this.selectUnit(unit) } else { this.deselectUnit() }
+      if (unit) { this.selectUnit(unit) }
+      if (Leftpanel.moving) {
+        if (pathTo && pathTo !== 'o') { Map.moveEast() } else { $( '#btn-unmove' ).trigger( 'click' ) }
+      }
     },
     selectTerrain: function (terrain) {
       Leftpanel.terrain = terrain;
@@ -139,6 +147,18 @@ var Map = new Vue ({
       shuffle(explore);
       explore.forEach( function (go) { go(); });
     },
+    moveEast: function () {
+      var y = Leftpanel.unit.posY,
+          x = Leftpanel.unit.posX,
+          spaceFrom = this.gameData[y][x];
+          spaceTo = this.gameData[y][x + 1];
+          unitData = spaceFrom.unit;
+      spaceFrom.unit = null;
+      unitData.moves -= spaceTo.terrain.moveCost;
+      unitData.posX += 1;
+      spaceTo.unit = unitData;
+      Leftpanel.stopMoving();
+    }
   },
   components: {
     'row': Row
@@ -157,7 +177,7 @@ var Leftpanel = new Vue ({
       Map.showMoveRange(this.unit.posY, this.unit.posX, this.unit.moves, '');
       this.moving = true;
     },
-    cancelMove: function () {
+    stopMoving: function () {
       this.hideMoveRange();
       this.moving = false;
     },
@@ -177,7 +197,7 @@ function keyHandler () {
   if (Leftpanel.unit && Leftpanel.unit.faction === 'Player') {
     switch (event.keyCode) {
       case 77:
-        $( '#btn-move' ).trigger( 'click' );
+        if (!Leftpanel.moving) { $( '#btn-move' ).trigger( 'click' ); } else { $( '#btn-unmove' ).trigger( 'click' ); }
       break;
     }
   }

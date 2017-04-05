@@ -24,8 +24,10 @@
           </div>
           <div id='unit-actions' class='ui' v-if="unit.faction === 'Player'">
             <p class='heading'>Actions</p>
-            <p v-if='unit.moves > 0 && !moving'><button id='btn-move' @click='moveUnit'>Move (M)</button></p>
-            <p v-if='moving'><button id='btn-unmove' @click='cancelMove'> Cancel Move (M)</button></p>
+            <div v-if='unit.moves > 0'>
+              <p v-if='!moving'><button id='btn-move' @click='moveUnit'>Move (M)</button></p>
+              <p v-else><button id='btn-unmove' @click='stopMoving'>Cancel Move (M)</button></p>
+            </div>
             <p><button id='btn-attack'>Attack (A)</button></p>
           </div>
         </div>
