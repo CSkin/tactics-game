@@ -50,6 +50,8 @@ function Unit(id, sprite, faction, name, hp, damage, range, movement, posY, posX
   this.range = range;
   this.movement = movement;
   this.moves = movement;
+  this.moving = null;
+  this.path = null;
   this.posY = posY;
   this.posX = posX;
 }

@@ -63,6 +63,7 @@ button {
   position: relative;
   z-index: 2;
   left: 0;
+  top: 0;
 }
 
 .ui {
@@ -103,9 +104,33 @@ button {
 }
 
 .moveEast-enter-active {
-  transition: left 250ms;
+  transition: left 200ms linear;
 }
 
 .moveEast-enter {
   left: -32px;
+}
+
+.moveSouth-enter-active {
+  transition: top 200ms linear;
+}
+
+.moveSouth-enter {
+  top: -32px;
+}
+
+.moveWest-enter-active {
+  transition: left 200ms linear;
+}
+
+.moveWest-enter {
+  left: 32px;
+}
+
+.moveNorth-enter-active {
+  transition: top 200ms linear;
+}
+
+.moveNorth-enter {
+  top: 32px;
 }

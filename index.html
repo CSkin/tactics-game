@@ -14,6 +14,13 @@
       
       <div id='leftpanel' class='panel'>
         
+        <div id='selected-terrain' v-if='terrain'>
+          <div id='terrain-info' class='ui'>
+            <p class='heading'>{{ terrain.name }}</p>
+            <p>Movement cost: {{ terrain.moveCost }}</p>
+          </div>
+        </div>
+        
         <div id='selected-unit' v-if='unit'>
           <div id='unit-info' class='ui'>
             <p class='heading'>{{ unit.name }}</p>
@@ -25,17 +32,10 @@
           <div id='unit-actions' class='ui' v-if="unit.faction === 'Player'">
             <p class='heading'>Actions</p>
             <div v-if='unit.moves > 0'>
-              <p v-if='!moving'><button id='btn-move' @click='moveUnit'>Move (M)</button></p>
-              <p v-else><button id='btn-unmove' @click='stopMoving'>Cancel Move (M)</button></p>
+              <p v-if='!moving'><button id='btn-move' @click='beginMove'>Move (M)</button></p>
+              <p v-else><button id='btn-unmove' @click='cancelMove'>Cancel Move (M)</button></p>
             </div>
             <p><button id='btn-attack'>Attack (A)</button></p>
-          </div>
-        </div>
-        
-        <div id='selected-terrain' v-if='terrain'>
-          <div id='terrain-info' class='ui'>
-            <p class='heading'>{{ terrain.name }}</p>
-            <p>Movement cost: {{ terrain.moveCost }}</p>
           </div>
         </div>
         
