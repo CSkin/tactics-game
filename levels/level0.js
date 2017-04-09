@@ -19,12 +19,12 @@ var mapPlan = [
   ' - - - - - - - - - - - - - - - - ',
 ];
 
-function Terrain(type, moveCost) {
+function Terrain(type, cost) {
   this.type = type;
   var name = type.split('');
   name[0] = name[0].toUpperCase();
   this.name = name.join('');
-  this.moveCost = moveCost;
+  this.cost = cost;
 }
 
 var waste = new Terrain('waste', 99),
@@ -37,28 +37,29 @@ function Space(posY, posX, terrain) {
   this.posX = posX;
   this.terrain = terrain;
   this.unit = null;
-  this.pathTo = null;
-  this.inRange = null;
+  this.moves = null;
+  this.path = null;
+  this.range = null;
 }
 
-function Unit(id, sprite, faction, name, health, attack, defense, range, movement, posY, posX) {
+function Unit(id, sprite, faction, name, attack, defense, range, movement, posY, posX) {
   this.id = id;
   this.sprite = 'sprites/' + sprite;
   this.faction = faction;
   this.name = name;
-  this.health = health;
+  this.health = 'Healthy';
   this.attack = attack;
   this.defense = defense;
   this.range = range;
   this.movement = movement;
-  this.moves = movement;
+  this.moves = this.movement;
   this.moving = null;
   this.path = null;
   this.posY = posY;
   this.posX = posX;
 }
 
-var player0 = new Unit('player0', 'player.png', 'Player', 'Player Unit', 'Healthy', 1, 1, 1, 5, 9, 4),
-    enemy0  = new Unit('enemy0', 'enemy.png', 'Enemy', 'Enemy Unit', 'Healthy', 1, 1, 1, 5, 6, 11);
+var player0 = new Unit('player0', 'player.png', 'Player', 'Player Unit', 1, 1, 1, 5, 9, 4),
+    enemy0  = new Unit('enemy0', 'enemy.png', 'Enemy', 'Enemy Unit', 1, 1, 1, 5, 6, 11);
     
 var unitPlan = [ player0, enemy0 ];

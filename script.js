@@ -54,13 +54,13 @@ var Terrain = {
 var Highlight = {
   template: `
   <transition name='fade'>
-    <div v-if='pathTo || inRange' class='highlight space' :class='movable'></div>
+    <div v-if='path || range' class='highlight space' :class='movable'></div>
   </transition>
   `,
-  props: ['pathTo', 'inRange'],
+  props: ['path', 'range'],
   computed: {
     movable: function () {
-      return { movable: this.pathTo && this.pathTo !== 'o' };
+      return { movable: this.path };
     }
   }
 };
@@ -95,7 +95,7 @@ var Space = {
   template: `
     <div class='space' @click='clickHandler'>
       <terrain :terrain='space.terrain'></terrain>
-      <highlight :pathTo='space.pathTo' :inRange='space.inRange'></highlight>
+      <highlight :path='space.path' :range='space.range'></highlight>
       <unit :unit='space.unit'></unit>
     </div>
   `,
@@ -104,13 +104,13 @@ var Space = {
     clickHandler: function () {
       var terrain = this.space.terrain,
           unit = this.space.unit,
-          pathTo = this.space.pathTo;
+          path = this.space.path;
       this.selectTerrain(terrain);
       if (!Leftpanel.moving) {
         if (unit) { this.selectUnit(unit) } else { this.deselectUnit() }
       }
       else {
-        if (pathTo && pathTo !== 'o') { Map.moveUnit(pathTo) }
+        if (path) { Map.moveUnit(path) }
         else {
           $( '#btn-unmove' ).trigger( 'click' );
           if (unit) { this.selectUnit(unit) } else { this.deselectUnit() }
@@ -119,7 +119,7 @@ var Space = {
     },
     selectTerrain: function (terrain) {
       Leftpanel.terrain = terrain;
-      console.log(this.space.pathTo); // Developer mode
+      console.log(this.space.path); // Developer mode
     },
     selectUnit: function (unit) {
       Leftpanel.unit = unit;
@@ -156,20 +156,20 @@ var Map = new Vue ({
   methods: {
     showMoveRange: function (y, x, moves, path) {
       var origin = this.gameData[y][x],
-          east   = this.gameData[y][Math.min(x + 1, 15)],
-          south  = this.gameData[Math.min(y + 1, 15)][x],
-          west   = this.gameData[y][Math.max(x - 1, 0)],
-          north  = this.gameData[Math.max(y - 1, 0)][x],
+          east = this.gameData[y][Math.min(x + 1, 15)],
+          sout = this.gameData[Math.min(y + 1, 15)][x],
+          west = this.gameData[y][Math.max(x - 1, 0)],
+          nort = this.gameData[Math.max(y - 1, 0)][x],
           explore = [],
-          goEast  = function () { Map.showMoveRange(y, Math.min(x + 1, 15), moves - east.terrain.moveCost,  path + 'e') },
-          goSouth = function () { Map.showMoveRange(Math.min(y + 1, 15), x, moves - south.terrain.moveCost, path + 's') },
-          goWest  = function () { Map.showMoveRange(y, Math.max(x - 1, 0),  moves - west.terrain.moveCost,  path + 'w') },
-          goNorth = function () { Map.showMoveRange(Math.max(y - 1, 0), x,  moves - north.terrain.moveCost, path + 'n') };
-      if (!origin.pathTo) { origin.pathTo = 'o' }
-      if (east.terrain.moveCost  <= moves && (!east.pathTo  || path.length + 1 < east.pathTo.length))  { east.pathTo  = path + 'e'; explore.push(goEast) }
-      if (south.terrain.moveCost <= moves && (!south.pathTo || path.length + 1 < south.pathTo.length)) { south.pathTo = path + 's'; explore.push(goSouth) }
-      if (west.terrain.moveCost  <= moves && (!west.pathTo  || path.length + 1 < west.pathTo.length))  { west.pathTo  = path + 'w'; explore.push(goWest) }
-      if (north.terrain.moveCost <= moves && (!north.pathTo || path.length + 1 < north.pathTo.length)) { north.pathTo = path + 'n'; explore.push(goNorth) }
+          goEast = function () { Map.showMoveRange(y, Math.min(x + 1, 15), moves - east.terrain.cost, path + 'e') },
+          goSout = function () { Map.showMoveRange(Math.min(y + 1, 15), x, moves - sout.terrain.cost, path + 's') },
+          goWest = function () { Map.showMoveRange(y, Math.max(x - 1, 0),  moves - west.terrain.cost, path + 'w') },
+          goNort = function () { Map.showMoveRange(Math.max(y - 1, 0), x,  moves - nort.terrain.cost, path + 'n') };
+      if (!origin.moves) { origin.moves = moves }
+      if (east.terrain.cost <= moves && (!east.moves || moves - east.terrain.cost > east.moves)) { east.moves = moves - east.terrain.cost; east.path = path + 'e'; explore.push(goEast) }
+      if (sout.terrain.cost <= moves && (!sout.moves || moves - sout.terrain.cost > sout.moves)) { sout.moves = moves - sout.terrain.cost; sout.path = path + 's'; explore.push(goSout) }
+      if (west.terrain.cost <= moves && (!west.moves || moves - west.terrain.cost > west.moves)) { west.moves = moves - west.terrain.cost; west.path = path + 'w'; explore.push(goWest) }
+      if (nort.terrain.cost <= moves && (!nort.moves || moves - nort.terrain.cost > nort.moves)) { nort.moves = moves - nort.terrain.cost; nort.path = path + 'n'; explore.push(goNort) }
       shuffle(explore);
       explore.forEach( function (go) { go(); });
     },
@@ -177,16 +177,17 @@ var Map = new Vue ({
       var y, x;
       for (y = 0; y < 16; y++) {
         for (x = 0; x < 16; x++) {
-          this.gameData[y][x].pathTo = null;
+          this.gameData[y][x].moves = null;
+          this.gameData[y][x].path = null;
         }
       }
     },
-    moveUnit: function (pathTo) {
+    moveUnit: function (path) {
       var y = Leftpanel.unit.posY,
           x = Leftpanel.unit.posX;
-      if (pathTo) {
+      if (path) {
         this.hideMoveRange();
-        this.gameData[y][x].unit.path = pathTo;
+        this.gameData[y][x].unit.path = path;
       }
       switch (this.gameData[y][x].unit.path[0]) {
         case 'e': this.moveEast(y, x); break;
@@ -200,7 +201,7 @@ var Map = new Vue ({
           spaceTo = this.gameData[y][x + 1];
           unitData = spaceFrom.unit;
       spaceFrom.unit = null;
-      unitData.moves -= spaceTo.terrain.moveCost;
+      unitData.moves -= spaceTo.terrain.cost;
       unitData.moving = 'east';
       unitData.path = unitData.path.substr(1);
       unitData.posX += 1;
@@ -211,7 +212,7 @@ var Map = new Vue ({
           spaceTo = this.gameData[y + 1][x];
           unitData = spaceFrom.unit;
       spaceFrom.unit = null;
-      unitData.moves -= spaceTo.terrain.moveCost;
+      unitData.moves -= spaceTo.terrain.cost;
       unitData.moving = 'south';
       unitData.path = unitData.path.substr(1);
       unitData.posY += 1;
@@ -222,7 +223,7 @@ var Map = new Vue ({
           spaceTo = this.gameData[y][x - 1];
           unitData = spaceFrom.unit;
       spaceFrom.unit = null;
-      unitData.moves -= spaceTo.terrain.moveCost;
+      unitData.moves -= spaceTo.terrain.cost;
       unitData.moving = 'west';
       unitData.path = unitData.path.substr(1);
       unitData.posX -= 1;
@@ -233,7 +234,7 @@ var Map = new Vue ({
           spaceTo = this.gameData[y - 1][x];
           unitData = spaceFrom.unit;
       spaceFrom.unit = null;
-      unitData.moves -= spaceTo.terrain.moveCost;
+      unitData.moves -= spaceTo.terrain.cost;
       unitData.moving = 'north';
       unitData.path = unitData.path.substr(1);
       unitData.posY -= 1;
