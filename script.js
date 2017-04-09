@@ -4,9 +4,12 @@ function loadMap (mapPlan) {
     row = [];
     string = mapPlan[y].replace(/\s/g, '');
     for (x = 0; x < string.length; x++) {
-      if (string[x] === '-') { row.push(new Space(y, x, waste)) }
-      if (string[x] === 'g') { row.push(new Space(y, x, grass)) }
-      if (string[x] === 's') { row.push(new Space(y, x, street)) }
+      switch (string[x]) {
+        case '-': row.push(new Space(y, x, waste)); break;
+        case 'g': row.push(new Space(y, x, grass)); break;
+        case 's': row.push(new Space(y, x, street)); break;
+        case 'b': row.push(new Space(y, x, brush)); break;
+      }
     }
     mapData.push(row);
   }

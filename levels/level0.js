@@ -7,10 +7,10 @@ var mapPlan = [
   ' - - - - - - - - - - - - - - - - ',
   ' - - - - - - - - - - - - - - - - ',
   ' - - - - - - - - - - - - - - - - ',
-  ' - - - - g g g g g g g g - - - - ',
-  ' - - - - g s s s s s s g - - - - ',
-  ' - - - - g s s s s s s g - - - - ',
-  ' - - - - g g g g g g g g - - - - ',
+  ' - - - - b b g g b g g g - - - - ',
+  ' - - - - b s s s s b s g - - - - ',
+  ' - - - - g s b s s s s b - - - - ',
+  ' - - - - g g g b g g b b - - - - ',
   ' - - - - - - - - - - - - - - - - ',
   ' - - - - - - - - - - - - - - - - ',
   ' - - - - - - - - - - - - - - - - ',
@@ -29,7 +29,8 @@ function Terrain(type, moveCost) {
 
 var waste = new Terrain('waste', 99),
     grass = new Terrain('grass', 1),
-    street = new Terrain('street', 1);
+    street = new Terrain('street', 1),
+    brush = new Terrain('brush', 2);
 
 function Space(posY, posX, terrain) {
   this.posY = posY;
