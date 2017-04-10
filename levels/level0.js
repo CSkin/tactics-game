@@ -39,7 +39,7 @@ function Space(posY, posX, terrain) {
   this.unit = null;
   this.moves = null;
   this.path = null;
-  this.range = null;
+  this.distance = null;
 }
 
 function Unit(id, sprite, faction, name, attack, defense, range, movement, posY, posX) {
@@ -55,11 +55,12 @@ function Unit(id, sprite, faction, name, attack, defense, range, movement, posY,
   this.moves = this.movement;
   this.moving = null;
   this.path = null;
+  this.attacks = 1;
   this.posY = posY;
   this.posX = posX;
 }
 
-var player0 = new Unit('player0', 'player.png', 'Player', 'Player Unit', 1, 1, 1, 5, 9, 4),
+var player0 = new Unit('player0', 'player.png', 'Player', 'Player Unit', 1, 1, 3, 5, 9, 4),
     enemy0  = new Unit('enemy0', 'enemy.png', 'Enemy', 'Enemy Unit', 1, 1, 1, 5, 6, 11);
     
 var unitPlan = [ player0, enemy0 ];

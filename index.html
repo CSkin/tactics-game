@@ -34,7 +34,8 @@
             <p class='heading underline'>Actions</p>
             <p v-if='!moving'><button id='btn-move' :disabled='unit.moves === 0' @click='beginMove'>Move (M)</button></p>
             <p v-else><button id='btn-unmove' @click='cancelMove'>Cancel Move (M)</button></p>
-            <p><button id='btn-attack'>Attack (A)</button></p>
+            <p v-if='!attacking'><button id='btn-attack' :disabled='unit.attacks === 0' @click='beginAttack'>Attack (A)</button></p>
+            <p v-else><button id='btn-unattack' @click='cancelAttack'>Cancel Attack (A)</button></p>
           </div>
         </div>
         

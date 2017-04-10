@@ -103,6 +103,11 @@ button {
   background-color: rgba(0, 191, 255, 0.7);
 }
 
+.attackable {
+  background-color: rgb(255, 36, 0);
+  background-color: rgba(255, 36, 0, 0.3);
+}
+
 .Healthy {
   color: green;
 }
