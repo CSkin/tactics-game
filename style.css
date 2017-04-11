@@ -16,10 +16,6 @@ div + span  {
   vertical-align: middle;
 }
 
-button {
-  margin-right: 5px;
-}
-
 #map {
   width: 512px;
   height: 512px;

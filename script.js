@@ -181,9 +181,12 @@ var Map = new Vue ({
       explore.forEach( function (go) { go(); });
     },
     hideMoveRange: function () {
-      var y, x;
-      for (y = 0; y < 16; y++) {
-        for (x = 0; x < 16; x++) {
+      var y, x,
+          posY = Leftpanel.unit.posY,
+          posX = Leftpanel.unit.posX,
+          moves = Leftpanel.unit.moves;
+      for (y = Math.max(posY - moves, 0); y <= Math.min(posY + moves, 15); y++) {
+        for (x = Math.max(posX - moves, 0); x <= Math.min(posX + moves, 15); x++) {
           this.gameData[y][x].moves = null;
           this.gameData[y][x].path = null;
         }
@@ -261,9 +264,12 @@ var Map = new Vue ({
       }
     },
     hideAttackRange: function () {
-      var y, x;
-      for (y = 0; y < 16; y++) {
-        for (x = 0; x < 16; x++) {
+      var y, x,
+          posY = Leftpanel.unit.posY,
+          posX = Leftpanel.unit.posX,
+          range = Leftpanel.unit.range;
+      for (y = Math.max(posY - range, 0); y <= Math.min(posY + range, 15); y++) {
+        for (x = Math.max(posX - range, 0); x <= Math.min(posX + range, 15); x++) {
           this.gameData[y][x].distance = null;
         }
       }
@@ -280,7 +286,8 @@ var Leftpanel = new Vue ({
     terrain: null,
     unit: null,
     moving: false,
-    attacking: false
+    attacking: false,
+    ending: false
   },
   methods: {
     beginMove: function () {
@@ -298,6 +305,12 @@ var Leftpanel = new Vue ({
     cancelAttack: function () {
       Map.hideAttackRange();
       this.attacking = false;
+    },
+    endTurn: function() {
+      var unit = Leftpanel.unit;
+      unit.moves = unit.movement;
+      unit.attacks = 1;
+      this.ending = false;
     }
   }
 });
@@ -306,7 +319,9 @@ function keyHandler () {
   // console.log('keyCode: ' + event.keyCode); // Developer mode
   if (Leftpanel.unit && Leftpanel.unit.faction === 'Player') {
     switch (event.keyCode) {
+      case 13: if (Leftpanel.ending) { $( '#btn-confend' ).trigger( 'click' ); } break;
       case 65: if (!Leftpanel.attacking) { $( '#btn-attack' ).trigger( 'click' ); } else { $( '#btn-unattack' ).trigger( 'click' ); } break;
+      case 69: if (!Leftpanel.ending) { $( '#btn-end' ).trigger( 'click' ); } else { $( '#btn-unend' ).trigger( 'click' ); } break;
       case 77: if (!Leftpanel.moving) { $( '#btn-move' ).trigger( 'click' ); } else { $( '#btn-unmove' ).trigger( 'click' ); } break;
     }
   }

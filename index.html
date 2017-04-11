@@ -27,15 +27,27 @@
             <p>Status: <span :class='unit.health'>{{ unit.health }}</span></p>
             <p>Attack: {{ unit.attack }}</p>
             <p>Defense: {{ unit.defense }}</p>
-            <p>Range: {{ unit.range }}</p>
             <p>Movement: {{ unit.moves }} / {{ unit.movement }}</p>
+            <p>Range: {{ unit.range }}</p>
           </div>
           <div id='unit-actions' class='ui' v-if="unit.faction === 'Player'">
             <p class='heading underline'>Actions</p>
-            <p v-if='!moving'><button id='btn-move' :disabled='unit.moves === 0' @click='beginMove'>Move (M)</button></p>
-            <p v-else><button id='btn-unmove' @click='cancelMove'>Cancel Move (M)</button></p>
-            <p v-if='!attacking'><button id='btn-attack' :disabled='unit.attacks === 0' @click='beginAttack'>Attack (A)</button></p>
-            <p v-else><button id='btn-unattack' @click='cancelAttack'>Cancel Attack (A)</button></p>
+            <p v-if='!attacking && !ending'>
+              <button id='btn-move' v-if='!moving' :disabled='unit.moves === 0' @click='beginMove'>Move (M)</button>
+              <button id='btn-unmove' v-else @click='cancelMove'>Cancel Move (M)</button>
+            </p>
+            <p v-if='!moving && !ending'>
+              <button id='btn-attack' v-if='!attacking' :disabled='unit.attacks === 0' @click='beginAttack'>Attack (A)</button>
+              <button id='btn-unattack' v-else @click='cancelAttack'>Cancel Attack (A)</button>
+            </p>
+            <div v-if='!moving && !attacking'>
+              <p v-if='!ending'><button id='btn-end' @click='ending = true'>End Turn (E)</button></p>
+              <p v-else>
+                Really end turn?<br>
+                <button id='btn-unend' @click='ending = false'>Cancel (E)</button>
+                <button id='btn-confend' @click='endTurn'>Confirm (Return)</button>
+              </p>
+            </div>
           </div>
         </div>
         
