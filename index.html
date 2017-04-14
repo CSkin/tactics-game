@@ -24,11 +24,11 @@
         <div id='selected-unit' v-if='unit'>
           <div id='unit-info' class='ui'>
             <div class='heading'><div id='unit-icon' class='icon' :class='unit.faction'></div><span class='underline'>{{ unit.name }}</span></div>
-            <p>Status: <span :class='unit.health'>{{ unit.health }}</span></p>
+            <p>Condition: <span :class='unit.condition'>{{ unit.condition }}</span></p>
             <p>Attack: {{ unit.attack }}</p>
             <p>Defense: {{ unit.defense }}</p>
-            <p>Movement: {{ unit.moves }} / {{ unit.movement }}</p>
             <p>Range: {{ unit.range }}</p>
+            <p>Movement: {{ unit.moves }} / {{ unit.movement }}</p>
           </div>
           <div id='unit-actions' class='ui' v-if="unit.faction === 'Player'">
             <p class='heading underline'>Actions</p>

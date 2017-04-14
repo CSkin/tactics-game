@@ -119,7 +119,7 @@ var Space = {
         }
       }
       else if (Leftpanel.attacking) {
-        if (distance && unit) { Map.attackUnit(unit, distance) }
+        if (distance && unit && unit.faction === 'Enemy') { Map.attackUnit(unit, distance) }
         else {
           $( '#btn-unattack' ).trigger( 'click' );
           if (unit) { this.selectUnit(unit) } else { this.deselectUnit() }
@@ -266,12 +266,33 @@ var Map = new Vue ({
           defender = unit,
           distanceBonus = distance - 1,
           diceSides = attacker.attack + defender.defense + distanceBonus,
-          diceRoll = Math.ceil(Math.random()*diceSides);
-      console.log('Chance to hit: ' + attacker.attack + ' in ' + diceSides + '.');
-      if (diceRoll <= attacker.attack) {
+          chanceToHit = attacker.attack / diceSides;
+      console.log(attacker.name + ' is attacking ' + defender.name + '.');
+      console.log('Chance to hit: ' + Math.round(chanceToHit * 100) + '%');
+      if (Math.random() <= chanceToHit) {
+        this.dealDamage(defender);
         console.log('Attack hit.');
       } else {
         console.log('Attack missed.');
+      }
+      if (defender.condition !== 'Defeated') {
+        diceSides = defender.attack + attacker.defense + distanceBonus;
+        chanceToHit = defender.attack / diceSides;
+        console.log(defender.name + ' is counterattacking ' + attacker.name + '.');
+        console.log('Chance to hit: ' + Math.round(chanceToHit * 100) + '%');
+        if (Math.random() <= chanceToHit) {
+          this.dealDamage(attacker);
+          console.log('Counterattack hit.');
+        } else {
+          console.log('Counterattack missed.');
+        }
+      }
+    },
+    dealDamage: function (unit) {
+      switch (unit.condition) {
+        case 'Healthy': unit.condition = 'Injured'; break;
+        case 'Injured': unit.condition = 'Critical'; break;
+        case 'Critical': unit.condition = 'Defeated'; break;
       }
     }
   },

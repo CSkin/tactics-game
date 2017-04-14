@@ -110,11 +110,19 @@ div + span  {
 }
 
 .Healthy {
-  color: green;
+  color: forestgreen;
 }
 
 .Injured {
+  color: orangered;
+}
+
+.Critical {
   color: red;
+}
+
+.Defeated {
+  color: darkred;
 }
 
 .waste {
