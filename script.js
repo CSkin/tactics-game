@@ -54,16 +54,17 @@ var Terrain = {
 var Highlight = {
   template: `
   <transition name='fade'>
-    <div v-if='path || distance' class='highlight space' :class='[movable, attackable]'></div>
+    <div v-if='path || distance' class='highlight space' :class='classes'></div>
   </transition>
   `,
-  props: ['path', 'distance'],
+  props: ['unit', 'path', 'distance'],
   computed: {
-    movable: function () {
-      return { movable: this.path };
-    },
-    attackable: function () {
-      return { attackable: this.distance };
+    classes: function () {
+      return {
+        movable: this.path,
+        inrange: this.distance && (!this.unit || this.unit.faction === 'Player'),
+        attackable: this.distance && this.unit && this.unit.faction === 'Enemy'
+      };
     }
   }
 };
@@ -98,7 +99,7 @@ var Space = {
   template: `
     <div class='space' @click='clickHandler'>
       <terrain :terrain='space.terrain'></terrain>
-      <highlight :path='space.path' :distance='space.distance'></highlight>
+      <highlight :unit='space.unit' :path='space.path' :distance='space.distance'></highlight>
       <unit :unit='space.unit'></unit>
     </div>
   `,
@@ -107,17 +108,25 @@ var Space = {
     clickHandler: function () {
       var terrain = this.space.terrain,
           unit = this.space.unit,
-          path = this.space.path;
+          path = this.space.path,
+          distance = this.space.distance;
       this.selectTerrain(terrain);
-      if (!Leftpanel.moving) {
-        if (unit) { this.selectUnit(unit) } else { this.deselectUnit() }
-      }
-      else {
+      if (Leftpanel.moving) {
         if (path) { Map.moveUnit(path) }
         else {
           $( '#btn-unmove' ).trigger( 'click' );
           if (unit) { this.selectUnit(unit) } else { this.deselectUnit() }
         }
+      }
+      else if (Leftpanel.attacking) {
+        if (distance && unit) { Map.attackUnit(unit, distance) }
+        else {
+          $( '#btn-unattack' ).trigger( 'click' );
+          if (unit) { this.selectUnit(unit) } else { this.deselectUnit() }
+        }
+      }
+      else {
+        if (unit) { this.selectUnit(unit) } else { this.deselectUnit() }
       }
     },
     selectTerrain: function (terrain) {
@@ -169,13 +178,13 @@ var Map = new Vue ({
           goWest = function () { Map.showMoveRange(y, Math.max(x - 1, 0),  moves - west.terrain.cost, path + 'w') },
           goNort = function () { Map.showMoveRange(Math.max(y - 1, 0), x,  moves - nort.terrain.cost, path + 'n') };
       if (!origin.moves) { origin.moves = moves }
-      if (east.terrain.cost <= moves && (!east.moves || moves - east.terrain.cost > east.moves))
+      if (east.terrain.cost <= moves && (!east.moves || moves - east.terrain.cost > east.moves) && east.unit === null)
         { east.moves = moves - east.terrain.cost; east.path = path + 'e'; explore.push(goEast) }
-      if (sout.terrain.cost <= moves && (!sout.moves || moves - sout.terrain.cost > sout.moves))
+      if (sout.terrain.cost <= moves && (!sout.moves || moves - sout.terrain.cost > sout.moves) && sout.unit === null)
         { sout.moves = moves - sout.terrain.cost; sout.path = path + 's'; explore.push(goSout) }
-      if (west.terrain.cost <= moves && (!west.moves || moves - west.terrain.cost > west.moves))
+      if (west.terrain.cost <= moves && (!west.moves || moves - west.terrain.cost > west.moves) && west.unit === null)
         { west.moves = moves - west.terrain.cost; west.path = path + 'w'; explore.push(goWest) }
-      if (nort.terrain.cost <= moves && (!nort.moves || moves - nort.terrain.cost > nort.moves))
+      if (nort.terrain.cost <= moves && (!nort.moves || moves - nort.terrain.cost > nort.moves) && nort.unit === null)
         { nort.moves = moves - nort.terrain.cost; nort.path = path + 'n'; explore.push(goNort) }
       shuffle(explore);
       explore.forEach( function (go) { go(); });
@@ -194,84 +203,75 @@ var Map = new Vue ({
     },
     moveUnit: function (path) {
       var y = Leftpanel.unit.posY,
-          x = Leftpanel.unit.posX;
+          x = Leftpanel.unit.posX,
+          moveObj = { y: y, x: x, moving: null, changePos: null },
+          sapceFrom, spaceTo, unitData;
       if (path) {
         this.hideMoveRange();
         this.gameData[y][x].unit.path = path;
       }
       switch (this.gameData[y][x].unit.path[0]) {
-        case 'e': this.moveEast(y, x); break;
-        case 's': this.moveSouth(y, x); break;
-        case 'w': this.moveWest(y, x); break;
-        case 'n': this.moveNorth(y, x); break;
+        case 'e':
+          moveObj.x = x + 1;
+          moveObj.moving = 'east';
+          moveObj.changePos = function () { unitData.posX += 1 };
+          break;
+        case 's':
+          moveObj.y = y + 1;
+          moveObj.moving = 'south';
+          moveObj.changePos = function () { unitData.posY += 1 };
+          break;
+        case 'w':
+          moveObj.x = x - 1;
+          moveObj.moving = 'west';
+          moveObj.changePos = function () { unitData.posX -= 1 };
+          break;
+        case 'n':
+          moveObj.y = y - 1;
+          moveObj.moving = 'north';
+          moveObj.changePos = function () { unitData.posY -= 1 };
+          break;
       }
-    },
-    moveEast: function (y, x) {
-      var spaceFrom = this.gameData[y][x],
-          spaceTo = this.gameData[y][x + 1],
-          unitData = spaceFrom.unit;
+      spaceFrom = this.gameData[y][x],
+      spaceTo = this.gameData[moveObj.y][moveObj.x],
+      unitData = spaceFrom.unit;
       spaceFrom.unit = null;
       unitData.moves -= spaceTo.terrain.cost;
-      unitData.moving = 'east';
+      unitData.moving = moveObj.moving;
       unitData.path = unitData.path.substr(1);
-      unitData.posX += 1;
+      moveObj.changePos();
       spaceTo.unit = unitData;
     },
-    moveSouth: function (y, x) {
-      var spaceFrom = this.gameData[y][x],
-          spaceTo = this.gameData[y + 1][x],
-          unitData = spaceFrom.unit;
-      spaceFrom.unit = null;
-      unitData.moves -= spaceTo.terrain.cost;
-      unitData.moving = 'south';
-      unitData.path = unitData.path.substr(1);
-      unitData.posY += 1;
-      spaceTo.unit = unitData;
-    },
-    moveWest: function (y, x) {
-      var spaceFrom = this.gameData[y][x],
-          spaceTo = this.gameData[y][x - 1],
-          unitData = spaceFrom.unit;
-      spaceFrom.unit = null;
-      unitData.moves -= spaceTo.terrain.cost;
-      unitData.moving = 'west';
-      unitData.path = unitData.path.substr(1);
-      unitData.posX -= 1;
-      spaceTo.unit = unitData;
-    },
-    moveNorth: function (y, x) {
-      var spaceFrom = this.gameData[y][x],
-          spaceTo = this.gameData[y - 1][x],
-          unitData = spaceFrom.unit;
-      spaceFrom.unit = null;
-      unitData.moves -= spaceTo.terrain.cost;
-      unitData.moving = 'north';
-      unitData.path = unitData.path.substr(1);
-      unitData.posY -= 1;
-      spaceTo.unit = unitData;
-    },
-    showAttackRange: function () {
-      var y, x,
-          posY = Leftpanel.unit.posY,
-          posX = Leftpanel.unit.posX,
-          range = Leftpanel.unit.range,
-          distance;
-      for (y = Math.max(posY - range, 0); y <= Math.min(posY + range, 15); y++) {
-        for (x = Math.max(posX - range, 0); x <= Math.min(posX + range, 15); x++) {
-          distance = Math.abs(posY - y) + Math.abs(posX - x);
-          if (distance <= range) { this.gameData[y][x].distance = distance }
-        }
-      }
-    },
-    hideAttackRange: function () {
-      var y, x,
+    toggleAttackRange: function (n) {
+      var y, x, showOrHide, distance,
           posY = Leftpanel.unit.posY,
           posX = Leftpanel.unit.posX,
           range = Leftpanel.unit.range;
+      if (n) {
+        showOrHide = function (y, x) {
+          distance = Math.abs(posY - y) + Math.abs(posX - x);
+          if (distance <= range) { Map.gameData[y][x].distance = distance }
+        }
+      } else {
+        showOrHide = function (y, x) { Map.gameData[y][x].distance = null; };
+      }
       for (y = Math.max(posY - range, 0); y <= Math.min(posY + range, 15); y++) {
         for (x = Math.max(posX - range, 0); x <= Math.min(posX + range, 15); x++) {
-          this.gameData[y][x].distance = null;
+          showOrHide(y, x);
         }
+      }
+    },
+    attackUnit: function (unit, distance) {
+      var attacker = Leftpanel.unit,
+          defender = unit,
+          distanceBonus = distance - 1,
+          diceSides = attacker.attack + defender.defense + distanceBonus,
+          diceRoll = Math.ceil(Math.random()*diceSides);
+      console.log('Chance to hit: ' + attacker.attack + ' in ' + diceSides + '.');
+      if (diceRoll <= attacker.attack) {
+        console.log('Attack hit.');
+      } else {
+        console.log('Attack missed.');
       }
     }
   },
@@ -299,11 +299,11 @@ var Leftpanel = new Vue ({
       this.moving = false;
     },
     beginAttack: function () {
-      Map.showAttackRange();
+      Map.toggleAttackRange(1);
       this.attacking = true;
     },
     cancelAttack: function () {
-      Map.hideAttackRange();
+      Map.toggleAttackRange(0);
       this.attacking = false;
     },
     endTurn: function() {
