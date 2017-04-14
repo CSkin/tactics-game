@@ -47,7 +47,7 @@ function Unit(id, sprite, faction, name, attack, defense, range, movement, posY,
   this.sprite = 'sprites/' + sprite;
   this.faction = faction;
   this.name = name;
-  this.health = 'Healthy';
+  this.condition = 'Healthy';
   this.attack = attack;
   this.defense = defense;
   this.range = range;
@@ -60,7 +60,7 @@ function Unit(id, sprite, faction, name, attack, defense, range, movement, posY,
   this.posX = posX;
 }
 
-var player0 = new Unit('player0', 'player.png', 'Player', 'Player Unit', 1, 1, 3, 5, 9, 4),
-    enemy0  = new Unit('enemy0', 'enemy.png', 'Enemy', 'Enemy Unit', 1, 1, 1, 5, 6, 11);
+var player0 = new Unit('player0', 'player.png', 'Player', 'Player Unit', 1, 2, 1, 5, 9, 4),
+    enemy0  = new Unit('enemy0', 'enemy.png', 'Enemy', 'Enemy Unit', 2, 1, 1, 5, 6, 11);
     
 var unitPlan = [ player0, enemy0 ];
