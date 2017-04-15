@@ -42,13 +42,13 @@ function Space(posY, posX, terrain) {
   this.distance = null;
 }
 
-function Unit(id, sprite, faction, name, attack, defense, range, movement, posY, posX) {
+function Unit(id, sprite, faction, name, offense, defense, range, movement, posY, posX) {
   this.id = id;
   this.sprite = 'sprites/' + sprite;
   this.faction = faction;
   this.name = name;
   this.condition = 'Healthy';
-  this.attack = attack;
+  this.offense = offense;
   this.defense = defense;
   this.range = range;
   this.movement = movement;
