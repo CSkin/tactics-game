@@ -1,4 +1,4 @@
-var mapImage = { 'background-image': "url('maps/level0.png')" };
+var mapImage = { backgroundImage: "url('maps/level0.png')" };
 
 var mapPlan = [
   ' - - - - - - - - - - - - - - - - ',

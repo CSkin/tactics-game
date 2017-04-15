@@ -17,6 +17,10 @@ div + span  {
   vertical-align: middle;
 }
 
+button {
+  font-size: 13px;
+}
+
 #map {
   width: 512px;
   height: 512px;
@@ -77,11 +81,15 @@ div + span  {
 }
 
 .heading {
+  height: 18px;
   margin: 5px 0;
+  font-weight: bold;
 }
 
 .icon {
   display: inline-block;
+  position: relative;
+  top: -2px;
   vertical-align: middle;
   width: 18px;
   height: 18px;
@@ -90,10 +98,6 @@ div + span  {
 
 .bold {
   font-weight: bold;
-}
-
-.combat-info {
-  color: red;
 }
 
 /* Dynamic Classes */
@@ -114,19 +118,19 @@ div + span  {
 }
 
 .Healthy {
-  color: forestgreen;
+  color: #259925;
 }
 
 .Injured {
-  color: orangered;
+  color: #d98c00;
 }
 
 .Critical {
-  color: red;
+  color: #e60000;
 }
 
 .Defeated {
-  color: darkred;
+  color: #8b0000;
 }
 
 .waste {

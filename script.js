@@ -302,6 +302,20 @@ var Leftpanel = new Vue ({
     ending: false,
     hit: null
   },
+  computed: {
+    gradient: function () {
+      if (this.hit < 10) { return { color: '#bf0000' } }
+      else if (this.hit < 20) { return { color: '#d01b00' } }
+      else if (this.hit < 30) { return { color: '#e13600' } }
+      else if (this.hit < 40) { return { color: '#f25100' } }
+      else if (this.hit < 50) { return { color: '#ea6a00' } }
+      else if (this.hit < 60) { return { color: '#e28300' } }
+      else if (this.hit < 70) { return { color: '#da9c00' } }
+      else if (this.hit < 80) { return { color: '#97a406' } }
+      else if (this.hit < 90) { return { color: '#55ab0c' } }
+      else { return { color: '#12b312' } }
+    }
+  },
   methods: {
     beginMove: function () {
       Map.showMoveRange(this.unit.posY, this.unit.posX, this.unit.moves, '');
@@ -336,6 +350,20 @@ var Rightpanel = new Vue ({
   data: {
     space: null,
     counter: null
+  },
+  computed: {
+    gradient: function () {
+      if (this.counter < 10) { return { color: '#bf0000' } }
+      else if (this.counter < 20) { return { color: '#d01b00' } }
+      else if (this.counter < 30) { return { color: '#e13600' } }
+      else if (this.counter < 40) { return { color: '#f25100' } }
+      else if (this.counter < 50) { return { color: '#ea6a00' } }
+      else if (this.counter < 60) { return { color: '#e28300' } }
+      else if (this.counter < 70) { return { color: '#da9c00' } }
+      else if (this.counter < 80) { return { color: '#97a406' } }
+      else if (this.counter < 90) { return { color: '#55ab0c' } }
+      else { return { color: '#12b312' } }
+    }
   },
   methods: {
     confirmAttack: function () {
