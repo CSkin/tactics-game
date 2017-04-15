@@ -1,5 +1,6 @@
 body {
   background-color: #708090;
+  font-family: sans-serif;
 }
 
 main {
@@ -28,7 +29,6 @@ div + span  {
 }
 
 #rightpanel {
-  display: none;
   width: 256px;
   height: 512px;
   margin-left: 5px;
@@ -73,7 +73,7 @@ div + span  {
 }
 
 .ui {
-  margin: 10px 10px 30px 10px;
+  margin: 10px 10px 25px 10px;
 }
 
 .heading {
@@ -88,8 +88,12 @@ div + span  {
   margin-right: 5px;
 }
 
-.underline {
-  text-decoration: underline;
+.bold {
+  font-weight: bold;
+}
+
+.combat-info {
+  color: red;
 }
 
 /* Dynamic Classes */

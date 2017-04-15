@@ -54,16 +54,19 @@ var Terrain = {
 var Highlight = {
   template: `
   <transition name='fade'>
-    <div v-if='path || distance' class='highlight space' :class='classes'></div>
+    <div v-if='space.path || space.distance' class='highlight space' :class='classes'></div>
   </transition>
   `,
-  props: ['unit', 'path', 'distance'],
+  props: ['space'],
   computed: {
     classes: function () {
+      var unit = this.space.unit,
+          path = this.space.path,
+          distance = this.space.distance;
       return {
-        movable: this.path,
-        inrange: this.distance && (!this.unit || this.unit.faction === 'Player'),
-        attackable: this.distance && this.unit && this.unit.faction === 'Enemy'
+        movable: path,
+        inrange: distance && (!unit || unit.faction === 'Player'),
+        attackable: distance && unit && unit.faction === 'Enemy'
       };
     }
   }
@@ -99,17 +102,18 @@ var Space = {
   template: `
     <div class='space' @click='clickHandler'>
       <terrain :terrain='space.terrain'></terrain>
-      <highlight :unit='space.unit' :path='space.path' :distance='space.distance'></highlight>
+      <highlight :space='space'></highlight>
       <unit :unit='space.unit'></unit>
     </div>
   `,
   props: ['space'],
   methods: {
     clickHandler: function () {
-      var terrain = this.space.terrain,
-          unit = this.space.unit,
-          path = this.space.path,
-          distance = this.space.distance;
+      var space = this.space,
+          terrain = space.terrain,
+          unit = space.unit,
+          path = space.path,
+          distance = space.distance;
       this.selectTerrain(terrain);
       if (Leftpanel.moving) {
         if (path) { Map.moveUnit(path) }
@@ -119,7 +123,7 @@ var Space = {
         }
       }
       else if (Leftpanel.attacking) {
-        if (distance && unit && unit.faction === 'Enemy') { Map.attackUnit(unit, distance) }
+        if (distance && unit && unit.faction === 'Enemy') { Map.targetUnit(space) }
         else {
           $( '#btn-unattack' ).trigger( 'click' );
           if (unit) { this.selectUnit(unit) } else { this.deselectUnit() }
@@ -131,7 +135,6 @@ var Space = {
     },
     selectTerrain: function (terrain) {
       Leftpanel.terrain = terrain;
-      console.log(this.space.distance); // Developer mode
     },
     selectUnit: function (unit) {
       Leftpanel.unit = unit;
@@ -205,7 +208,7 @@ var Map = new Vue ({
       var y = Leftpanel.unit.posY,
           x = Leftpanel.unit.posX,
           moveObj = { y: y, x: x, moving: null, changePos: null },
-          sapceFrom, spaceTo, unitData;
+          spaceFrom, spaceTo, unitData;
       if (path) {
         this.hideMoveRange();
         this.gameData[y][x].unit.path = path;
@@ -261,32 +264,20 @@ var Map = new Vue ({
         }
       }
     },
-    attackUnit: function (unit, distance) {
+    targetUnit: function (space) {
       var attacker = Leftpanel.unit,
-          defender = unit,
-          distanceBonus = distance - 1,
-          diceSides = attacker.attack + defender.defense + distanceBonus,
-          chanceToHit = attacker.attack / diceSides;
-      console.log(attacker.name + ' is attacking ' + defender.name + '.');
-      console.log('Chance to hit: ' + Math.round(chanceToHit * 100) + '%');
-      if (Math.random() <= chanceToHit) {
-        this.dealDamage(defender);
-        console.log('Attack hit.');
-      } else {
-        console.log('Attack missed.');
-      }
-      if (defender.condition !== 'Defeated') {
-        diceSides = defender.attack + attacker.defense + distanceBonus;
-        chanceToHit = defender.attack / diceSides;
-        console.log(defender.name + ' is counterattacking ' + attacker.name + '.');
-        console.log('Chance to hit: ' + Math.round(chanceToHit * 100) + '%');
-        if (Math.random() <= chanceToHit) {
-          this.dealDamage(attacker);
-          console.log('Counterattack hit.');
-        } else {
-          console.log('Counterattack missed.');
-        }
-      }
+          defender = space.unit,
+          distanceBonus = space.distance - 1,
+          hitTotal = attacker.offense + defender.defense + distanceBonus,
+          hit = attacker.offense / hitTotal,
+          counterTotal = defender.offense + attacker.defense + distanceBonus,
+          counter = defender.offense / counterTotal;
+      Rightpanel.space = space;
+      Leftpanel.hit = Math.round(hit * 100);
+      Rightpanel.counter = Math.round(counter * 100);
+    },
+    attackUnit: function (unit, distance) {
+      
     },
     dealDamage: function (unit) {
       switch (unit.condition) {
@@ -308,7 +299,8 @@ var Leftpanel = new Vue ({
     unit: null,
     moving: false,
     attacking: false,
-    ending: false
+    ending: false,
+    hit: null
   },
   methods: {
     beginMove: function () {
@@ -326,12 +318,28 @@ var Leftpanel = new Vue ({
     cancelAttack: function () {
       Map.toggleAttackRange(0);
       this.attacking = false;
+      this.hit = null;
+      Rightpanel.space = null;
+      Rightpanel.counter = null;
     },
     endTurn: function() {
       var unit = Leftpanel.unit;
       unit.moves = unit.movement;
       unit.attacks = 1;
       this.ending = false;
+    }
+  }
+});
+
+var Rightpanel = new Vue ({
+  el: '#rightpanel',
+  data: {
+    space: null,
+    counter: null
+  },
+  methods: {
+    confirmAttack: function () {
+      Map.attackUnit(this.space.unit, this.space.distance);
     }
   }
 });

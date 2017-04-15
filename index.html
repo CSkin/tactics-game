@@ -16,22 +16,25 @@
         
         <div id='selected-terrain' v-if='terrain'>
           <div id='terrain-info' class='ui'>
-            <div class='heading'><div id='terrain-icon' class='icon' :class='terrain.type'></div><span class='underline'>{{ terrain.name }}</span></div>
+            <div class='heading'><div class='icon' :class='terrain.type'></div><span class='bold'>{{ terrain.name }}</span></div>
             <p>Movement cost: {{ terrain.cost }}</p>
           </div>
         </div>
         
         <div id='selected-unit' v-if='unit'>
           <div id='unit-info' class='ui'>
-            <div class='heading'><div id='unit-icon' class='icon' :class='unit.faction'></div><span class='underline'>{{ unit.name }}</span></div>
+            <div class='heading'><div class='icon' :class='unit.faction'></div><span class='bold'>{{ unit.name }}</span></div>
             <p>Condition: <span :class='unit.condition'>{{ unit.condition }}</span></p>
-            <p>Attack: {{ unit.attack }}</p>
+            <p>Offense: {{ unit.offense }}</p>
             <p>Defense: {{ unit.defense }}</p>
             <p>Range: {{ unit.range }}</p>
             <p>Movement: {{ unit.moves }} / {{ unit.movement }}</p>
           </div>
+          <div id='unit-combat' class='ui' v-if='hit'>
+            <p class='combat-info'>Attack hit rate: {{ hit }}%</p>
+          </div>
           <div id='unit-actions' class='ui' v-if="unit.faction === 'Player'">
-            <p class='heading underline'>Actions</p>
+            <p class='heading bold'>Actions</p>
             <p v-if='!attacking && !ending'>
               <button id='btn-move' v-if='!moving' :disabled='unit.moves === 0' @click='beginMove'>Move (M)</button>
               <button id='btn-unmove' v-else @click='cancelMove'>Cancel Move (M)</button>
@@ -57,7 +60,33 @@
         <row v-for='row in gameData' :key='row' :row='row'></row>
       </div>
       
-      <div id='rightpanel' class='panel'></div>
+      <div id='rightpanel' class='panel'>
+        
+        <div id='target-space' v-if='space'>
+          <div id='target-terrain' class='ui'>
+            <div class='heading'><div class='icon' :class='space.terrain.type'></div><span class='bold'>{{ space.terrain.name }}</span></div>
+            <p>Movement cost: {{ space.terrain.cost }}</p>
+          </div>
+          <div id='target-unit' class='ui'>
+            <div class='heading'><div class='icon' :class='space.unit.faction'></div><span class='bold'>{{ space.unit.name }}</span></div>
+            <p>Condition: <span :class='space.unit.condition'>{{ space.unit.condition }}</span></p>
+            <p>Offense: {{ space.unit.offense }}</p>
+            <p>Defense: {{ space.unit.defense }}</p>
+            <p>Range: {{ space.unit.range }}</p>
+            <p>Movement: {{ space.unit.moves }} / {{ space.unit.movement }}</p>
+          </div>
+          <div id='target-combat' class='ui' v-if='counter'>
+            <p class='combat-info'>Counter hit rate: {{ counter }}%</p>
+          </div>
+          <div id='target-actions' class='ui'>
+            <p class='heading bold'>Actions</p>
+            <p>
+              <button id='btn-confatk' @click='confirmAttack'>Confirm Attack (Return)</button>
+            </p>
+          </div>
+        </div>
+        
+      </div>
       
       <div id='bottompanel' class='panel'></div>
       
