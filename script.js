@@ -110,11 +110,9 @@ var Space = {
   methods: {
     clickHandler: function () {
       var space = this.space,
-          terrain = space.terrain,
           unit = space.unit,
-          path = space.path,
-          distance = space.distance;
-      this.selectTerrain(terrain);
+          path = space.path;
+      this.selectTerrain(space.terrain);
       if (Leftpanel.moving) {
         if (path) { Map.moveUnit(path) }
         else {
@@ -123,7 +121,7 @@ var Space = {
         }
       }
       else if (Leftpanel.attacking) {
-        if (distance && unit && unit.faction === 'Enemy') { Map.targetUnit(space) }
+        if (space.distance && unit && unit.faction === 'Enemy') { Map.targetUnit(space) }
         else {
           $( '#btn-unattack' ).trigger( 'click' );
           if (unit) { this.selectUnit(unit) } else { this.deselectUnit() }
@@ -134,9 +132,11 @@ var Space = {
       }
     },
     selectTerrain: function (terrain) {
+      Rightpanel.space = null;
       Leftpanel.terrain = terrain;
     },
     selectUnit: function (unit) {
+      Rightpanel.space = null;
       Leftpanel.unit = unit;
     },
     deselectUnit: function () {
@@ -245,22 +245,22 @@ var Map = new Vue ({
       moveObj.changePos();
       spaceTo.unit = unitData;
     },
-    toggleAttackRange: function (n) {
+    toggleAttackRange: function (showOrHide) {
       var y, x, showOrHide, distance,
           posY = Leftpanel.unit.posY,
           posX = Leftpanel.unit.posX,
           range = Leftpanel.unit.range;
-      if (n) {
-        showOrHide = function (y, x) {
+      if (showOrHide === 'show') {
+        toggle = function (y, x) {
           distance = Math.abs(posY - y) + Math.abs(posX - x);
           if (distance <= range) { Map.gameData[y][x].distance = distance }
         }
       } else {
-        showOrHide = function (y, x) { Map.gameData[y][x].distance = null; };
+        toggle = function (y, x) { Map.gameData[y][x].distance = null; };
       }
       for (y = Math.max(posY - range, 0); y <= Math.min(posY + range, 15); y++) {
         for (x = Math.max(posX - range, 0); x <= Math.min(posX + range, 15); x++) {
-          showOrHide(y, x);
+          toggle(y, x);
         }
       }
     },
@@ -268,22 +268,45 @@ var Map = new Vue ({
       var attacker = Leftpanel.unit,
           defender = space.unit,
           distanceBonus = space.distance - 1,
-          hitTotal = attacker.offense + defender.defense + distanceBonus,
-          hit = attacker.offense / hitTotal,
+          attackTotal = attacker.offense + defender.defense + distanceBonus,
+          attack = attacker.offense / attackTotal,
           counterTotal = defender.offense + attacker.defense + distanceBonus,
           counter = defender.offense / counterTotal;
-      Rightpanel.space = space;
-      Leftpanel.hit = Math.round(hit * 100);
+      Rightpanel.space = this.gameData[space.posY][space.posX];
+      Leftpanel.attack = Math.round(attack * 100);
       Rightpanel.counter = Math.round(counter * 100);
     },
-    attackUnit: function (unit, distance) {
-      
+    attackUnit: function (counter) {
+      var target, hitChance;
+      if (!counter) {
+        Map.toggleAttackRange('hide');
+        target = Rightpanel.space.unit;
+        hitChance = Leftpanel.attack;
+      } else {
+        target = Leftpanel.unit;
+        hitChance = Rightpanel.counter;
+      }
+      if (Math.random()*100 <= hitChance) {
+        this.dealDamage(target.posY, target.posX);
+        if (!counter) {console.log('Attack hit!')} else {console.log('Counterattack hit!')}
+      } else {
+        if (!counter) {console.log('Attack missed!')} else {console.log('Counterattack missed!')}
+      }
+      if (!counter && target.condition !== 'Defeated') {
+        this.attackUnit('counter');
+      } else {
+        Leftpanel.endAttack();
+      }
     },
-    dealDamage: function (unit) {
+    dealDamage: function (y, x) {
+      var unit = this.gameData[y][x].unit;
       switch (unit.condition) {
         case 'Healthy': unit.condition = 'Injured'; break;
         case 'Injured': unit.condition = 'Critical'; break;
         case 'Critical': unit.condition = 'Defeated'; break;
+      }
+      if (unit.condition === 'Defeated') {
+        this.gameData[y][x].unit = null;
       }
     }
   },
@@ -300,24 +323,25 @@ var Leftpanel = new Vue ({
     moving: false,
     attacking: false,
     ending: false,
-    hit: null
+    attack: null
   },
   computed: {
     gradient: function () {
-      if (this.hit < 10) { return { color: '#bf0000' } }
-      else if (this.hit < 20) { return { color: '#d01b00' } }
-      else if (this.hit < 30) { return { color: '#e13600' } }
-      else if (this.hit < 40) { return { color: '#f25100' } }
-      else if (this.hit < 50) { return { color: '#ea6a00' } }
-      else if (this.hit < 60) { return { color: '#e28300' } }
-      else if (this.hit < 70) { return { color: '#da9c00' } }
-      else if (this.hit < 80) { return { color: '#97a406' } }
-      else if (this.hit < 90) { return { color: '#55ab0c' } }
+      if (this.attack < 10) { return { color: '#bf0000' } }
+      else if (this.attack < 20) { return { color: '#d01b00' } }
+      else if (this.attack < 30) { return { color: '#e13600' } }
+      else if (this.attack < 40) { return { color: '#f25100' } }
+      else if (this.attack < 50) { return { color: '#ea6a00' } }
+      else if (this.attack < 60) { return { color: '#e28300' } }
+      else if (this.attack < 70) { return { color: '#da9c00' } }
+      else if (this.attack < 80) { return { color: '#97a406' } }
+      else if (this.attack < 90) { return { color: '#55ab0c' } }
       else { return { color: '#12b312' } }
     }
   },
   methods: {
     beginMove: function () {
+      Rightpanel.space = null;
       Map.showMoveRange(this.unit.posY, this.unit.posX, this.unit.moves, '');
       this.moving = true;
     },
@@ -326,14 +350,21 @@ var Leftpanel = new Vue ({
       this.moving = false;
     },
     beginAttack: function () {
-      Map.toggleAttackRange(1);
+      Rightpanel.space = null;
+      Map.toggleAttackRange('show');
       this.attacking = true;
     },
     cancelAttack: function () {
-      Map.toggleAttackRange(0);
+      Map.toggleAttackRange('hide');
+      this.attack = null;
       this.attacking = false;
-      this.hit = null;
       Rightpanel.space = null;
+      Rightpanel.counter = null;
+    },
+    endAttack: function () {
+      this.attack = null;
+      this.attacks -= 1;
+      this.attacking = false;
       Rightpanel.counter = null;
     },
     endTurn: function() {
@@ -353,21 +384,21 @@ var Rightpanel = new Vue ({
   },
   computed: {
     gradient: function () {
-      if (this.counter < 10) { return { color: '#bf0000' } }
-      else if (this.counter < 20) { return { color: '#d01b00' } }
-      else if (this.counter < 30) { return { color: '#e13600' } }
-      else if (this.counter < 40) { return { color: '#f25100' } }
-      else if (this.counter < 50) { return { color: '#ea6a00' } }
-      else if (this.counter < 60) { return { color: '#e28300' } }
-      else if (this.counter < 70) { return { color: '#da9c00' } }
-      else if (this.counter < 80) { return { color: '#97a406' } }
-      else if (this.counter < 90) { return { color: '#55ab0c' } }
-      else { return { color: '#12b312' } }
+      if (this.counter <= 10) { return { color: '#12b312' } }
+      else if (this.counter <= 20) { return { color: '#55ab0c' } }
+      else if (this.counter <= 30) { return { color: '#97a406' } }
+      else if (this.counter <= 40) { return { color: '#da9c00' } }
+      else if (this.counter <= 50) { return { color: '#e28300' } }
+      else if (this.counter <= 60) { return { color: '#ea6a00' } }
+      else if (this.counter <= 70) { return { color: '#f25100' } }
+      else if (this.counter <= 80) { return { color: '#e13600' } }
+      else if (this.counter <= 90) { return { color: '#d01b00' } }
+      else { return { color: '#bf0000' } }
     }
   },
   methods: {
     confirmAttack: function () {
-      Map.attackUnit(this.space.unit, this.space.distance);
+      Map.attackUnit();
     }
   }
 });
