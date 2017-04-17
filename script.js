@@ -93,7 +93,7 @@ var Unit = {
   },
   methods: {
     moveHandler: function () {
-      if (this.unit.path) { Map.moveUnit(); } else { Leftpanel.moving = false; }
+      if (this.unit.path) { Map.moveUnit(this.unit.posY, this.unit.posX); } else { Leftpanel.action = null; }
     }
   }
 };
@@ -109,38 +109,37 @@ var Space = {
   props: ['space'],
   methods: {
     clickHandler: function () {
-      var space = this.space,
-          unit = space.unit,
-          path = space.path;
-      this.selectTerrain(space.terrain);
-      if (Leftpanel.moving) {
-        if (path) { Map.moveUnit(path) }
-        else {
-          $( '#btn-unmove' ).trigger( 'click' );
-          if (unit) { this.selectUnit(unit) } else { this.deselectUnit() }
-        }
-      }
-      else if (Leftpanel.attacking) {
-        if (space.distance && unit && unit.faction === 'Enemy') { Map.targetUnit(space) }
-        else {
-          $( '#btn-unattack' ).trigger( 'click' );
-          if (unit) { this.selectUnit(unit) } else { this.deselectUnit() }
-        }
-      }
-      else {
-        if (unit) { this.selectUnit(unit) } else { this.deselectUnit() }
+      var y = this.space.posY,
+          x = this.space.posX,
+          unit = this.space.unit,
+          path = this.space.path;
+      switch (Leftpanel.action) {
+        case 'moving':
+          if (path) { Map.moveUnit(Leftpanel.space.posY, Leftpanel.space.posX, path) }
+          else {
+            $( '#btn-unmove' ).trigger( 'click' );
+            this.selectSpace(y, x);
+          }
+          break;
+        case 'attacking':
+          if (this.space.distance && unit && unit.faction === 'Enemy') { Map.targetUnit(y, x) }
+          else {
+            $( '#btn-unattack' ).trigger( 'click' );
+            this.selectSpace(y, x);
+          }
+          break;
+        case 'ending':
+          $( '#btn-unend' ).trigger( 'click' );
+          this.selectSpace(y, x);
+          break;
+        default:
+          this.selectSpace(y, x);
+          break;
       }
     },
-    selectTerrain: function (terrain) {
+    selectSpace: function (y, x) {
       Rightpanel.space = null;
-      Leftpanel.terrain = terrain;
-    },
-    selectUnit: function (unit) {
-      Rightpanel.space = null;
-      Leftpanel.unit = unit;
-    },
-    deselectUnit: function () {
-      Leftpanel.unit = null;
+      Leftpanel.space = Map.gameData[y][x];
     }
   },
   components: {
@@ -194,9 +193,9 @@ var Map = new Vue ({
     },
     hideMoveRange: function () {
       var y, x,
-          posY = Leftpanel.unit.posY,
-          posX = Leftpanel.unit.posX,
-          moves = Leftpanel.unit.moves;
+          posY = Leftpanel.space.unit.posY,
+          posX = Leftpanel.space.unit.posX,
+          moves = Leftpanel.space.unit.moves;
       for (y = Math.max(posY - moves, 0); y <= Math.min(posY + moves, 15); y++) {
         for (x = Math.max(posX - moves, 0); x <= Math.min(posX + moves, 15); x++) {
           this.gameData[y][x].moves = null;
@@ -204,10 +203,8 @@ var Map = new Vue ({
         }
       }
     },
-    moveUnit: function (path) {
-      var y = Leftpanel.unit.posY,
-          x = Leftpanel.unit.posX,
-          moveObj = { y: y, x: x, moving: null, changePos: null },
+    moveUnit: function (y, x, path) {
+      var moveObj = { y: y, x: x, moving: null, changePos: null },
           spaceFrom, spaceTo, unitData;
       if (path) {
         this.hideMoveRange();
@@ -244,12 +241,13 @@ var Map = new Vue ({
       unitData.path = unitData.path.substr(1);
       moveObj.changePos();
       spaceTo.unit = unitData;
+      Leftpanel.space = spaceTo;
     },
     toggleAttackRange: function (showOrHide) {
       var y, x, showOrHide, distance,
-          posY = Leftpanel.unit.posY,
-          posX = Leftpanel.unit.posX,
-          range = Leftpanel.unit.range;
+          posY = Leftpanel.space.unit.posY,
+          posX = Leftpanel.space.unit.posX,
+          range = Leftpanel.space.unit.range;
       if (showOrHide === 'show') {
         toggle = function (y, x) {
           distance = Math.abs(posY - y) + Math.abs(posX - x);
@@ -264,15 +262,16 @@ var Map = new Vue ({
         }
       }
     },
-    targetUnit: function (space) {
-      var attacker = Leftpanel.unit,
-          defender = space.unit,
-          distanceBonus = space.distance - 1,
+    targetUnit: function (y, x) {
+      var targetSpace = this.gameData[y][x],
+          attacker = Leftpanel.space.unit,
+          defender = targetSpace.unit,
+          distanceBonus = targetSpace.distance - 1,
           attackTotal = attacker.offense + defender.defense + distanceBonus,
           attack = attacker.offense / attackTotal,
           counterTotal = defender.offense + attacker.defense + distanceBonus,
           counter = defender.offense / counterTotal;
-      Rightpanel.space = this.gameData[space.posY][space.posX];
+      Rightpanel.space = targetSpace;
       Leftpanel.attack = Math.round(attack * 100);
       Rightpanel.counter = Math.round(counter * 100);
     },
@@ -283,7 +282,7 @@ var Map = new Vue ({
         target = Rightpanel.space.unit;
         hitChance = Leftpanel.attack;
       } else {
-        target = Leftpanel.unit;
+        target = Leftpanel.space.unit;
         hitChance = Rightpanel.counter;
       }
       if (Math.random()*100 <= hitChance) {
@@ -318,11 +317,8 @@ var Map = new Vue ({
 var Leftpanel = new Vue ({
   el: '#leftpanel',
   data: {
-    terrain: null,
-    unit: null,
-    moving: false,
-    attacking: false,
-    ending: false,
+    space: null,
+    action: null,
     attack: null
   },
   computed: {
@@ -342,36 +338,37 @@ var Leftpanel = new Vue ({
   methods: {
     beginMove: function () {
       Rightpanel.space = null;
-      Map.showMoveRange(this.unit.posY, this.unit.posX, this.unit.moves, '');
-      this.moving = true;
+      Map.showMoveRange(this.space.unit.posY, this.space.unit.posX, this.space.unit.moves, '');
+      this.action = 'moving';
     },
     cancelMove: function () {
       Map.hideMoveRange();
-      this.moving = false;
+      this.action = null;
     },
     beginAttack: function () {
       Rightpanel.space = null;
       Map.toggleAttackRange('show');
-      this.attacking = true;
+      this.action = 'attacking';
     },
     cancelAttack: function () {
       Map.toggleAttackRange('hide');
       this.attack = null;
-      this.attacking = false;
       Rightpanel.space = null;
       Rightpanel.counter = null;
+      this.action = null;
     },
     endAttack: function () {
       this.attack = null;
-      this.attacks -= 1;
-      this.attacking = false;
       Rightpanel.counter = null;
+      this.space.unit.attacks -= 1;
+      this.action = null;
     },
     endTurn: function() {
-      var unit = Leftpanel.unit;
+      Rightpanel.space = null;
+      var unit = this.space.unit;
       unit.moves = unit.movement;
       unit.attacks = 1;
-      this.ending = false;
+      this.action = null;
     }
   }
 });
@@ -405,12 +402,24 @@ var Rightpanel = new Vue ({
 
 function keyHandler () {
   // console.log('keyCode: ' + event.keyCode); // Developer mode
-  if (Leftpanel.unit && Leftpanel.unit.faction === 'Player') {
+  if (Leftpanel.space && Leftpanel.space.unit && Leftpanel.space.unit.faction === 'Player') {
     switch (event.keyCode) {
-      case 13: if (Leftpanel.ending) { $( '#btn-confend' ).trigger( 'click' ); } break;
-      case 65: if (!Leftpanel.attacking) { $( '#btn-attack' ).trigger( 'click' ); } else { $( '#btn-unattack' ).trigger( 'click' ); } break;
-      case 69: if (!Leftpanel.ending) { $( '#btn-end' ).trigger( 'click' ); } else { $( '#btn-unend' ).trigger( 'click' ); } break;
-      case 77: if (!Leftpanel.moving) { $( '#btn-move' ).trigger( 'click' ); } else { $( '#btn-unmove' ).trigger( 'click' ); } break;
+      case 13:
+        if (Leftpanel.action === 'attacking') { $( '#btn-confatk' ).trigger( 'click' ); }
+        else if (Leftpanel.action === 'ending') { $( '#btn-confend' ).trigger( 'click' ); }
+        break;
+      case 65:
+        if (Leftpanel.action !== 'attacking') { $( '#btn-attack' ).trigger( 'click' ); }
+        else { $( '#btn-unattack' ).trigger( 'click' ); }
+        break;
+      case 69:
+        if (Leftpanel.action !== 'ending') { $( '#btn-end' ).trigger( 'click' ); }
+        else { $( '#btn-unend' ).trigger( 'click' ); }
+        break;
+      case 77:
+        if (Leftpanel.action !== 'moving') { $( '#btn-move' ).trigger( 'click' ); }
+        else { $( '#btn-unmove' ).trigger( 'click' ); }
+        break;
     }
   }
 }
