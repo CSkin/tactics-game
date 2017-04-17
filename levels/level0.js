@@ -53,7 +53,7 @@ function Unit(id, sprite, faction, name, offense, defense, range, movement, posY
   this.range = range;
   this.movement = movement;
   this.moves = this.movement;
-  this.moving = null;
+  this.action = null;
   this.path = null;
   this.attacks = 1;
   this.posY = posY;
