@@ -74,26 +74,46 @@ var Highlight = {
 
 var Unit = {
   template: `
-  <transition :name='moveDirection' @after-enter='moveHandler'>
+  <transition :name='dynamicTransition' @after-enter='afterTransition'>
     <img v-if='unit' class='unit space' :src='unit.sprite' tabindex=0></img>
   </transition>
   `,
   props: ['unit'],
   computed: {
-    moveDirection: function () {
-      if (this.unit && this.unit.moving) {
-        switch (this.unit.moving) {
+    dynamicTransition: function () {
+      var unit = this.unit;
+      if (unit && unit.action) {
+        switch (unit.action) {
           case 'east': return 'moveEast';
           case 'south': return 'moveSouth';
           case 'west': return 'moveWest';
           case 'north': return 'moveNorth';
+          case 'attacking': return 'sayGoodbye';
+          case 'defending': return 'sayGoodbye';
         }
       }
     }
   },
   methods: {
+    afterTransition: function () {
+      var unit = this.unit;
+      if (unit && unit.action) {
+        switch (unit.action) {
+          case 'east': this.moveHandler(); break;
+          case 'south': this.moveHandler(); break;
+          case 'west': this.moveHandler(); break;
+          case 'north': this.moveHandler(); break;
+        }
+      }
+    },
     moveHandler: function () {
-      if (this.unit.path) { Map.moveUnit(this.unit.posY, this.unit.posX); } else { Leftpanel.action = null; }
+      var unit = this.unit;
+      if (unit.path) {
+        Map.moveUnit(unit.posY, unit.posX);
+      } else {
+        Map.gameData[unit.posY][unit.posX].unit.action = null;
+        Leftpanel.action = null;
+      }
     }
   }
 };
@@ -237,7 +257,7 @@ var Map = new Vue ({
       unitData = spaceFrom.unit;
       spaceFrom.unit = null;
       unitData.moves -= spaceTo.terrain.cost;
-      unitData.moving = moveObj.moving;
+      unitData.action = moveObj.moving;
       unitData.path = unitData.path.substr(1);
       moveObj.changePos();
       spaceTo.unit = unitData;
@@ -271,6 +291,8 @@ var Map = new Vue ({
           attack = attacker.offense / attackTotal,
           counterTotal = defender.offense + attacker.defense + distanceBonus,
           counter = defender.offense / counterTotal;
+      this.gameData[attacker.posY][attacker.posX].unit.action = 'attacking';
+      this.gameData[defender.posY][defender.posX].unit.action = 'defending';
       Rightpanel.space = targetSpace;
       Leftpanel.attack = Math.round(attack * 100);
       Rightpanel.counter = Math.round(counter * 100);
@@ -360,7 +382,13 @@ var Leftpanel = new Vue ({
     endAttack: function () {
       this.attack = null;
       Rightpanel.counter = null;
-      this.space.unit.attacks -= 1;
+      if (this.space.unit) {
+        this.space.unit.attacks -= 1;
+        this.space.unit.action = null;
+      }
+      if (Rightpanel.space.unit) {
+        Rightpanel.space.unit.action = null;
+      }
       this.action = null;
     },
     endTurn: function() {

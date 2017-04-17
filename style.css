@@ -198,3 +198,11 @@ button {
 .moveNorth-enter {
   top: 32px;
 }
+
+.sayGoodbye-leave-active {
+  transition: opacity 1s 1s;
+}
+
+.sayGoodbye-leave-to {
+  opacity: 0;
+}
