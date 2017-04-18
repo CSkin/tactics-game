@@ -74,44 +74,35 @@ var Highlight = {
 
 var Unit = {
   template: `
-  <transition :name='dynamicTransition' @after-enter='afterTransition'>
+  <transition :name='dynamicTransition' @after-enter='moveHandler'>
     <img v-if='unit' class='unit space' :src='unit.sprite' tabindex=0></img>
   </transition>
   `,
   props: ['unit'],
   computed: {
     dynamicTransition: function () {
-      var unit = this.unit;
-      if (unit && unit.action) {
-        switch (unit.action) {
-          case 'east': return 'moveEast';
-          case 'south': return 'moveSouth';
-          case 'west': return 'moveWest';
-          case 'north': return 'moveNorth';
-          case 'attacking': return 'sayGoodbye';
-          case 'defending': return 'sayGoodbye';
+      if (this.unit) {
+        if (this.unit.moving) {
+          switch (this.unit.moving) {
+            case 'east': return 'moveEast';
+            case 'south': return 'moveSouth';
+            case 'west': return 'moveWest';
+            case 'north': return 'moveNorth';
+          }
+        } else if (this.unit.condition === 'Defeated') {
+          return 'sayGoodbye';
         }
       }
     }
   },
   methods: {
-    afterTransition: function () {
-      var unit = this.unit;
-      if (unit && unit.action) {
-        switch (unit.action) {
-          case 'east': this.moveHandler(); break;
-          case 'south': this.moveHandler(); break;
-          case 'west': this.moveHandler(); break;
-          case 'north': this.moveHandler(); break;
-        }
-      }
-    },
     moveHandler: function () {
       var unit = this.unit;
       if (unit.path) {
         Map.moveUnit(unit.posY, unit.posX);
-      } else {
-        Map.gameData[unit.posY][unit.posX].unit.action = null;
+      }
+      else {
+        Map.gameData[unit.posY][unit.posX].unit.moving = null;
         Leftpanel.action = null;
       }
     }
@@ -257,7 +248,7 @@ var Map = new Vue ({
       unitData = spaceFrom.unit;
       spaceFrom.unit = null;
       unitData.moves -= spaceTo.terrain.cost;
-      unitData.action = moveObj.moving;
+      unitData.moving = moveObj.moving;
       unitData.path = unitData.path.substr(1);
       moveObj.changePos();
       spaceTo.unit = unitData;
@@ -291,8 +282,6 @@ var Map = new Vue ({
           attack = attacker.offense / attackTotal,
           counterTotal = defender.offense + attacker.defense + distanceBonus,
           counter = defender.offense / counterTotal;
-      this.gameData[attacker.posY][attacker.posX].unit.action = 'attacking';
-      this.gameData[defender.posY][defender.posX].unit.action = 'defending';
       Rightpanel.space = targetSpace;
       Leftpanel.attack = Math.round(attack * 100);
       Rightpanel.counter = Math.round(counter * 100);
@@ -327,7 +316,7 @@ var Map = new Vue ({
         case 'Critical': unit.condition = 'Defeated'; break;
       }
       if (unit.condition === 'Defeated') {
-        this.gameData[y][x].unit = null;
+        window.setTimeout(function () { Map.gameData[y][x].unit = null }, 500)
       }
     }
   },
@@ -355,6 +344,10 @@ var Leftpanel = new Vue ({
       else if (this.attack < 80) { return { color: '#97a406' } }
       else if (this.attack < 90) { return { color: '#55ab0c' } }
       else { return { color: '#12b312' } }
+    },
+    dynamicTransition: function () {
+      if (this.space && this.space.unit && this.space.unit.condition === 'Defeated') { return 'sayGoodbye' }
+      else { return 'fade' }
     }
   },
   methods: {
@@ -382,13 +375,7 @@ var Leftpanel = new Vue ({
     endAttack: function () {
       this.attack = null;
       Rightpanel.counter = null;
-      if (this.space.unit) {
-        this.space.unit.attacks -= 1;
-        this.space.unit.action = null;
-      }
-      if (Rightpanel.space.unit) {
-        Rightpanel.space.unit.action = null;
-      }
+      if (this.space.unit) { this.space.unit.attacks -= 1 }
       this.action = null;
     },
     endTurn: function() {
@@ -419,6 +406,10 @@ var Rightpanel = new Vue ({
       else if (this.counter <= 80) { return { color: '#e13600' } }
       else if (this.counter <= 90) { return { color: '#d01b00' } }
       else { return { color: '#bf0000' } }
+    },
+    dynamicTransition: function () {
+      if (this.space && this.space.unit && this.space.unit.condition === 'Defeated') { return 'sayGoodbye' }
+      else { return 'fade'}
     }
   },
   methods: {

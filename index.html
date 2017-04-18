@@ -14,46 +14,50 @@
       
       <div id='leftpanel' class='panel'>
         
-        <div id='selected-terrain' v-if='space && space.terrain'>
-          <div id='terrain-info' class='ui'>
-            <div class='heading'><div class='icon' :class='space.terrain.type'></div>{{ space.terrain.name }}</div>
-            <p>Move cost: <b>{{ space.terrain.cost }}</b></p>
-          </div>
-        </div>
-        
-        <div id='selected-unit' v-if='space && space.unit'>
-          <div id='unit-info' class='ui'>
-            <div class='heading'><div class='icon' :class='space.unit.faction'></div>{{ space.unit.name }}</div>
-            <p>Condition: <b :class='space.unit.condition'>{{ space.unit.condition }}</b></p>
-            <p>Offense: <b>{{ space.unit.offense }}</b></p>
-            <p>Defense: <b>{{ space.unit.defense }}</b></p>
-            <p>Range: <b>{{ space.unit.range }}</b></p>
-            <p>Movement: <b>{{ space.unit.moves }} / {{ space.unit.movement }}</b></p>
-          </div>
-          <div id='unit-combat' class='ui' v-if='attack'>
-            <p class='heading'><img class='icon' src='sprites/combat-icon.png'>Combat Info</p>
-            <p>Attack success rate: <b :style='gradient'>{{ attack }}%</b></p>
-          </div>
-          <div id='unit-actions' class='ui' v-if="space.unit.faction === 'Player'">
-            <p class='heading'><img class='icon' src='sprites/actions-icon.png'>Actions</p>
-            <p v-if="!action || action === 'moving'">
-              <button id='btn-move' v-if='!action' :disabled='space.unit.moves === 0' @click='beginMove'>Move (M)</button>
-              <button id='btn-unmove' v-else @click='cancelMove'>Cancel Move (M)</button>
-            </p>
-            <p v-if="!action || action === 'attacking'">
-              <button id='btn-attack' v-if='!action' :disabled='space.unit.attacks === 0' @click='beginAttack'>Attack (A)</button>
-              <button id='btn-unattack' v-else @click='cancelAttack'>Cancel Attack (A)</button>
-            </p>
-            <div v-if="!action || action === 'ending'">
-              <p v-if='!action'><button id='btn-end' @click="action = 'ending'">End Turn (E)</button></p>
-              <p v-else>
-                Really end turn?<br>
-                <button id='btn-unend' @click='action = null'>Cancel (E)</button>
-                <button id='btn-confend' @click='endTurn'>Confirm (Return)</button>
-              </p>
+        <transition name='fade'>
+          <div id='selected-terrain' v-if='space && space.terrain'>
+            <div id='terrain-info' class='ui'>
+              <div class='heading'><div class='icon' :class='space.terrain.type'></div>{{ space.terrain.name }}</div>
+              <p>Move cost: <b>{{ space.terrain.cost }}</b></p>
             </div>
           </div>
-        </div>
+        </transition>
+        
+        <transition :name='dynamicTransition'>
+          <div id='selected-unit' v-if='space && space.unit'>
+            <div id='unit-info' class='ui'>
+              <div class='heading'><div class='icon' :class='space.unit.faction'></div>{{ space.unit.name }}</div>
+              <p>Condition: <b :class='space.unit.condition'>{{ space.unit.condition }}</b></p>
+              <p>Offense: <b>{{ space.unit.offense }}</b></p>
+              <p>Defense: <b>{{ space.unit.defense }}</b></p>
+              <p>Range: <b>{{ space.unit.range }}</b></p>
+              <p>Movement: <b>{{ space.unit.moves }} / {{ space.unit.movement }}</b></p>
+            </div>
+            <div id='unit-combat' class='ui' v-if='attack'>
+              <p class='heading'><img class='icon' src='sprites/combat-icon.png'>Combat Info</p>
+              <p>Attack success chance: <b :style='gradient'>{{ attack }}%</b></p>
+            </div>
+            <div id='unit-actions' class='ui' v-if="space.unit.faction === 'Player'">
+              <p class='heading'><img class='icon' src='sprites/actions-icon.png'>Actions</p>
+              <p v-if="!action || action === 'moving'">
+                <button id='btn-move' v-if='!action' :disabled='space.unit.moves === 0' @click='beginMove'>Move (M)</button>
+                <button id='btn-unmove' v-else @click='cancelMove'>Cancel Move (M)</button>
+              </p>
+              <p v-if="!action || action === 'attacking'">
+                <button id='btn-attack' v-if='!action' :disabled='space.unit.attacks === 0' @click='beginAttack'>Attack (A)</button>
+                <button id='btn-unattack' v-else @click='cancelAttack'>Cancel Attack (A)</button>
+              </p>
+              <div v-if="!action || action === 'ending'">
+                <p v-if='!action'><button id='btn-end' @click="action = 'ending'">End Turn (E)</button></p>
+                <p v-else>
+                  Really end turn?<br>
+                  <button id='btn-unend' @click='action = null'>Cancel (E)</button>
+                  <button id='btn-confend' @click='endTurn'>Confirm (Return)</button>
+                </p>
+              </div>
+            </div>
+          </div>
+        </transition>
         
       </div>
       
@@ -63,31 +67,35 @@
       
       <div id='rightpanel' class='panel'>
         
-        <div id='target-space' v-if='space && space.terrain'>
-          <div id='target-terrain' class='ui'>
-            <div class='heading'><div class='icon' :class='space.terrain.type'></div>{{ space.terrain.name }}</div>
-            <p>Move cost: <b>{{ space.terrain.cost }}</b></p>
+        <transition name='fade'>
+          <div id='target-space' v-if='space && space.terrain'>
+            <div id='target-terrain' class='ui'>
+              <div class='heading'><div class='icon' :class='space.terrain.type'></div>{{ space.terrain.name }}</div>
+              <p>Move cost: <b>{{ space.terrain.cost }}</b></p>
+            </div>
           </div>
-        </div>
-          
-        <div id='target-unit' v-if='space && space.unit'>
-          <div id='target-info' class='ui'>
-            <div class='heading'><div class='icon' :class='space.unit.faction'></div>{{ space.unit.name }}</div>
-            <p>Condition: <b :class='space.unit.condition'>{{ space.unit.condition }}</b></p>
-            <p>Offense: <b>{{ space.unit.offense }}</b></p>
-            <p>Defense: <b>{{ space.unit.defense }}</b></p>
-            <p>Range: <b>{{ space.unit.range }}</b></p>
-            <p>Movement: <b>{{ space.unit.moves }} / {{ space.unit.movement }}</b></p>
+        </transition>
+        
+        <transition :name='dynamicTransition'>
+          <div id='target-unit' v-if='space && space.unit'>
+            <div id='target-info' class='ui'>
+              <div class='heading'><div class='icon' :class='space.unit.faction'></div>{{ space.unit.name }}</div>
+              <p>Condition: <b :class='space.unit.condition'>{{ space.unit.condition }}</b></p>
+              <p>Offense: <b>{{ space.unit.offense }}</b></p>
+              <p>Defense: <b>{{ space.unit.defense }}</b></p>
+              <p>Range: <b>{{ space.unit.range }}</b></p>
+              <p>Movement: <b>{{ space.unit.moves }} / {{ space.unit.movement }}</b></p>
+            </div>
+            <div id='target-combat' class='ui' v-if='counter'>
+              <p class='heading'><img class='icon' src='sprites/combat-icon.png'>Combat Info</p>
+              <p>Counter success chance: <b :style='gradient'>{{ counter }}%</b></p>
+            </div>
+            <div id='target-actions' class='ui' v-if='counter'>
+              <p class='heading'><img class='icon' src='sprites/actions-icon.png'>Actions</p>
+              <p><button id='btn-confatk' @click='confirmAttack'>Confirm Attack (Return)</button></p>
+            </div>
           </div>
-          <div id='target-combat' class='ui' v-if='counter'>
-            <p class='heading'><img class='icon' src='sprites/combat-icon.png'>Combat Info</p>
-            <p>Counter success rate: <b :style='gradient'>{{ counter }}%</b></p>
-          </div>
-          <div id='target-actions' class='ui' v-if='counter'>
-            <p class='heading'><img class='icon' src='sprites/actions-icon.png'>Actions</p>
-            <p><button id='btn-confatk' @click='confirmAttack'>Confirm Attack (Return)</button></p>
-          </div>
-        </div>
+        </transition>
         
       </div>
       

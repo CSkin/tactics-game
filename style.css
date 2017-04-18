@@ -200,7 +200,7 @@ button {
 }
 
 .sayGoodbye-leave-active {
-  transition: opacity 1s 1s;
+  transition: opacity 1s .5s;
 }
 
 .sayGoodbye-leave-to {
