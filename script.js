@@ -287,8 +287,7 @@ var Map = new Vue ({
       Rightpanel.counter = Math.round(counter * 100);
     },
     attackUnit: function (counter) {
-      var attacker, defender, hitChance, translateY, translateX,
-          distance = Rightpanel.space.distance;
+      var attacker, defender, hitChance;
       if (!counter) {
         Map.toggleAttackRange('hide');
         attacker = Leftpanel.space.unit;
@@ -299,7 +298,7 @@ var Map = new Vue ({
         defender = Leftpanel.space.unit;
         hitChance = Rightpanel.counter;
       }
-      this.animateCombat(attacker, defender, distance);
+      this.animateCombat(attacker, defender);
       if (Math.random()*100 <= hitChance) {
         this.dealDamage(defender.posY, defender.posX);
         if (!counter) {console.log('Attack hit!')} else {console.log('Counterattack hit!')}
@@ -312,15 +311,15 @@ var Map = new Vue ({
         Leftpanel.endAttack();
       // }
     },
-    animateCombat: function (attacker, defender, distance) {
-      translateY = Math.round(((defender.posY - attacker.posY) / distance) * 16) + 'px'
-      translateX = Math.round(((defender.posX - attacker.posX) / distance) * 16) + 'px'
-      console.log(translateY);
-      console.log(translateX);
+    animateCombat: function (attacker, defender) {
+      var spacesY = defender.posY - attacker.posY,
+          spacesX = defender.posX - attacker.posX,
+          pixelsY = Math.round(16 * Math.sin(Math.atan2(spacesY, spacesX))) + 'px',
+          pixelsX = Math.round(16 * Math.cos(Math.atan2(spacesY, spacesX))) + 'px';
       document.getElementById(attacker.id).animate({
         zIndex: [ 99, 99 ],
-        top: [0, translateY, 0,],
-        left: [0, translateX, 0 ]
+        top: [0, pixelsY, 0,],
+        left: [0, pixelsX, 0 ]
       }, 300);
     },
     dealDamage: function (y, x) {
