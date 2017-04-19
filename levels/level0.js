@@ -55,12 +55,13 @@ function Unit(id, sprite, faction, name, offense, defense, range, movement, posY
   this.moves = this.movement;
   this.moving = null;
   this.path = null;
-  this.attacks = 1;
+  this.attacksperturn = 5;
+  this.attacks = this.attacksperturn;
   this.posY = posY;
   this.posX = posX;
 }
 
-var player0 = new Unit('player0', 'player.png', 'Player', 'Player Unit', 2, 2, 1, 10, 9, 4),
+var player0 = new Unit('player0', 'player.png', 'Player', 'Player Unit', 2, 2, 3, 10, 9, 4),
     enemy0  = new Unit('enemy0', 'enemy.png', 'Enemy', 'Enemy Unit', 2, 1, 1, 5, 6, 11);
-    
+
 var unitPlan = [ player0, enemy0 ];

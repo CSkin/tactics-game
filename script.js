@@ -75,7 +75,7 @@ var Highlight = {
 var Unit = {
   template: `
   <transition :name='dynamicTransition' @after-enter='moveHandler'>
-    <img v-if='unit' class='unit space' :src='unit.sprite' tabindex=0></img>
+    <img :id= 'unit.id' v-if='unit' class='unit space' :src='unit.sprite' tabindex=0></img>
   </transition>
   `,
   props: ['unit'],
@@ -287,26 +287,41 @@ var Map = new Vue ({
       Rightpanel.counter = Math.round(counter * 100);
     },
     attackUnit: function (counter) {
-      var target, hitChance;
+      var attacker, defender, hitChance, translateY, translateX,
+          distance = Rightpanel.space.distance;
       if (!counter) {
         Map.toggleAttackRange('hide');
-        target = Rightpanel.space.unit;
+        attacker = Leftpanel.space.unit;
+        defender = Rightpanel.space.unit;
         hitChance = Leftpanel.attack;
       } else {
-        target = Leftpanel.space.unit;
+        attacker = Rightpanel.space.unit;
+        defender = Leftpanel.space.unit;
         hitChance = Rightpanel.counter;
       }
+      this.animateCombat(attacker, defender, distance);
       if (Math.random()*100 <= hitChance) {
-        this.dealDamage(target.posY, target.posX);
+        this.dealDamage(defender.posY, defender.posX);
         if (!counter) {console.log('Attack hit!')} else {console.log('Counterattack hit!')}
       } else {
         if (!counter) {console.log('Attack missed!')} else {console.log('Counterattack missed!')}
       }
-      if (!counter && target.condition !== 'Defeated') {
-        this.attackUnit('counter');
-      } else {
+      // if (!counter && defender.condition !== 'Defeated') {
+      //   this.attackUnit('counter');
+      // } else {
         Leftpanel.endAttack();
-      }
+      // }
+    },
+    animateCombat: function (attacker, defender, distance) {
+      translateY = Math.round(((defender.posY - attacker.posY) / distance) * 16) + 'px'
+      translateX = Math.round(((defender.posX - attacker.posX) / distance) * 16) + 'px'
+      console.log(translateY);
+      console.log(translateX);
+      document.getElementById(attacker.id).animate({
+        zIndex: [ 99, 99 ],
+        top: [0, translateY, 0,],
+        left: [0, translateX, 0 ]
+      }, 300);
     },
     dealDamage: function (y, x) {
       var unit = this.gameData[y][x].unit;
@@ -382,7 +397,7 @@ var Leftpanel = new Vue ({
       Rightpanel.space = null;
       var unit = this.space.unit;
       unit.moves = unit.movement;
-      unit.attacks = 1;
+      unit.attacks = unit.attacksperturn;
       this.action = null;
     }
   }
