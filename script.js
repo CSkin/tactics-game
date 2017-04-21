@@ -314,13 +314,29 @@ var Map = new Vue ({
     animateCombat: function (attacker, defender) {
       var spacesY = defender.posY - attacker.posY,
           spacesX = defender.posX - attacker.posX,
-          pixelsY = Math.round(16 * Math.sin(Math.atan2(spacesY, spacesX))) + 'px',
-          pixelsX = Math.round(16 * Math.cos(Math.atan2(spacesY, spacesX))) + 'px';
-      document.getElementById(attacker.id).animate({
+          pixelsY = Math.round(16 * Math.sin(Math.atan2(spacesY, spacesX))),
+          pixelsX = Math.round(16 * Math.cos(Math.atan2(spacesY, spacesX)));
+      var attack = {
         zIndex: [ 99, 99 ],
-        top: [0, pixelsY, 0,],
-        left: [0, pixelsX, 0 ]
-      }, 300);
+        top: [0, (pixelsY + 'px'), 0 ],
+        left: [0, (pixelsX + 'px'), 0 ],
+        easing: 'ease-in-out'
+      };
+      var hit = {
+        top: [0, (pixelsY / 3 + 'px'), 0 ],
+        left: [0, (pixelsX / 3 + 'px'), 0 ],
+        boxSizing: ['border-box', 'border-box'],
+        backgroundImage: ["url('sprites/attack-hit.png')", "url('sprites/attack-hit.png')"],
+        paddingLeft: ['32px', '32px'],
+        easing: 'ease-in-out'
+      };
+      var miss = {
+        opacity: [1, 0.5, 0.5, 1],
+        easing: 'ease-in-out'
+      };
+      document.getElementById(attacker.id).animate(attack, 300);
+      // window.setTimeout(function () { document.getElementById(defender.id).animate(hit, 150) }, 200);
+      window.setTimeout(function () { document.getElementById(defender.id).animate(miss, 250) }, 50);
     },
     dealDamage: function (y, x) {
       var unit = this.gameData[y][x].unit;
