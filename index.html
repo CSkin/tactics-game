@@ -18,7 +18,10 @@
           <div id='selected-terrain' v-if='space && space.terrain'>
             <div id='terrain-info' class='ui'>
               <div class='heading'><div class='icon' :class='space.terrain.type'></div>{{ space.terrain.name }}</div>
-              <p>Move cost: <b>{{ space.terrain.cost }}</b></p>
+              <p v-if='space.terrain.cost < 99'>Move cost: <b>{{ space.terrain.cost }}</b></p>
+              <p v-else>Impassable</p>
+              <p v-if='space.terrain.defense > 0'>Defense: <b>{{ space.terrain.defense }}</b></p>
+              <p v-if='space.terrain.elevation > 0'>Elevation: <b>{{ space.terrain.elevation }}</b></p>
             </div>
           </div>
         </transition>
@@ -29,7 +32,7 @@
               <div class='heading'><div class='icon' :class='space.unit.faction'></div>{{ space.unit.name }}</div>
               <p>Condition: <b :class='space.unit.condition'>{{ space.unit.condition }}</b></p>
               <p>Offense: <b>{{ space.unit.offense }}</b></p>
-              <p>Defense: <b>{{ space.unit.defense }}</b></p>
+              <p>Defense: <b>{{ space.unit.defense }}</b> <b class='buff' v-if='defenseBonus > 0'>+{{ defenseBonus }}</b></p>
               <p>Range: <b>{{ space.unit.range }}</b></p>
               <p>Movement: <b>{{ space.unit.moves }} / {{ space.unit.movement }}</b></p>
             </div>
@@ -71,7 +74,10 @@
           <div id='target-space' v-if='space && space.terrain'>
             <div id='target-terrain' class='ui'>
               <div class='heading'><div class='icon' :class='space.terrain.type'></div>{{ space.terrain.name }}</div>
-              <p>Move cost: <b>{{ space.terrain.cost }}</b></p>
+              <p v-if='space.terrain.cost < 99'>Move cost: <b>{{ space.terrain.cost }}</b></p>
+              <p v-else>Impassable</p>
+              <p v-if='space.terrain.defense > 0'>Defense: <b>{{ space.terrain.defense }}</b></p>
+              <p v-if='space.terrain.elevation > 0'>Elevation: <b>{{ space.terrain.elevation }}</b></p>
             </div>
           </div>
         </transition>
@@ -82,7 +88,7 @@
               <div class='heading'><div class='icon' :class='space.unit.faction'></div>{{ space.unit.name }}</div>
               <p>Condition: <b :class='space.unit.condition'>{{ space.unit.condition }}</b></p>
               <p>Offense: <b>{{ space.unit.offense }}</b></p>
-              <p>Defense: <b>{{ space.unit.defense }}</b></p>
+              <p>Defense: <b>{{ space.unit.defense }}</b> <b class='buff' v-if='defenseBonus > 0'>+{{ defenseBonus }}</b></p>
               <p>Range: <b>{{ space.unit.range }}</b></p>
               <p>Movement: <b>{{ space.unit.moves }} / {{ space.unit.movement }}</b></p>
             </div>
@@ -90,7 +96,7 @@
               <p class='heading'><img class='icon' src='sprites/combat-icon.png'>Combat Info</p>
               <p>Counter success chance: <b :style='gradient'>{{ counter }}%</b></p>
             </div>
-            <div id='target-actions' class='ui' v-if='counter'>
+            <div id='target-actions' class='ui' v-if='counter || counter === 0'>
               <p class='heading'><img class='icon' src='sprites/actions-icon.png'>Actions</p>
               <p><button id='btn-confatk' @click='confirmAttack'>Confirm Attack (Return)</button></p>
             </div>

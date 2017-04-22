@@ -7,10 +7,10 @@ var mapPlan = [
   ' - - - - - - - - - - - - - - - - ',
   ' - - - - - - - - - - - - - - - - ',
   ' - - - - - - - - - - - - - - - - ',
-  ' - - - - b b g g b g g g - - - - ',
-  ' - - - - b s s s s b s g - - - - ',
-  ' - - - - g s b s s s s b - - - - ',
-  ' - - - - g g g b g g b b - - - - ',
+  ' - - - - b b s s b s s s - - - - ',
+  ' - - - - b g g g g b g s - - - - ',
+  ' - - - - s g b g g g g b - - - - ',
+  ' - - - - s s s b s s b b - - - - ',
   ' - - - - - - - - - - - - - - - - ',
   ' - - - - - - - - - - - - - - - - ',
   ' - - - - - - - - - - - - - - - - ',
@@ -19,18 +19,18 @@ var mapPlan = [
   ' - - - - - - - - - - - - - - - - ',
 ];
 
-function Terrain(type, cost) {
+function Terrain(type, name, cost, defense, elevation) {
   this.type = type;
-  var name = type.split('');
-  name[0] = name[0].toUpperCase();
-  this.name = name.join('');
+  this.name = name;
   this.cost = cost;
+  this.defense = defense;
+  this.elevation = elevation;
 }
 
-var waste = new Terrain('waste', 99),
-    grass = new Terrain('grass', 1),
-    street = new Terrain('street', 1),
-    brush = new Terrain('brush', 2);
+var barren = new Terrain('barren', 'Barren', 99, 0, 0),
+    ground = new Terrain('ground', 'Ground', 1, 0, 0),
+    grass = new Terrain('grass', 'Grass', 1, 0, 0),
+    brush = new Terrain('brush', 'Brush', 2, 1, 0);
 
 function Space(posY, posX, terrain) {
   this.posY = posY;

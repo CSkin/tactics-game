@@ -5,9 +5,9 @@ function loadMap (mapPlan) {
     string = mapPlan[y].replace(/\s/g, '');
     for (x = 0; x < string.length; x++) {
       switch (string[x]) {
-        case '-': row.push(new Space(y, x, waste)); break;
-        case 'g': row.push(new Space(y, x, grass)); break;
-        case 's': row.push(new Space(y, x, street)); break;
+        case '-': row.push(new Space(y, x, barren)); break;
+        case 'g': row.push(new Space(y, x, ground)); break;
+        case 's': row.push(new Space(y, x, grass)); break;
         case 'b': row.push(new Space(y, x, brush)); break;
       }
     }
@@ -277,14 +277,18 @@ var Map = new Vue ({
       var targetSpace = this.gameData[y][x],
           attacker = Leftpanel.space.unit,
           defender = targetSpace.unit,
-          distanceBonus = targetSpace.distance - 1,
-          attackTotal = attacker.offense + defender.defense + distanceBonus,
+          attackTotal = attacker.offense + defender.defense + Rightpanel.defenseBonus,
           attack = attacker.offense / attackTotal,
-          counterTotal = defender.offense + attacker.defense + distanceBonus,
-          counter = defender.offense / counterTotal;
+          counter, counterTotal;
       Rightpanel.space = targetSpace;
       Leftpanel.attack = Math.round(attack * 100);
-      Rightpanel.counter = Math.round(counter * 100);
+      if (defender.range >= Rightpanel.space.distance) {
+        counterTotal = defender.offense + attacker.defense + Leftpanel.defenseBonus,
+        counter = defender.offense / counterTotal;
+        Rightpanel.counter = Math.round(counter * 100);
+      } else {
+        Rightpanel.counter = 0;
+      }
     },
     attackUnit: function (counter) {
       var attacker, defender, hitChance, spacesY, spacesX, pixelsY, pixelsX, evadeSprite, attack, hit, miss;
@@ -332,13 +336,11 @@ var Map = new Vue ({
         window.setTimeout(function () { document.getElementById(defender.id).animate(miss, 300) }, 100);
         if (!counter) {console.log('Attack missed!')} else {console.log('Counterattack missed!')}
       }
-      window.setTimeout(function () {
-        if (!counter && defender.condition !== 'Defeated') {
-          Map.attackUnit('counter');
-        } else {
-          Leftpanel.endAttack();
-        }
-      }, 600);
+      if (!counter && defender.condition !== 'Defeated' && defender.range >= Rightpanel.space.distance) {
+        window.setTimeout(function () { Map.attackUnit('counter') }, 600);
+      } else {
+        window.setTimeout(function () { Leftpanel.endAttack() }, 600);
+      }
     },
     dealDamage: function (y, x) {
       var unit = this.gameData[y][x].unit;
@@ -365,6 +367,12 @@ var Leftpanel = new Vue ({
     attack: null
   },
   computed: {
+    defenseBonus: function () {
+      var defenseBonus = 0;
+      if (this.space) { defenseBonus += this.space.terrain.defense }
+      if (Rightpanel.space) { defenseBonus += Rightpanel.space.distance - 1 }
+      return defenseBonus;
+    },
     gradient: function () {
       if (this.attack < 10) { return { color: '#bf0000' } }
       else if (this.attack < 20) { return { color: '#d01b00' } }
@@ -427,17 +435,23 @@ var Rightpanel = new Vue ({
     counter: null
   },
   computed: {
+    defenseBonus: function () {
+      var defenseBonus = 0;
+      if (this.space) { defenseBonus += this.space.terrain.defense }
+      if (this.space) { defenseBonus += this.space.distance - 1 }
+      return defenseBonus;
+    },
     gradient: function () {
-      if (this.counter <= 10) { return { color: '#12b312' } }
-      else if (this.counter <= 20) { return { color: '#55ab0c' } }
-      else if (this.counter <= 30) { return { color: '#97a406' } }
-      else if (this.counter <= 40) { return { color: '#da9c00' } }
-      else if (this.counter <= 50) { return { color: '#e28300' } }
-      else if (this.counter <= 60) { return { color: '#ea6a00' } }
-      else if (this.counter <= 70) { return { color: '#f25100' } }
-      else if (this.counter <= 80) { return { color: '#e13600' } }
-      else if (this.counter <= 90) { return { color: '#d01b00' } }
-      else { return { color: '#bf0000' } }
+      if (this.counter < 10) { return { color: '#bf0000' } }
+      else if (this.counter < 20) { return { color: '#d01b00' } }
+      else if (this.counter < 30) { return { color: '#e13600' } }
+      else if (this.counter < 40) { return { color: '#f25100' } }
+      else if (this.counter < 50) { return { color: '#ea6a00' } }
+      else if (this.counter < 60) { return { color: '#e28300' } }
+      else if (this.counter < 70) { return { color: '#da9c00' } }
+      else if (this.counter < 80) { return { color: '#97a406' } }
+      else if (this.counter < 90) { return { color: '#55ab0c' } }
+      else { return { color: '#12b312' } }
     },
     dynamicTransition: function () {
       if (this.space && this.space.unit && this.space.unit.condition === 'Defeated') { return 'sayGoodbye' }
