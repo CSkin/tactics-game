@@ -254,8 +254,8 @@ var Map = new Vue ({
       spaceTo.unit = unitData;
       Leftpanel.space = spaceTo;
     },
-    toggleAttackRange: function (showOrHide) {
-      var y, x, showOrHide, distance,
+    toggleAttackRange: function (showOrHide, targetY, targetX) {
+      var y, x, showOrHide, distance, targetDistance,
           posY = Leftpanel.space.unit.posY,
           posX = Leftpanel.space.unit.posX,
           range = Leftpanel.space.unit.range;
@@ -266,21 +266,24 @@ var Map = new Vue ({
         }
       } else {
         toggle = function (y, x) { Map.gameData[y][x].distance = null; };
+        if (targetY && targetX) { targetDistance = Map.gameData[targetY][targetX].distance }
       }
       for (y = Math.max(posY - range, 0); y <= Math.min(posY + range, 15); y++) {
         for (x = Math.max(posX - range, 0); x <= Math.min(posX + range, 15); x++) {
           toggle(y, x);
         }
       }
+      if (showOrHide === 'hide' && targetY && targetX) { Map.gameData[targetY][targetX].distance = targetDistance }
     },
     targetUnit: function (y, x) {
       var targetSpace = this.gameData[y][x],
           attacker = Leftpanel.space.unit,
           defender = targetSpace.unit,
-          attackTotal = attacker.offense + defender.defense + Rightpanel.defenseBonus,
-          attack = attacker.offense / attackTotal,
-          counter, counterTotal;
+          attackTotal, attack, counterTotal, counter;
+      Map.toggleAttackRange('hide', y, x);
       Rightpanel.space = targetSpace;
+      attackTotal = attacker.offense + defender.defense + Rightpanel.defenseBonus;
+      attack = attacker.offense / attackTotal;
       Leftpanel.attack = Math.round(attack * 100);
       if (defender.range >= Rightpanel.space.distance) {
         counterTotal = defender.offense + attacker.defense + Leftpanel.defenseBonus,
@@ -293,7 +296,7 @@ var Map = new Vue ({
     attackUnit: function (counter) {
       var attacker, defender, hitChance, spacesY, spacesX, pixelsY, pixelsX, evadeSprite, attack, hit, miss;
       if (!counter) {
-        Map.toggleAttackRange('hide');
+        Map.gameData[Rightpanel.space.posY][Rightpanel.space.posX].distance = null;
         attacker = Leftpanel.space.unit;
         defender = Rightpanel.space.unit;
         hitChance = Leftpanel.attack;
@@ -336,11 +339,13 @@ var Map = new Vue ({
         window.setTimeout(function () { document.getElementById(defender.id).animate(miss, 300) }, 100);
         if (!counter) {console.log('Attack missed!')} else {console.log('Counterattack missed!')}
       }
-      if (!counter && defender.condition !== 'Defeated' && defender.range >= Rightpanel.space.distance) {
-        window.setTimeout(function () { Map.attackUnit('counter') }, 600);
-      } else {
-        window.setTimeout(function () { Leftpanel.endAttack() }, 600);
-      }
+      window.setTimeout(function () {
+        if (!counter && Rightpanel.counter > 0 && defender.condition !== 'Defeated') {
+          Map.attackUnit('counter');
+        } else {
+          Leftpanel.endAttack();
+        }
+      }, 400);
     },
     dealDamage: function (y, x) {
       var unit = this.gameData[y][x].unit;
