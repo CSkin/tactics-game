@@ -287,7 +287,7 @@ var Map = new Vue ({
       Rightpanel.counter = Math.round(counter * 100);
     },
     attackUnit: function (counter) {
-      var attacker, defender, hitChance;
+      var attacker, defender, hitChance, spacesY, spacesX, pixelsY, pixelsX, evadeSprite, attack, hit, miss;
       if (!counter) {
         Map.toggleAttackRange('hide');
         attacker = Leftpanel.space.unit;
@@ -298,31 +298,18 @@ var Map = new Vue ({
         defender = Leftpanel.space.unit;
         hitChance = Rightpanel.counter;
       }
-      this.animateCombat(attacker, defender);
-      if (Math.random()*100 <= hitChance) {
-        this.dealDamage(defender.posY, defender.posX);
-        if (!counter) {console.log('Attack hit!')} else {console.log('Counterattack hit!')}
-      } else {
-        if (!counter) {console.log('Attack missed!')} else {console.log('Counterattack missed!')}
-      }
-      // if (!counter && defender.condition !== 'Defeated') {
-      //   this.attackUnit('counter');
-      // } else {
-        Leftpanel.endAttack();
-      // }
-    },
-    animateCombat: function (attacker, defender) {
-      var spacesY = defender.posY - attacker.posY,
-          spacesX = defender.posX - attacker.posX,
-          pixelsY = Math.round(16 * Math.sin(Math.atan2(spacesY, spacesX))),
-          pixelsX = Math.round(16 * Math.cos(Math.atan2(spacesY, spacesX)));
-      var attack = {
+      spacesY = defender.posY - attacker.posY;
+      spacesX = defender.posX - attacker.posX;
+      pixelsY = Math.round(16 * Math.sin(Math.atan2(spacesY, spacesX)));
+      pixelsX = Math.round(16 * Math.cos(Math.atan2(spacesY, spacesX)));
+      evadeSprite = "url('" + defender.sprite.slice(0, -4) + "-evade.png')";
+      attack = {
         zIndex: [ 99, 99 ],
         top: [0, (pixelsY + 'px'), 0 ],
         left: [0, (pixelsX + 'px'), 0 ],
         easing: 'ease-in-out'
       };
-      var hit = {
+      hit = {
         top: [0, (pixelsY / 3 + 'px'), 0 ],
         left: [0, (pixelsX / 3 + 'px'), 0 ],
         boxSizing: ['border-box', 'border-box'],
@@ -330,13 +317,28 @@ var Map = new Vue ({
         paddingLeft: ['32px', '32px'],
         easing: 'ease-in-out'
       };
-      var miss = {
-        opacity: [1, 0.5, 0.5, 1],
+      miss = {
+        boxSizing: ['border-box', 'border-box'],
+        backgroundImage: [evadeSprite, evadeSprite],
+        paddingLeft: ['32px', '32px'],
         easing: 'ease-in-out'
       };
-      document.getElementById(attacker.id).animate(attack, 300);
-      // window.setTimeout(function () { document.getElementById(defender.id).animate(hit, 150) }, 200);
-      window.setTimeout(function () { document.getElementById(defender.id).animate(miss, 250) }, 50);
+      document.getElementById(attacker.id).animate(attack, 400);
+      if (Math.random()*100 <= hitChance) {
+        window.setTimeout(function () { document.getElementById(defender.id).animate(hit, 200) }, 200);
+        window.setTimeout(function () { Map.dealDamage(defender.posY, defender.posX) }, 400);
+        if (!counter) {console.log('Attack hit!')} else {console.log('Counterattack hit!')}
+      } else {
+        window.setTimeout(function () { document.getElementById(defender.id).animate(miss, 300) }, 100);
+        if (!counter) {console.log('Attack missed!')} else {console.log('Counterattack missed!')}
+      }
+      window.setTimeout(function () {
+        if (!counter && defender.condition !== 'Defeated') {
+          Map.attackUnit('counter');
+        } else {
+          Leftpanel.endAttack();
+        }
+      }, 600);
     },
     dealDamage: function (y, x) {
       var unit = this.gameData[y][x].unit;
