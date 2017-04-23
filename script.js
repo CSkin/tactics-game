@@ -257,14 +257,38 @@ var Map = new Vue ({
       Leftpanel.space = spaceTo;
     },
     showAttackRange: function () {
-      var y, x, distance,
+      var f, y, x, s, distance, angle, width, shadows = [], inLineOfSight,
           posY = Leftpanel.space.unit.posY,
           posX = Leftpanel.space.unit.posX,
-          range = Leftpanel.space.unit.range;
-      for (y = Math.max(posY - range, 0); y <= Math.min(posY + range, 15); y++) {
-        for (x = Math.max(posX - range, 0); x <= Math.min(posX + range, 15); x++) {
-          distance = Math.abs(posY - y) + Math.abs(posX - x);
-          if (distance <= range) { this.gameData[y][x].distance = distance }
+          range = Leftpanel.space.unit.range,
+          findShadows = function (y, x) {
+            if (!Map.gameData[y][x].terrain.seeThru) {
+              distance = Math.abs(posY - y) + Math.abs(posX - x);
+              angle = Math.atan2(y - posY, x - posX);
+              width = Math.PI / (4 * distance);
+              shadows.push({ distance: distance, angle: angle, width: width });
+            }
+          },
+          findAttackRange = function (y, x) {
+            distance = Math.abs(posY - y) + Math.abs(posX - x);
+            if (distance <= range && Map.gameData[y][x].terrain.seeThru) {
+              inLineOfSight = true;
+              angle = Math.atan2(y - posY, x - posX);
+              for (s = 0; s < shadows.length; s++) {
+                if (Math.abs(shadows[s].angle - angle) < shadows[s].width && distance > shadows[s].distance) {
+                  inLineOfSight = false;
+                  break;
+                }
+              }
+              if (inLineOfSight) { Map.gameData[y][x].distance = distance }
+            }
+          },
+          functions = [findShadows, findAttackRange];
+      for (f = 0; f < 2; f++) {
+        for (y = Math.max(posY - range, 0); y <= Math.min(posY + range, 15); y++) {
+          for (x = Math.max(posX - range, 0); x <= Math.min(posX + range, 15); x++) {
+            functions[f](y, x);
+          }
         }
       }
     },
