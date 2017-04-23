@@ -256,33 +256,37 @@ var Map = new Vue ({
       spaceTo.unit = unitData;
       Leftpanel.space = spaceTo;
     },
-    toggleAttackRange: function (showOrHide, targetY, targetX) {
-      var y, x, showOrHide, distance, targetDistance,
+    showAttackRange: function () {
+      var y, x, distance,
           posY = Leftpanel.space.unit.posY,
           posX = Leftpanel.space.unit.posX,
           range = Leftpanel.space.unit.range;
-      if (showOrHide === 'show') {
-        toggle = function (y, x) {
-          distance = Math.abs(posY - y) + Math.abs(posX - x);
-          if (distance <= range) { Map.gameData[y][x].distance = distance }
-        }
-      } else {
-        toggle = function (y, x) { Map.gameData[y][x].distance = null; };
-        if (targetY && targetX) { targetDistance = Map.gameData[targetY][targetX].distance }
-      }
       for (y = Math.max(posY - range, 0); y <= Math.min(posY + range, 15); y++) {
         for (x = Math.max(posX - range, 0); x <= Math.min(posX + range, 15); x++) {
-          toggle(y, x);
+          distance = Math.abs(posY - y) + Math.abs(posX - x);
+          if (distance <= range) { this.gameData[y][x].distance = distance }
         }
       }
-      if (showOrHide === 'hide' && targetY && targetX) { Map.gameData[targetY][targetX].distance = targetDistance }
+    },
+    hideAttackRange: function (targetY, targetX) {
+      var y, x, distance, targetDistance,
+          posY = Leftpanel.space.unit.posY,
+          posX = Leftpanel.space.unit.posX,
+          range = Leftpanel.space.unit.range;
+      if (targetY && targetX) { targetDistance = this.gameData[targetY][targetX].distance }
+      for (y = Math.max(posY - range, 0); y <= Math.min(posY + range, 15); y++) {
+        for (x = Math.max(posX - range, 0); x <= Math.min(posX + range, 15); x++) {
+          this.gameData[y][x].distance = null;
+        }
+      }
+      if (targetY && targetX) { this.gameData[targetY][targetX].distance = targetDistance }
     },
     targetUnit: function (y, x) {
       var targetSpace = this.gameData[y][x],
           attacker = Leftpanel.space.unit,
           defender = targetSpace.unit,
           attackTotal, attack, counterTotal, counter;
-      Map.toggleAttackRange('hide', y, x);
+      this.hideAttackRange(y, x);
       Rightpanel.space = targetSpace;
       attackTotal = attacker.offense + defender.defense + Rightpanel.defenseBonus;
       attack = attacker.offense / attackTotal;
@@ -298,7 +302,7 @@ var Map = new Vue ({
     attackUnit: function (counter) {
       var attacker, defender, hitChance, spacesY, spacesX, pixelsY, pixelsX, evadeSprite, attack, hit, miss;
       if (!counter) {
-        Map.gameData[Rightpanel.space.posY][Rightpanel.space.posX].distance = null;
+        this.gameData[Rightpanel.space.posY][Rightpanel.space.posX].distance = null;
         attacker = Leftpanel.space.unit;
         defender = Rightpanel.space.unit;
         hitChance = Leftpanel.attack;
@@ -409,11 +413,11 @@ var Leftpanel = new Vue ({
     },
     beginAttack: function () {
       Rightpanel.space = null;
-      Map.toggleAttackRange('show');
+      Map.showAttackRange();
       this.action = 'attacking';
     },
     cancelAttack: function () {
-      Map.toggleAttackRange('hide');
+      Map.hideAttackRange();
       this.attack = null;
       Rightpanel.space = null;
       Rightpanel.counter = null;
