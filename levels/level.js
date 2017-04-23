@@ -1,4 +1,4 @@
-var mapImage = { backgroundImage: "url('maps/level0.png')" };
+var mapImage = { backgroundImage: "url('maps/level1.png')" };
 
 var mapPlan = [
   ' - - - - - - - - - - - - - - - - ',
@@ -7,10 +7,10 @@ var mapPlan = [
   ' - - - - - - - - - - - - - - - - ',
   ' - - - - - - - - - - - - - - - - ',
   ' - - - - - - - - - - - - - - - - ',
-  ' - - - - b b s s b s s s - - - - ',
-  ' - - - - b g g g g b g s - - - - ',
-  ' - - - - s g b g g g g b - - - - ',
-  ' - - - - s s s b s s b b - - - - ',
+  ' - - - - b b a a l l a a - - - - ',
+  ' - - - - b s s B B s s a - - - - ',
+  ' - - - - a s s B B s s b - - - - ',
+  ' - - - - a a l l a a b b - - - - ',
   ' - - - - - - - - - - - - - - - - ',
   ' - - - - - - - - - - - - - - - - ',
   ' - - - - - - - - - - - - - - - - ',
@@ -19,18 +19,23 @@ var mapPlan = [
   ' - - - - - - - - - - - - - - - - ',
 ];
 
-function Terrain(type, name, cost, defense, elevation) {
+function Terrain(type, name, cost, defense, defenseDirection, elevation, seeThru) {
   this.type = type;
   this.name = name;
   this.cost = cost;
   this.defense = defense;
+  this.defenseDirection = defenseDirection;
   this.elevation = elevation;
+  this.seeThru = seeThru;
 }
 
-var barren = new Terrain('barren', 'Barren', 99, 0, 0),
-    ground = new Terrain('ground', 'Ground', 1, 0, 0),
-    grass = new Terrain('grass', 'Grass', 1, 0, 0),
-    brush = new Terrain('brush', 'Brush', 2, 1, 0);
+var barren = new Terrain('barren', 'Barren', 99, 0, null, 0, true),
+    ground = new Terrain('ground', 'Ground', 1, 0, null, 0, true),
+    sand = new Terrain('sand', 'Sand', 2, 0, null, 0, true),
+    grass = new Terrain('grass', 'Grass', 1, 0, null, 0, true),
+    brush = new Terrain('brush', 'Brush', 2, 1, null, 0, true),
+    boulder = new Terrain('boulder', 'Boulder', 99, 0, null, 0, false),
+    log = new Terrain('log', 'Log', 1, 2, null, 0, true);
 
 function Space(posY, posX, terrain) {
   this.posY = posY;

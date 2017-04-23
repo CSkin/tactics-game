@@ -6,9 +6,11 @@ function loadMap (mapPlan) {
     for (x = 0; x < string.length; x++) {
       switch (string[x]) {
         case '-': row.push(new Space(y, x, barren)); break;
-        case 'g': row.push(new Space(y, x, ground)); break;
-        case 's': row.push(new Space(y, x, grass)); break;
+        case 's': row.push(new Space(y, x, sand)); break;
+        case 'a': row.push(new Space(y, x, grass)); break;
         case 'b': row.push(new Space(y, x, brush)); break;
+        case 'B': row.push(new Space(y, x, boulder)); break;
+        case 'l': row.push(new Space(y, x, log)); break;
       }
     }
     mapData.push(row);
