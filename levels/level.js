@@ -19,23 +19,23 @@ var mapPlan = [
   ' - - - - - - - - - - - - - - - - ',
 ];
 
-function Terrain(type, name, cost, defense, defenseDirection, elevation, seeThru) {
+function Terrain(type, name, cost, defense, elevation, seeThru) {
   this.type = type;
   this.name = name;
   this.cost = cost;
   this.defense = defense;
-  this.defenseDirection = defenseDirection;
+  this.defenseDirection = null;
   this.elevation = elevation;
   this.seeThru = seeThru;
 }
 
-var barren = new Terrain('barren', 'Barren', 99, 0, null, 0, true),
-    ground = new Terrain('ground', 'Ground', 1, 0, null, 0, true),
-    sand = new Terrain('sand', 'Sand', 2, 0, null, 0, true),
-    grass = new Terrain('grass', 'Grass', 1, 0, null, 0, true),
-    brush = new Terrain('brush', 'Brush', 2, 1, null, 0, true),
-    boulder = new Terrain('boulder', 'Boulder', 99, 0, null, 0, false),
-    log = new Terrain('log', 'Log', 1, 2, null, 0, true);
+var barren = new Terrain('barren', 'Barren', 99, 0, 0, true),
+    ground = new Terrain('ground', 'Ground', 1, 0, 0, true),
+    sand = new Terrain('sand', 'Sand', 2, 0, 0, true),
+    grass = new Terrain('grass', 'Grass', 1, 0, 0, true),
+    brush = new Terrain('brush', 'Brush', 2, 1, 0, true),
+    boulder = new Terrain('boulder', 'Boulder', 99, 0, 0, false),
+    log = new Terrain('log', 'Log', 1, 2, 0, true);
 
 function Space(posY, posX, terrain) {
   this.posY = posY;
