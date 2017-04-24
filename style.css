@@ -104,6 +104,11 @@ button {
   color: #0080ff;
 }
 
+.small {
+  font-size: 0.8em;
+  margin-left: 5px;
+}
+
 /* Dynamic Classes */
 
 .movable {
