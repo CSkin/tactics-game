@@ -18,15 +18,15 @@ function loadMap (mapPlan) {
   return mapData;
 }
 
-function directionalDefense (mapData) {
+function directionalCover (mapData) {
   var y, x;
   for (y = 0; y < 16; y++) {
     for (x = 0; x < 16; x++) {
       if (mapData[y][x].terrain.type === 'log') {
-        if      (mapData[y][x + 1].terrain.type === 'log') { mapData[y][x].terrain.defenseDirection = 'East' }
-        else if (mapData[y + 1][x].terrain.type === 'log') { mapData[y][x].terrain.defenseDirection = 'South' }
-        else if (mapData[y][x - 1].terrain.type === 'log') { mapData[y][x].terrain.defenseDirection = 'West' }
-        else if (mapData[y - 1][x].terrain.type === 'log') { mapData[y][x].terrain.defenseDirection = 'North' }
+        if      (mapData[y][x + 1].terrain.type === 'log') { mapData[y][x].terrain.coverDirection = 'east' }
+        else if (mapData[y + 1][x].terrain.type === 'log') { mapData[y][x].terrain.coverDirection = 'south' }
+        else if (mapData[y][x - 1].terrain.type === 'log') { mapData[y][x].terrain.coverDirection = 'west' }
+        else if (mapData[y - 1][x].terrain.type === 'log') { mapData[y][x].terrain.coverDirection = 'north' }
       }
     }
   }
@@ -45,7 +45,7 @@ function loadUnits (mapData, unitPlan) {
 }
 
 function loadLevel () {
-  var mapData = directionalDefense(loadMap(mapPlan)),
+  var mapData = directionalCover(loadMap(mapPlan)),
       levelData = loadUnits(mapData, unitPlan);
   return levelData;
 }
@@ -419,17 +419,17 @@ var Leftpanel = new Vue ({
   computed: {
     defenseBonus: function () {
       var defenseBonus = 0,
-          terrainDefense = this.space.terrain.defense,
-          defenseDirection = this.space.terrain.defenseDirection;
-      if (this.space && !defenseDirection) { defenseBonus += terrainDefense }
+          cover = this.space.terrain.cover,
+          coverDirection = this.space.terrain.coverDirection;
+      if (this.space && !coverDirection) { defenseBonus += cover }
       if (Rightpanel.space && Rightpanel.space.unit) {
         var leftUnit = this.space.unit, rightUnit = Rightpanel.space.unit;
-        if (defenseDirection) {
-          switch (defenseDirection) {
-            case 'East': if (rightUnit.posX > leftUnit.posX) { defenseBonus += terrainDefense } break;
-            case 'South': if (rightUnit.posY > leftUnit.posY) { defenseBonus += terrainDefense } break;
-            case 'West': if (rightUnit.posX < leftUnit.posX) { defenseBonus += terrainDefense } break;
-            case 'North': if (rightUnit.posY < leftUnit.posY) { defenseBonus += terrainDefense } break;
+        if (coverDirection) {
+          switch (coverDirection) {
+            case 'east': if (rightUnit.posX > leftUnit.posX) { defenseBonus += cover } break;
+            case 'south': if (rightUnit.posY > leftUnit.posY) { defenseBonus += cover } break;
+            case 'west': if (rightUnit.posX < leftUnit.posX) { defenseBonus += cover } break;
+            case 'north': if (rightUnit.posY < leftUnit.posY) { defenseBonus += cover } break;
           }
         }
         defenseBonus += Math.abs(leftUnit.posY - rightUnit.posY) + Math.abs(leftUnit.posX - rightUnit.posX) - 1;
@@ -500,17 +500,17 @@ var Rightpanel = new Vue ({
   computed: {
     defenseBonus: function () {
       var defenseBonus = 0,
-          terrainDefense = this.space.terrain.defense,
-          defenseDirection = this.space.terrain.defenseDirection;
+          cover = this.space.terrain.cover,
+          coverDirection = this.space.terrain.coverDirection;
       if (this.space) {
         var leftUnit = Leftpanel.space.unit, rightUnit = this.space.unit;
-        if (!defenseDirection) { defenseBonus += terrainDefense }
+        if (!coverDirection) { defenseBonus += cover }
         else {
-          switch (defenseDirection) {
-            case 'East': if (leftUnit.posX > rightUnit.posX) { defenseBonus += terrainDefense } break;
-            case 'South': if (leftUnit.posY > rightUnit.posY) { defenseBonus += terrainDefense } break;
-            case 'West': if (leftUnit.posX < rightUnit.posX) { defenseBonus += terrainDefense } break;
-            case 'North': if (leftUnit.posY < rightUnit.posY) { defenseBonus += terrainDefense } break;
+          switch (coverDirection) {
+            case 'east': if (leftUnit.posX > rightUnit.posX) { defenseBonus += cover } break;
+            case 'south': if (leftUnit.posY > rightUnit.posY) { defenseBonus += cover } break;
+            case 'west': if (leftUnit.posX < rightUnit.posX) { defenseBonus += cover } break;
+            case 'north': if (leftUnit.posY < rightUnit.posY) { defenseBonus += cover } break;
           }
         }
         defenseBonus += Math.abs(leftUnit.posY - rightUnit.posY) + Math.abs(leftUnit.posX - rightUnit.posX) - 1;

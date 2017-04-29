@@ -20,8 +20,8 @@
               <div class='heading'><div class='icon' :class='space.terrain.type'></div>{{ space.terrain.name }}</div>
               <p v-if='space.terrain.cost < 99'>Move cost: <b>{{ space.terrain.cost }}</b></p>
               <p v-else>Impassable</p>
-              <p v-if='space.terrain.defense > 0'>Defense: <b>{{ space.terrain.defense }}</b>
-                <span v-if='space.terrain.defenseDirection' class='small'>vs attacks from <b>{{ space.terrain.defenseDirection }}</b></span>
+              <p v-if='space.terrain.cover > 0'>Cover: <b>{{ space.terrain.cover }}</b>
+                <span v-if='space.terrain.coverDirection' class='small'>vs attacks from <b>{{ space.terrain.coverDirection }}</b></span>
               </p>
               <p v-if='space.terrain.elevation > 0'>Elevation: <b>{{ space.terrain.elevation }}</b></p>
             </div>
@@ -78,8 +78,8 @@
               <div class='heading'><div class='icon' :class='space.terrain.type'></div>{{ space.terrain.name }}</div>
               <p v-if='space.terrain.cost < 99'>Move cost: <b>{{ space.terrain.cost }}</b></p>
               <p v-else>Impassable</p>
-              <p v-if='space.terrain.defense > 0'>Defense: <b>{{ space.terrain.defense }}</b>
-                <span v-if='space.terrain.defenseDirection' class='small'>vs attacks from <b>{{ space.terrain.defenseDirection }}</b></span>
+              <p v-if='space.terrain.cover > 0'>Cover: <b>{{ space.terrain.cover }}</b>
+                <span v-if='space.terrain.coverDirection' class='small'>vs attacks from <b>{{ space.terrain.coverDirection }}</b></span>
               </p>
               <p v-if='space.terrain.elevation > 0'>Elevation: <b>{{ space.terrain.elevation }}</b></p>
             </div>

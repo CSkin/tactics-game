@@ -19,12 +19,12 @@ var mapPlan = [
   ' - - - - - - - - - - - - - - - - ',
 ];
 
-function Terrain(type, name, cost, defense, elevation, seeThru) {
+function Terrain(type, name, cost, cover, elevation, seeThru) {
   this.type = type;
   this.name = name;
   this.cost = cost;
-  this.defense = defense;
-  this.defenseDirection = null;
+  this.cover = cover;
+  this.coverDirection = null;
   this.elevation = elevation;
   this.seeThru = seeThru;
 }
