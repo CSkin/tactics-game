@@ -322,6 +322,39 @@ var TargetActions = {
   }
 };
 
+var Sidepanel = {
+  template: `
+  <div>
+    <transition name='fade'>
+      <div v-if='space && space.terrain'>
+        <terrain-info :terrain='space.terrain'></terrain-info>
+      </div>
+    </transition>
+    <transition name='fade'>
+      <div v-if='space && space.unit'>
+        <unit-info :unit='space.unit'></unit-info>
+        <template v-if="side === 'left'">
+          <unit-combat type='Attack' :hit='attack'></unit-combat>
+          <unit-actions :action='action' :unit='space.unit'></unit-actions>
+        </template>
+        <template v-else-if="side === 'right'">
+          <unit-combat type='Counter' :hit='counter'></unit-combat>
+          <target-actions :hit='counter'></target-actions>
+        </template>
+      </div>
+    </transition>
+  </div>
+  `,
+  props: ['side', 'space', 'action', 'attack', 'counter'],
+  components: {
+    'terrain-info': TerrainInfo,
+    'unit-info': UnitInfo,
+    'unit-combat': UnitCombat,
+    'unit-actions': UnitActions,
+    'target-actions': TargetActions
+  }
+}
+
 var Game = new Vue ({
   el:'#game',
   data: {
@@ -361,11 +394,7 @@ var Game = new Vue ({
   },
   components: {
     'row': Row,
-    'terrain-info': TerrainInfo,
-    'unit-info': UnitInfo,
-    'unit-combat': UnitCombat,
-    'unit-actions': UnitActions,
-    'target-actions': TargetActions
+    'side-panel': Sidepanel
   }
 });
 

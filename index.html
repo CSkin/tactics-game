@@ -13,18 +13,13 @@
     <main id='game'>
       
       <div id='leftpanel' class='panel'>
-        <transition name='fade'>
-          <div v-if='active && active.terrain'>
-            <terrain-info :terrain='active.terrain'></terrain-info>
-          </div>
-        </transition>
-        <transition name='fade'>
-          <div v-if='active && active.unit'>
-            <unit-info :unit='active.unit'></unit-info>
-            <unit-combat type='Attack' :hit='attack'></unit-combat>
-            <unit-actions :action='action' :unit='active.unit'></unit-actions>
-          </div>
-        </transition>
+        <side-panel
+          side='left'
+          :space='active'
+          :action='action'
+          :attack='attack'
+          :counter='counter'>
+        </side-panel>
       </div>
       
       <div id='map' class='panel' :style='mapImage'>
@@ -32,18 +27,13 @@
       </div>
       
       <div id='rightpanel' class='panel'>
-        <transition name='fade'>
-          <div v-if='target && target.terrain'>
-            <terrain-info :terrain='target.terrain'></terrain-info>
-          </div>
-        </transition>
-        <transition name='fade'>
-          <div v-if='target && target.unit'>
-            <unit-info :unit='target.unit'></unit-info>
-            <unit-combat type='Counter' :hit='counter'></unit-combat>
-            <target-actions :hit='counter'></target-actions>
-          </div>
-        </transition>
+        <side-panel
+          side='right'
+          :space='target'
+          :action='action'
+          :attack='attack'
+          :counter='counter'>
+        </side-panel>
       </div>
       
       <div id='bottompanel' class='panel'></div>
