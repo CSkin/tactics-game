@@ -45,8 +45,7 @@ function loadUnits (mapData, unitPlan) {
 }
 
 function loadLevel () {
-  var mapData = loadUnits(directionalCover(loadMap(mapPlan)), unitPlan);
-  return mapData;
+  return loadUnits(directionalCover(loadMap(mapPlan)), unitPlan);
 }
 
 function shuffle (array) {
@@ -81,8 +80,8 @@ var Highlight = {
           distance = this.space.distance;
       return {
         movable: path,
-        inrange: distance && (!unit || unit.faction === 'Player'),
-        attackable: distance && unit && unit.faction === 'Enemy'
+        inrange: distance && (!unit || unit.friendly),
+        attackable: distance && unit && !unit.friendly
       };
     }
   }
@@ -118,7 +117,7 @@ var Unit = {
         Game.moveUnit(unit.posY, unit.posX);
       }
       else {
-        Game.mapData[unit.posY][unit.posX].unit.moving = null;
+        Game.map[unit.posY][unit.posX].unit.moving = null;
         Game.action = null;
       }
     }
@@ -142,14 +141,14 @@ var Space = {
           path = this.space.path;
       switch (Game.action) {
         case 'moving':
-          if (path) { Game.moveUnit(Game.space1.posY, Game.space1.posX, path) }
+          if (path) { Game.moveUnit(Game.active.posY, Game.active.posX, path) }
           else {
             $( '#btn-unmove' ).trigger( 'click' );
             this.selectSpace(y, x);
           }
           break;
         case 'attacking':
-          if (this.space.distance && unit && unit.faction === 'Enemy') { Game.targetUnit(y, x) }
+          if (this.space.distance && unit && !unit.friendly) { Game.targetUnit(y, x) }
           else {
             $( '#btn-unattack' ).trigger( 'click' );
             this.selectSpace(y, x);
@@ -165,8 +164,8 @@ var Space = {
       }
     },
     selectSpace: function (y, x) {
-      Game.space1 = Game.mapData[y][x];
-      Game.space2 = null;
+      Game.active = Game.map[y][x];
+      Game.target = null;
     }
   },
   components: {
@@ -188,23 +187,151 @@ var Row = {
   }
 };
 
-var Sidepanel = {
+var TerrainInfo = {
   template: `
-  
+  <div class='ui'>
+    <div class='heading'><div class='icon' :class='terrain.type'></div>{{ terrain.name }}</div>
+    <p v-if='terrain.cost < 99'>Move cost: <b>{{ terrain.cost }}</b></p>
+    <p v-else>Impassable</p>
+    <p v-if='terrain.cover > 0'>Cover: <b>{{ terrain.cover }}</b>
+      <span v-if='terrain.coverDirection' class='small'>vs attacks from <b>{{ terrain.coverDirection }}</b></span>
+    </p>
+    <p v-if='terrain.elevation > 0'>Elevation: <b>{{ terrain.elevation }}</b></p>
+  </div>
   `,
-  props: ['space', 'hit']
+  props: ['terrain']
+};
+
+var UnitInfo = {
+  template: `
+  <div class='ui'>
+    <div class='heading'><div class='icon' :class='unit.faction'></div>{{ unit.name }}</div>
+    <p>Condition: <b :class='unit.condition'>{{ unit.condition }}</b></p>
+    <p>Offense: <b>{{ unit.offense }}</b></p>
+    <p>Defense: <b>{{ unit.defense }}</b></p>
+    <p>Range: <b>{{ unit.range }}</b></p>
+    <p>Movement: <b>{{ unit.moves }} / {{ unit.movement }}</b></p>
+  </div>
+  `,
+  props: ['unit']
+};
+
+var UnitCombat = {
+  template: `
+  <div class='ui' v-if='hit'>
+    <p class='heading'><img class='icon' src='sprites/combat-icon.png'>Combat Info</p>
+    <p>{{ type }} success chance: <b :style='gradient'>{{ hit }}%</b></p>
+  </div>
+  `,
+  props: ['type', 'hit'],
+  computed: {
+    gradient: function () {
+      if (this.hit < 10) { return { color: '#bf0000' } }
+      else if (this.hit < 20) { return { color: '#d01b00' } }
+      else if (this.hit < 30) { return { color: '#e13600' } }
+      else if (this.hit < 40) { return { color: '#f25100' } }
+      else if (this.hit < 50) { return { color: '#ea6a00' } }
+      else if (this.hit < 60) { return { color: '#e28300' } }
+      else if (this.hit < 70) { return { color: '#da9c00' } }
+      else if (this.hit < 80) { return { color: '#97a406' } }
+      else if (this.hit < 90) { return { color: '#55ab0c' } }
+      else { return { color: '#12b312' } }
+    }
+  }
+};
+
+var UnitActions = {
+  template: `
+  <div class='ui' v-if='unit.controlled'>
+    <p class='heading'><img class='icon' src='sprites/actions-icon.png'>Actions</p>
+    <p v-if="!action || action === 'moving'">
+      <button id='btn-move' v-if='!action' :disabled='unit.moves === 0' @click='beginMove'>Move (M)</button>
+      <button id='btn-unmove' v-else @click='cancelMove'>Cancel Move (M)</button>
+    </p>
+    <p v-if="!action || action === 'attacking'">
+      <button id='btn-attack' v-if='!action' :disabled='unit.attacks === 0' @click='beginAttack'>Attack (A)</button>
+      <button id='btn-unattack' v-else @click='cancelAttack'>Cancel Attack (A)</button>
+    </p>
+    <div v-if="!action || action === 'ending'">
+      <p v-if='!action'><button id='btn-end' @click='beginEnd'>End Turn (E)</button></p>
+      <p v-else>
+        Really end turn?<br>
+        <button id='btn-unend' @click='cancelEnd'>Cancel (E)</button>
+        <button id='btn-confend' @click='endTurn'>Confirm (Return)</button>
+      </p>
+    </div>
+  </div>
+  `,
+  props: ['action', 'unit'],
+  methods: {
+    beginMove: function () {
+      Game.showMoveRange(Game.active.unit.posY, Game.active.unit.posX, Game.active.unit.moves, '');
+      Game.target = null;
+      Game.action = 'moving';
+    },
+    cancelMove: function () {
+      Game.hideMoveRange();
+      Game.action = null;
+    },
+    beginAttack: function () {
+      Game.showAttackRange();
+      Game.target = null;
+      Game.action = 'attacking';
+    },
+    cancelAttack: function () {
+      Game.hideAttackRange();
+      Game.target = null;
+      Game.action = null;
+      Game.attack = null;
+      Game.counter = null;
+    },
+    endAttack: function () {
+      if (Game.active.unit) { Game.active.unit.attacks -= 1 }
+      Game.action = null;
+      Game.attack = null;
+      Game.counter = null;
+    },
+    beginEnd: function () {
+      Game.action = 'ending';
+    },
+    cancelEnd: function () {
+      Game.action = null;
+    },
+    endTurn: function () {
+      var unit = Game.active.unit;
+      unit.moves = unit.movement;
+      unit.attacks = unit.attacksperturn;
+      Game.target = null;
+      Game.action = null;
+    }
+  }
+};
+
+var TargetActions = {
+  template: `
+  <div class='ui' v-if='hit || hit === 0'>
+    <p class='heading'><img class='icon' src='sprites/actions-icon.png'>Actions</p>
+    <p><button id='btn-confatk' @click='confirmAttack'>Confirm Attack (Return)</button></p>
+  </div>
+  `,
+  props: ['hit'],
+  methods: {
+    confirmAttack: function () {
+      Game.attackUnit();
+    }
+  }
 };
 
 var Game = new Vue ({
   el:'#game',
   data: {
     mapImage: mapImage,
-    mapData: loadLevel(),
-    space1: null,
-    space2: null,
-    action: null,
-    attack: null,
-    counter: null
+    map: loadLevel(),
+    active: null, // Space object
+    target: null, // Space object
+    action: null, // string
+    attack: null, // number between 0 and 100
+    counter: null // number between 0 and 100
   },
   methods: {
     showMoveRange: function (y, x, moves, path) {
@@ -234,13 +361,17 @@ var Game = new Vue ({
   },
   components: {
     'row': Row,
-    'side-panel': Sidepanel
+    'terrain-info': TerrainInfo,
+    'unit-info': UnitInfo,
+    'unit-combat': UnitCombat,
+    'unit-actions': UnitActions,
+    'target-actions': TargetActions
   }
 });
 
 function keyHandler () {
   // console.log('keyCode: ' + event.keyCode); // Developer mode
-  if (Game.space1 && Game.space1.unit && Game.space1.unit.faction === 'Player') {
+  if (Game.active && Game.active.unit && Game.active.unit.controlled) {
     switch (event.keyCode) {
       case 13:
         if (Game.action === 'attacking') { $( '#btn-confatk' ).trigger( 'click' ); }
