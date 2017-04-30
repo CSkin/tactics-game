@@ -24,7 +24,7 @@ function Terrain(type, name, cost, cover, elevation, seeThru) {
   this.name = name;
   this.cost = cost;
   this.cover = cover;
-  this.coverDirection = null;
+  this.facing = null;
   this.elevation = elevation;
   this.seeThru = seeThru;
 }
@@ -57,6 +57,7 @@ function Unit(id, friendly, controlled, faction, sprite, name, offense, defense,
   this.condition = 'Healthy';
   this.offense = offense;
   this.defense = defense;
+  this.defBonus = null;
   this.range = range;
   this.movement = movement;
   this.moves = this.movement;

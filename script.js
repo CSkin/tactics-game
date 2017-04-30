@@ -23,10 +23,10 @@ function directionalCover (mapData) {
   for (y = 0; y < 16; y++) {
     for (x = 0; x < 16; x++) {
       if (mapData[y][x].terrain.type === 'log') {
-        if      (mapData[y][x + 1].terrain.type === 'log') { mapData[y][x].terrain.coverDirection = 'east' }
-        else if (mapData[y + 1][x].terrain.type === 'log') { mapData[y][x].terrain.coverDirection = 'south' }
-        else if (mapData[y][x - 1].terrain.type === 'log') { mapData[y][x].terrain.coverDirection = 'west' }
-        else if (mapData[y - 1][x].terrain.type === 'log') { mapData[y][x].terrain.coverDirection = 'north' }
+        if      (mapData[y][x + 1].terrain.type === 'log') { mapData[y][x].terrain.facing = 'east' }
+        else if (mapData[y + 1][x].terrain.type === 'log') { mapData[y][x].terrain.facing = 'south' }
+        else if (mapData[y][x - 1].terrain.type === 'log') { mapData[y][x].terrain.facing = 'west' }
+        else if (mapData[y - 1][x].terrain.type === 'log') { mapData[y][x].terrain.facing = 'north' }
       }
     }
   }
@@ -194,7 +194,7 @@ var TerrainInfo = {
     <p v-if='terrain.cost < 99'>Move cost: <b>{{ terrain.cost }}</b></p>
     <p v-else>Impassable</p>
     <p v-if='terrain.cover > 0'>Cover: <b>{{ terrain.cover }}</b>
-      <span v-if='terrain.coverDirection' class='small'>vs attacks from <b>{{ terrain.coverDirection }}</b></span>
+      <span v-if='terrain.facing' class='small'>vs attacks from <b>{{ terrain.facing }}</b></span>
     </p>
     <p v-if='terrain.elevation > 0'>Elevation: <b>{{ terrain.elevation }}</b></p>
   </div>
@@ -208,7 +208,7 @@ var UnitInfo = {
     <div class='heading'><div class='icon' :class='unit.faction'></div>{{ unit.name }}</div>
     <p>Condition: <b :class='unit.condition'>{{ unit.condition }}</b></p>
     <p>Offense: <b>{{ unit.offense }}</b></p>
-    <p>Defense: <b>{{ unit.defense }}</b></p>
+    <p>Defense: <b>{{ unit.defense }}</b> <b class='buff' v-if='unit.defBonus > 0'>+{{ unit.defBonus }}</b></p>
     <p>Range: <b>{{ unit.range }}</b></p>
     <p>Movement: <b>{{ unit.moves }} / {{ unit.movement }}</b></p>
   </div>
@@ -265,7 +265,8 @@ var UnitActions = {
   props: ['action', 'unit'],
   methods: {
     beginMove: function () {
-      Game.showMoveRange(Game.active.unit.posY, Game.active.unit.posX, Game.active.unit.moves, '');
+      var unit = Game.active.unit;
+      Game.showMoveRange(unit.posY, unit.posX, unit.moves, '');
       Game.target = null;
       Game.action = 'moving';
     },
@@ -286,10 +287,7 @@ var UnitActions = {
       Game.counter = null;
     },
     endAttack: function () {
-      if (Game.active.unit) { Game.active.unit.attacks -= 1 }
-      Game.action = null;
-      Game.attack = null;
-      Game.counter = null;
+      Game.endAttack();
     },
     beginEnd: function () {
       Game.action = 'ending';
@@ -330,7 +328,7 @@ var Sidepanel = {
         <terrain-info :terrain='space.terrain'></terrain-info>
       </div>
     </transition>
-    <transition name='fade'>
+    <transition :name='dynamicTransition'>
       <div v-if='space && space.unit'>
         <unit-info :unit='space.unit'></unit-info>
         <template v-if="side === 'left'">
@@ -346,6 +344,12 @@ var Sidepanel = {
   </div>
   `,
   props: ['side', 'space', 'action', 'attack', 'counter'],
+  computed: {
+    dynamicTransition: function () {
+      if (this.space && this.space.unit && this.space.unit.condition === 'Defeated') { return 'sayGoodbye' }
+      else { return 'fade' }
+    }
+  },
   components: {
     'terrain-info': TerrainInfo,
     'unit-info': UnitInfo,
@@ -366,30 +370,248 @@ var Game = new Vue ({
     attack: null, // number between 0 and 100
     counter: null // number between 0 and 100
   },
+  watch: {
+    active: function () {
+      if (this.active.unit) {
+        this.map[this.active.unit.posY][this.active.unit.posX].unit.defBonus = this.defenseBonus(this.active, this.target);
+      }
+    },
+    target: function () {
+      if (this.active.unit && this.target) {
+        this.map[this.active.unit.posY][this.active.unit.posX].unit.defBonus = this.defenseBonus(this.active, this.target);
+        this.map[this.target.unit.posY][this.target.unit.posX].unit.defBonus = this.defenseBonus(this.target, this.active);
+      }
+    }
+  },
   methods: {
+    defenseBonus: function (defender, attacker) {
+      var defBonus = 0,
+          cover = defender.terrain.cover,
+          facing = defender.terrain.facing;
+      if (!facing) { defBonus += cover }
+      if (attacker) {
+        if (facing) {
+          switch (facing) {
+            case 'east': if (attacker.posX > defender.posX) { defBonus += cover } break;
+            case 'south': if (attacker.posY > defender.posY) { defBonus += cover } break;
+            case 'west': if (attacker.posX < defender.posX) { defBonus += cover } break;
+            case 'north': if (attacker.posY < defender.posY) { defBonus += cover } break;
+          }
+        }
+        defBonus += Math.abs(defender.posY - attacker.posY) + Math.abs(defender.posX - attacker.posX) - 1;
+      }
+      return defBonus;
+    },
     showMoveRange: function (y, x, moves, path) {
-      
+      var origin = this.map[y][x],
+          east = this.map[y][Math.min(x + 1, 15)],
+          sout = this.map[Math.min(y + 1, 15)][x],
+          west = this.map[y][Math.max(x - 1, 0)],
+          nort = this.map[Math.max(y - 1, 0)][x],
+          explore = [],
+          goEast = function () { Game.showMoveRange(y, Math.min(x + 1, 15), moves - east.terrain.cost, path + 'e') },
+          goSout = function () { Game.showMoveRange(Math.min(y + 1, 15), x, moves - sout.terrain.cost, path + 's') },
+          goWest = function () { Game.showMoveRange(y, Math.max(x - 1, 0),  moves - west.terrain.cost, path + 'w') },
+          goNort = function () { Game.showMoveRange(Math.max(y - 1, 0), x,  moves - nort.terrain.cost, path + 'n') };
+      if (!origin.moves) { origin.moves = moves }
+      if (east.terrain.cost <= moves && (!east.moves || moves - east.terrain.cost > east.moves) && east.unit === null)
+        { east.moves = moves - east.terrain.cost; east.path = path + 'e'; explore.push(goEast) }
+      if (sout.terrain.cost <= moves && (!sout.moves || moves - sout.terrain.cost > sout.moves) && sout.unit === null)
+        { sout.moves = moves - sout.terrain.cost; sout.path = path + 's'; explore.push(goSout) }
+      if (west.terrain.cost <= moves && (!west.moves || moves - west.terrain.cost > west.moves) && west.unit === null)
+        { west.moves = moves - west.terrain.cost; west.path = path + 'w'; explore.push(goWest) }
+      if (nort.terrain.cost <= moves && (!nort.moves || moves - nort.terrain.cost > nort.moves) && nort.unit === null)
+        { nort.moves = moves - nort.terrain.cost; nort.path = path + 'n'; explore.push(goNort) }
+      shuffle(explore);
+      explore.forEach( function (go) { go(); });
     },
     hideMoveRange: function () {
-      
+      var y, x,
+          posY = this.active.unit.posY,
+          posX = this.active.unit.posX,
+          moves = this.active.unit.moves;
+      for (y = Math.max(posY - moves, 0); y <= Math.min(posY + moves, 15); y++) {
+        for (x = Math.max(posX - moves, 0); x <= Math.min(posX + moves, 15); x++) {
+          this.map[y][x].moves = null;
+          this.map[y][x].path = null;
+        }
+      }
     },
     moveUnit: function (y, x, path) {
-      
+      var moveObj = { y: y, x: x, moving: null, changePos: null },
+          spaceFrom, spaceTo, unitData;
+      if (path) {
+        this.hideMoveRange();
+        this.map[y][x].unit.path = path;
+      }
+      switch (this.map[y][x].unit.path[0]) {
+        case 'e':
+          moveObj.x = x + 1;
+          moveObj.moving = 'east';
+          moveObj.changePos = function () { unitData.posX += 1 };
+          break;
+        case 's':
+          moveObj.y = y + 1;
+          moveObj.moving = 'south';
+          moveObj.changePos = function () { unitData.posY += 1 };
+          break;
+        case 'w':
+          moveObj.x = x - 1;
+          moveObj.moving = 'west';
+          moveObj.changePos = function () { unitData.posX -= 1 };
+          break;
+        case 'n':
+          moveObj.y = y - 1;
+          moveObj.moving = 'north';
+          moveObj.changePos = function () { unitData.posY -= 1 };
+          break;
+      }
+      spaceFrom = this.map[y][x],
+      spaceTo = this.map[moveObj.y][moveObj.x],
+      unitData = spaceFrom.unit;
+      spaceFrom.unit = null;
+      unitData.moves -= spaceTo.terrain.cost;
+      unitData.moving = moveObj.moving;
+      unitData.path = unitData.path.substr(1);
+      moveObj.changePos();
+      spaceTo.unit = unitData;
+      this.active = spaceTo;
     },
     showAttackRange: function () {
-      
+      var f, y, x, s, distance, angle, width, shadows = [], inLineOfSight,
+          posY = this.active.unit.posY,
+          posX = this.active.unit.posX,
+          range = this.active.unit.range,
+          findShadows = function (y, x) {
+            if (!Game.map[y][x].terrain.seeThru) {
+              distance = Math.abs(posY - y) + Math.abs(posX - x);
+              angle = Math.atan2(y - posY, x - posX);
+              width = Math.PI / (4 * distance);
+              shadows.push({ distance: distance, angle: angle, width: width });
+            }
+          },
+          findAttackRange = function (y, x) {
+            distance = Math.abs(posY - y) + Math.abs(posX - x);
+            if (distance <= range && Game.map[y][x].terrain.seeThru) {
+              inLineOfSight = true;
+              angle = Math.atan2(y - posY, x - posX);
+              for (s = 0; s < shadows.length; s++) {
+                if (Math.abs(shadows[s].angle - angle) < shadows[s].width && distance > shadows[s].distance) {
+                  inLineOfSight = false;
+                  break;
+                }
+              }
+              if (inLineOfSight) { Game.map[y][x].distance = distance }
+            }
+          },
+          functions = [findShadows, findAttackRange];
+      for (f = 0; f < 2; f++) {
+        for (y = Math.max(posY - range, 0); y <= Math.min(posY + range, 15); y++) {
+          for (x = Math.max(posX - range, 0); x <= Math.min(posX + range, 15); x++) {
+            functions[f](y, x);
+          }
+        }
+      }
     },
     hideAttackRange: function (targetY, targetX) {
-      
+      var y, x, distance, targetDistance,
+          posY = this.active.unit.posY,
+          posX = this.active.unit.posX,
+          range = this.active.unit.range;
+      if (targetY && targetX) { targetDistance = this.map[targetY][targetX].distance }
+      for (y = Math.max(posY - range, 0); y <= Math.min(posY + range, 15); y++) {
+        for (x = Math.max(posX - range, 0); x <= Math.min(posX + range, 15); x++) {
+          this.map[y][x].distance = null;
+        }
+      }
+      if (targetY && targetX) { this.map[targetY][targetX].distance = targetDistance }
     },
     targetUnit: function (y, x) {
-      
+      this.hideAttackRange(y, x);
+      this.target = this.map[y][x];
+      var attacker = this.active.unit,
+          defender = this.target.unit,
+          attackTotal, attack, counterTotal, counter;
+      attackTotal = attacker.offense + defender.defense + this.defenseBonus(this.target, this.active);
+      attack = attacker.offense / attackTotal;
+      this.attack = Math.round(attack * 100);
+      if (defender.range >= this.target.distance) {
+        counterTotal = defender.offense + attacker.defense + this.defenseBonus(this.active, this.target);
+        counter = defender.offense / counterTotal;
+        this.counter = Math.round(counter * 100);
+      } else {
+        this.counter = 0;
+      }
     },
     attackUnit: function (counter) {
-      
+      var attacker, defender, hitChance, spacesY, spacesX, pixelsY, pixelsX, evadeSprite, attack, hit, miss;
+      if (!counter) {
+        this.map[this.target.posY][this.target.posX].distance = null;
+        attacker = this.active.unit;
+        defender = this.target.unit;
+        hitChance = this.attack;
+      } else {
+        attacker = this.target.unit;
+        defender = this.active.unit;
+        hitChance = this.counter;
+      }
+      spacesY = defender.posY - attacker.posY;
+      spacesX = defender.posX - attacker.posX;
+      pixelsY = Math.round(16 * Math.sin(Math.atan2(spacesY, spacesX)));
+      pixelsX = Math.round(16 * Math.cos(Math.atan2(spacesY, spacesX)));
+      evadeSprite = "url('" + defender.sprite.slice(0, -4) + "-evade.png')";
+      attack = {
+        zIndex: [ 99, 99 ],
+        top: [0, (pixelsY + 'px'), 0 ],
+        left: [0, (pixelsX + 'px'), 0 ],
+        easing: 'ease-in-out'
+      };
+      hit = {
+        top: [0, (pixelsY / 3 + 'px'), 0 ],
+        left: [0, (pixelsX / 3 + 'px'), 0 ],
+        boxSizing: ['border-box', 'border-box'],
+        backgroundImage: ["url('sprites/attack-hit.png')", "url('sprites/attack-hit.png')"],
+        paddingLeft: ['32px', '32px'],
+        easing: 'ease-in-out'
+      };
+      miss = {
+        boxSizing: ['border-box', 'border-box'],
+        backgroundImage: [evadeSprite, evadeSprite],
+        paddingLeft: ['32px', '32px'],
+        easing: 'ease-in-out'
+      };
+      document.getElementById(attacker.id).animate(attack, 400);
+      if (Math.random()*100 <= hitChance) {
+        window.setTimeout(function () { document.getElementById(defender.id).animate(hit, 200) }, 200);
+        window.setTimeout(function () { Game.dealDamage(defender.posY, defender.posX) }, 400);
+      } else {
+        window.setTimeout(function () { document.getElementById(defender.id).animate(miss, 300) }, 100);
+      }
+      window.setTimeout(function () {
+        if (!counter && Game.counter > 0 && defender.condition !== 'Defeated') {
+          Game.attackUnit('counter');
+        } else {
+          Game.endAttack();
+        }
+      }, 400);
     },
     dealDamage: function (y, x) {
-      
+      var unit = this.map[y][x].unit;
+      switch (unit.condition) {
+        case 'Healthy': unit.condition = 'Injured'; break;
+        case 'Injured': unit.condition = 'Critical'; break;
+        case 'Critical': unit.condition = 'Defeated'; break;
+      }
+      if (unit.condition === 'Defeated') {
+        window.setTimeout(function () { Game.map[y][x].unit = null }, 500)
+      }
+    },
+    endAttack: function () {
+      var unit = this.active.unit;
+      if (unit) { this.map[unit.posY][unit.posX].unit.attacks -= 1 }
+      this.action = null;
+      this.attack = null;
+      this.counter = null;
     }
   },
   components: {
