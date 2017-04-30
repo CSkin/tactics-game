@@ -24,7 +24,7 @@ function Terrain(type, name, cost, cover, elevation, seeThru) {
   this.name = name;
   this.cost = cost;
   this.cover = cover;
-  this.coverDirection = null;
+  this.facing = null;
   this.elevation = elevation;
   this.seeThru = seeThru;
 }
@@ -47,14 +47,17 @@ function Space(posY, posX, terrain) {
   this.distance = null;
 }
 
-function Unit(id, sprite, faction, name, offense, defense, range, movement, posY, posX) {
+function Unit(id, friendly, controlled, faction, sprite, name, offense, defense, range, movement, posY, posX) {
   this.id = id;
-  this.sprite = 'sprites/' + sprite;
+  this.friendly = friendly;
+  this.controlled = controlled;
   this.faction = faction;
+  this.sprite = 'sprites/' + sprite;
   this.name = name;
   this.condition = 'Healthy';
   this.offense = offense;
   this.defense = defense;
+  this.defBonus = null;
   this.range = range;
   this.movement = movement;
   this.moves = this.movement;
@@ -66,7 +69,7 @@ function Unit(id, sprite, faction, name, offense, defense, range, movement, posY
   this.posX = posX;
 }
 
-var player0 = new Unit('player0', 'player.png', 'Player', 'Player Unit', 2, 2, 3, 10, 9, 4),
-    enemy0  = new Unit('enemy0', 'enemy.png', 'Enemy', 'Enemy Unit', 2, 1, 3, 5, 6, 11);
+var player0 = new Unit('player0', true, true, 'Player', 'player.png', 'Player Unit', 2, 2, 3, 10, 9, 4),
+    enemy0  = new Unit('enemy0', false, false, 'Enemy', 'enemy.png', 'Enemy Unit', 2, 1, 3, 5, 6, 11);
 
 var unitPlan = [ player0, enemy0 ];
