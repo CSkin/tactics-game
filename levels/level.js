@@ -72,4 +72,12 @@ function Unit(id, friendly, controlled, faction, sprite, name, offense, defense,
 var player0 = new Unit('player0', true, true, 'Player', 'player.png', 'Player Unit', 2, 2, 3, 10, 9, 4),
     enemy0  = new Unit('enemy0', false, false, 'Enemy', 'enemy.png', 'Enemy Unit', 2, 1, 3, 5, 6, 11);
 
-var unitPlan = [ player0, enemy0 ];
+var unitPlan = [
+  {
+    faction: 'Player',
+    units: [ player0 ]
+  }, {
+    faction: 'Enemy',
+    units: [ enemy0 ]
+  }
+];

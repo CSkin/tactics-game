@@ -34,12 +34,13 @@ function directionalCover (mapData) {
 }
 
 function loadUnits (mapData, unitPlan) {
-  var u, y, x, unit;
-  for (u = 0; u < unitPlan.length; u++) {
-    y = unitPlan[u].posY;
-    x = unitPlan[u].posX;
-    unit = unitPlan[u];
-    mapData[y][x].unit = unit;
+  var f, u, y, x, unit;
+  for (f = 0; f < unitPlan.length; f++) {
+    for (u = 0; u < unitPlan[f].units.length; u++) {
+      y = unitPlan[f].units[u].posY;
+      x = unitPlan[f].units[u].posX;
+      mapData[y][x].unit = unitPlan[f].units[u];
+    }
   }
   return mapData;
 }
@@ -140,6 +141,8 @@ var Space = {
           unit = this.space.unit,
           path = this.space.path;
       switch (Game.action) {
+        case 'beginning':
+          break;
         case 'moving':
           if (path) { Game.moveUnit(Game.active.posY, Game.active.posX, path) }
           else {
@@ -265,8 +268,8 @@ var UnitActions = {
     beginMove: function () {
       var unit = Game.active.unit;
       Game.showMoveRange(unit.posY, unit.posX, unit.moves, '');
-      Game.target = null;
       Game.action = 'moving';
+      Game.target = null;
     },
     cancelMove: function () {
       Game.hideMoveRange();
@@ -274,13 +277,13 @@ var UnitActions = {
     },
     beginAttack: function () {
       Game.showAttackRange();
-      Game.target = null;
       Game.action = 'attacking';
+      Game.target = null;
     },
     cancelAttack: function () {
       Game.hideAttackRange();
-      Game.target = null;
       Game.action = null;
+      Game.target = null;
       Game.attack = null;
       Game.counter = null;
     },
@@ -294,11 +297,7 @@ var UnitActions = {
       Game.action = null;
     },
     endTurn: function () {
-      var unit = Game.active.unit;
-      unit.moves = unit.movement;
-      unit.attacks = unit.attacksperturn;
-      Game.target = null;
-      Game.action = null;
+      Game.endTurn();
     }
   }
 };
@@ -318,7 +317,7 @@ var TargetActions = {
   }
 };
 
-var Sidepanel = {
+var SidePanel = {
   template: `
   <div>
     <transition name='fade'>
@@ -355,18 +354,67 @@ var Sidepanel = {
     'unit-actions': UnitActions,
     'target-actions': TargetActions
   }
-}
+};
+
+var TurnBanner = {
+  template:`
+  <transition name='banner' @after-enter='bannerIn' @after-leave='bannerOut'>
+    <div id='banner-back' class='banner' :style='bannerBack'>
+      <div id='banner-fore' class='banner' :style='bannerFore'>
+        <div id='banner-text' class='banner'>{{ bannerText }}</div>
+      </div>
+    </div>
+  </transition>
+  `,
+  props: ['faction'],
+  computed: {
+    bannerBack: function () {
+      var r, g, b, transp, opaque;
+      switch (unitPlan[this.faction].faction) {
+        case 'Player': r = 140; g = 104; b = 21;  break;
+        case 'Enemy':  r = 0;   g = 63;  b = 31;  break;
+      }
+      transp = 'rgba(' + r + ', ' + g + ', ' + b + ', 0)';
+      opaque = 'rgba(' + r + ', ' + g + ', ' + b + ', 1)';
+      return { background: 'linear-gradient(to left, '+transp+', '+opaque+', '+opaque+', '+opaque+', '+transp+')' }
+    },
+    bannerFore: function () {
+      var r, g, b, transp, opaque;
+      switch (unitPlan[this.faction].faction) {
+        case 'Player': r = 218; g = 165; b = 32;  break;
+        case 'Enemy':  r = 0;   g = 140; b = 70;  break;
+      }
+      transp = 'rgba(' + r + ', ' + g + ', ' + b + ', 0)';
+      opaque = 'rgba(' + r + ', ' + g + ', ' + b + ', 1)';
+      return { background: 'linear-gradient(to left, '+transp+', '+opaque+', '+opaque+', '+opaque+', '+transp+')' }
+    },
+    bannerText: function () {
+      return unitPlan[this.faction].faction.toUpperCase() + ' TURN';
+    }
+  },
+  methods: {
+    bannerIn: function () {
+      Game.banner = false;
+    },
+    bannerOut: function () {
+      Game.action = null;
+    }
+  }
+};
 
 var Game = new Vue ({
   el:'#game',
   data: {
     mapImage: mapImage,
     map: loadLevel(),
-    active: null, // Space object
-    target: null, // Space object
-    action: null, // string
-    attack: null, // number between 0 and 100
-    counter: null // number between 0 and 100
+    turnNum: 1,           // number (index of current turn)
+    turnFac: 0,           // number (index of faction in unitPlan)
+    banner: false,        // boolean
+    action: 'beginning',  // string ( 'beginning' / 'moving' / 'attacking' / 'ending' )
+    active: null,         // Space object
+    target: null,         // Space object
+    attack: null,         // number between 0 and 100
+    counter: null         // number between 0 and 100
   },
   watch: {
     active: function () {
@@ -382,23 +430,16 @@ var Game = new Vue ({
     }
   },
   methods: {
-    defenseBonus: function (defender, attacker) {
-      var defBonus = 0,
-          cover = defender.terrain.cover,
-          facing = defender.terrain.facing;
-      if (!facing) { defBonus += cover }
-      if (attacker) {
-        if (facing) {
-          switch (facing) {
-            case 'East': if (attacker.posX > defender.posX) { defBonus += cover } break;
-            case 'South': if (attacker.posY > defender.posY) { defBonus += cover } break;
-            case 'West': if (attacker.posX < defender.posX) { defBonus += cover } break;
-            case 'North': if (attacker.posY < defender.posY) { defBonus += cover } break;
-          }
-        }
-        defBonus += Math.abs(defender.posY - attacker.posY) + Math.abs(defender.posX - attacker.posX) - 1;
+    beginTurn: function () {
+      var u, unit,
+          units = unitPlan[this.turnFac].units;
+      for (u = 0; u < units.length; u++) {
+        unit = this.map[units[u].posY][units[u].posX].unit;
+        unit.moves = unit.movement;
+        unit.attacks = unit.attacksperturn;
       }
-      return defBonus;
+      this.banner = true;
+      this.action = 'beginning';
     },
     showMoveRange: function (y, x, moves, path) {
       var origin = this.map[y][x],
@@ -541,6 +582,24 @@ var Game = new Vue ({
         this.counter = 0;
       }
     },
+    defenseBonus: function (defender, attacker) {
+      var defBonus = 0,
+          cover = defender.terrain.cover,
+          facing = defender.terrain.facing;
+      if (!facing) { defBonus += cover }
+      if (attacker) {
+        if (facing) {
+          switch (facing) {
+            case 'East': if (attacker.posX > defender.posX) { defBonus += cover } break;
+            case 'South': if (attacker.posY > defender.posY) { defBonus += cover } break;
+            case 'West': if (attacker.posX < defender.posX) { defBonus += cover } break;
+            case 'North': if (attacker.posY < defender.posY) { defBonus += cover } break;
+          }
+        }
+        defBonus += Math.abs(defender.posY - attacker.posY) + Math.abs(defender.posX - attacker.posX) - 1;
+      }
+      return defBonus;
+    },
     attackUnit: function (counter) {
       var attacker, defender, hitChance, spacesY, spacesX, pixelsY, pixelsX, evadeSprite, attack, hit, miss;
       if (!counter) {
@@ -610,11 +669,17 @@ var Game = new Vue ({
       this.action = null;
       this.attack = null;
       this.counter = null;
+    },
+    endTurn: function () {
+      this.action = null;
+      this.target = null;
+      this.beginTurn();
     }
   },
   components: {
     'row': Row,
-    'side-panel': Sidepanel
+    'side-panel': SidePanel,
+    'turn-banner': TurnBanner
   }
 });
 
@@ -643,5 +708,7 @@ function keyHandler () {
 }
 
 $( document ).keyup( keyHandler );
+
+window.setTimeout(function () { Game.beginTurn() }, 500);
 
 });
