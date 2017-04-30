@@ -23,10 +23,10 @@ function directionalCover (mapData) {
   for (y = 0; y < 16; y++) {
     for (x = 0; x < 16; x++) {
       if (mapData[y][x].terrain.type === 'log') {
-        if      (mapData[y][x + 1].terrain.type === 'log') { mapData[y][x].terrain.facing = 'east' }
-        else if (mapData[y + 1][x].terrain.type === 'log') { mapData[y][x].terrain.facing = 'south' }
-        else if (mapData[y][x - 1].terrain.type === 'log') { mapData[y][x].terrain.facing = 'west' }
-        else if (mapData[y - 1][x].terrain.type === 'log') { mapData[y][x].terrain.facing = 'north' }
+        if      (mapData[y][x + 1].terrain.type === 'log') { mapData[y][x].terrain.facing = 'East' }
+        else if (mapData[y + 1][x].terrain.type === 'log') { mapData[y][x].terrain.facing = 'South' }
+        else if (mapData[y][x - 1].terrain.type === 'log') { mapData[y][x].terrain.facing = 'West' }
+        else if (mapData[y - 1][x].terrain.type === 'log') { mapData[y][x].terrain.facing = 'North' }
       }
     }
   }
@@ -191,11 +191,9 @@ var TerrainInfo = {
   template: `
   <div class='ui'>
     <div class='heading'><div class='icon' :class='terrain.type'></div>{{ terrain.name }}</div>
-    <p v-if='terrain.cost < 99'>Move cost: <b>{{ terrain.cost }}</b></p>
-    <p v-else>Impassable</p>
-    <p v-if='terrain.cover > 0'>Cover: <b>{{ terrain.cover }}</b>
-      <span v-if='terrain.facing' class='small'>vs attacks from <b>{{ terrain.facing }}</b></span>
-    </p>
+    <p v-if='terrain.cost < 99'>Move cost: <b>{{ terrain.cost }}</b></p><p v-else>Impassable</p>
+    <p v-if='terrain.cover > 0'>Cover: <b>{{ terrain.cover }}</b></p>
+    <p v-if='terrain.facing'>Facing: <b>{{ terrain.facing }}</b></p>
     <p v-if='terrain.elevation > 0'>Elevation: <b>{{ terrain.elevation }}</b></p>
   </div>
   `,
@@ -392,10 +390,10 @@ var Game = new Vue ({
       if (attacker) {
         if (facing) {
           switch (facing) {
-            case 'east': if (attacker.posX > defender.posX) { defBonus += cover } break;
-            case 'south': if (attacker.posY > defender.posY) { defBonus += cover } break;
-            case 'west': if (attacker.posX < defender.posX) { defBonus += cover } break;
-            case 'north': if (attacker.posY < defender.posY) { defBonus += cover } break;
+            case 'East': if (attacker.posX > defender.posX) { defBonus += cover } break;
+            case 'South': if (attacker.posY > defender.posY) { defBonus += cover } break;
+            case 'West': if (attacker.posX < defender.posX) { defBonus += cover } break;
+            case 'North': if (attacker.posY < defender.posY) { defBonus += cover } break;
           }
         }
         defBonus += Math.abs(defender.posY - attacker.posY) + Math.abs(defender.posX - attacker.posX) - 1;
