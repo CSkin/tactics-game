@@ -19,7 +19,7 @@ var mapPlan = [
   ' - - - - - - - - - - - - - - - - ',
 ];
 
-function Terrain(type, name, cost, cover, elevation, seeThru) {
+function Terrain (type, name, cost, cover, elevation, seeThru) {
   this.type = type;
   this.name = name;
   this.cost = cost;
@@ -37,7 +37,7 @@ var barren = new Terrain('barren', 'Barren', 99, 0, 0, true),
     boulder = new Terrain('boulder', 'Boulder', 99, 0, 0, false),
     log = new Terrain('log', 'Log', 1, 2, 0, true);
 
-function Space(posY, posX, terrain) {
+function Space (posY, posX, terrain) {
   this.posY = posY;
   this.posX = posX;
   this.terrain = terrain;
@@ -47,10 +47,8 @@ function Space(posY, posX, terrain) {
   this.distance = null;
 }
 
-function Unit(id, friendly, controlled, faction, sprite, name, offense, defense, range, movement, posY, posX) {
+function Unit (id, faction, sprite, name, offense, defense, range, movement, posY, posX, friendly, control, ai) {
   this.id = id;
-  this.friendly = friendly;
-  this.controlled = controlled;
   this.faction = faction;
   this.sprite = 'sprites/' + sprite;
   this.name = name;
@@ -63,21 +61,26 @@ function Unit(id, friendly, controlled, faction, sprite, name, offense, defense,
   this.moves = this.movement;
   this.moving = null;
   this.path = null;
-  this.attacksperturn = 5;
+  this.attacksperturn = 1;
   this.attacks = this.attacksperturn;
   this.posY = posY;
   this.posX = posX;
+  this.friendly = friendly;
+  this.control = control;
+  if (ai) { this.ai = ai }
 }
 
-var player0 = new Unit('player0', true, true, 'Player', 'player.png', 'Player Unit', 2, 2, 3, 10, 9, 4),
-    enemy0  = new Unit('enemy0', false, false, 'Enemy', 'enemy.png', 'Enemy Unit', 2, 1, 3, 5, 6, 11);
+var player0 = new Unit('player0', 'Player', 'player.png', 'Player Unit', 1, 2, 3, 5, 9, 4, true, 'player'),
+    enemy0  = new Unit('enemy0', 'Enemy', 'enemy.png', 'Enemy Unit', 2, 1, 3, 5, 6, 11, false, 'ai', 'dumb');
 
 var unitPlan = [
   {
     faction: 'Player',
+    control: 'player',
     units: [ player0 ]
   }, {
     faction: 'Enemy',
+    control: 'ai',
     units: [ enemy0 ]
   }
 ];

@@ -49,6 +49,14 @@ function loadLevel () {
   return loadUnits(directionalCover(loadMap(mapPlan)), unitPlan);
 }
 
+function loadFactions () {
+  var obj, factions = [];
+  for (obj of unitPlan) {
+    factions.push(obj.faction);
+  }
+  return factions;
+}
+
 function shuffle (array) {
   var i, j, temp;
   for (i = array.length - 1; i > 0; i--) {
@@ -140,30 +148,32 @@ var Space = {
           x = this.space.posX,
           unit = this.space.unit,
           path = this.space.path;
-      switch (Game.action) {
-        case 'beginning':
-          break;
-        case 'moving':
-          if (path) { Game.moveUnit(Game.active.posY, Game.active.posX, path) }
-          else {
-            $( '#btn-unmove' ).trigger( 'click' );
+      if (Game.control === 'player') {
+        switch (Game.action) {
+          case 'beginning':
+            break;
+          case 'moving':
+            if (path) { Game.moveUnit(Game.active.posY, Game.active.posX, path) }
+            else {
+              $( '#btn-unmove' ).trigger( 'click' );
+              this.selectSpace(y, x);
+            }
+            break;
+          case 'attacking':
+            if (this.space.distance && unit && !unit.friendly) { Game.targetUnit(y, x) }
+            else {
+              $( '#btn-unattack' ).trigger( 'click' );
+              this.selectSpace(y, x);
+            }
+            break;
+          case 'ending':
+            $( '#btn-unend' ).trigger( 'click' );
             this.selectSpace(y, x);
-          }
-          break;
-        case 'attacking':
-          if (this.space.distance && unit && !unit.friendly) { Game.targetUnit(y, x) }
-          else {
-            $( '#btn-unattack' ).trigger( 'click' );
+            break;
+          default:
             this.selectSpace(y, x);
-          }
-          break;
-        case 'ending':
-          $( '#btn-unend' ).trigger( 'click' );
-          this.selectSpace(y, x);
-          break;
-        default:
-          this.selectSpace(y, x);
-          break;
+            break;
+        }
       }
     },
     selectSpace: function (y, x) {
@@ -243,7 +253,7 @@ var UnitCombat = {
 
 var UnitActions = {
   template: `
-  <div class='ui' v-if='unit.controlled'>
+  <div class='ui' v-if="unit.control === 'player'">
     <p class='heading'><img class='icon' src='sprites/actions-icon.png'>Actions</p>
     <p v-if="!action || action === 'moving'">
       <button id='btn-move' v-if='!action' :disabled='unit.moves === 0' @click='beginMove'>Move (M)</button>
@@ -361,7 +371,7 @@ var TurnBanner = {
   <transition name='banner' @after-enter='bannerIn' @after-leave='bannerOut'>
     <div id='banner-back' class='banner' :style='bannerBack'>
       <div id='banner-fore' class='banner' :style='bannerFore'>
-        <div id='banner-text' class='banner'>{{ bannerText }}</div>
+        <div id='banner-text' class='banner'>{{ faction.toUpperCase() }} TURN</div>
       </div>
     </div>
   </transition>
@@ -370,7 +380,7 @@ var TurnBanner = {
   computed: {
     bannerBack: function () {
       var r, g, b, transp, opaque;
-      switch (unitPlan[this.faction].faction) {
+      switch (this.faction) {
         case 'Player': r = 140; g = 104; b = 21;  break;
         case 'Enemy':  r = 0;   g = 63;  b = 31;  break;
       }
@@ -380,16 +390,13 @@ var TurnBanner = {
     },
     bannerFore: function () {
       var r, g, b, transp, opaque;
-      switch (unitPlan[this.faction].faction) {
+      switch (this.faction) {
         case 'Player': r = 218; g = 165; b = 32;  break;
         case 'Enemy':  r = 0;   g = 140; b = 70;  break;
       }
       transp = 'rgba(' + r + ', ' + g + ', ' + b + ', 0)';
       opaque = 'rgba(' + r + ', ' + g + ', ' + b + ', 1)';
       return { background: 'linear-gradient(to left, '+transp+', '+opaque+', '+opaque+', '+opaque+', '+transp+')' }
-    },
-    bannerText: function () {
-      return unitPlan[this.faction].faction.toUpperCase() + ' TURN';
     }
   },
   methods: {
@@ -407,23 +414,34 @@ var Game = new Vue ({
   data: {
     mapImage: mapImage,
     map: loadLevel(),
-    turnNum: 1,           // number (index of current turn)
-    turnFac: 0,           // number (index of faction in unitPlan)
-    banner: false,        // boolean
-    action: 'beginning',  // string ( 'beginning' / 'moving' / 'attacking' / 'ending' )
+    factions: loadFactions(),
+    turn: {
+      number: 1,          // turn counter
+      facInd: 0           // faction index
+    },
+    banner: false,        // controls turn animation
+    action: 'beginning',  // 'beginning' / 'moving' / 'attacking' / 'ending'
     active: null,         // Space object
     target: null,         // Space object
-    attack: null,         // number between 0 and 100
-    counter: null         // number between 0 and 100
+    attack: null,         // attack success chance
+    counter: null         // counter success chance
+  },
+  computed: {
+    faction: function () {
+      return this.factions[this.turn.facInd];
+    },
+    control: function () {
+      return unitPlan.filter(function(obj) { return obj.faction === Game.faction })[0].control;
+    }
   },
   watch: {
     active: function () {
-      if (this.active.unit) {
+      if (this.active && this.active.unit) {
         this.map[this.active.unit.posY][this.active.unit.posX].unit.defBonus = this.defenseBonus(this.active, this.target);
       }
     },
     target: function () {
-      if (this.active.unit && this.target) {
+      if (this.active && this.active.unit && this.target) {
         this.map[this.active.unit.posY][this.active.unit.posX].unit.defBonus = this.defenseBonus(this.active, this.target);
         this.map[this.target.unit.posY][this.target.unit.posX].unit.defBonus = this.defenseBonus(this.target, this.active);
       }
@@ -432,14 +450,31 @@ var Game = new Vue ({
   methods: {
     beginTurn: function () {
       var u, unit,
-          units = unitPlan[this.turnFac].units;
-      for (u = 0; u < units.length; u++) {
-        unit = this.map[units[u].posY][units[u].posX].unit;
-        unit.moves = unit.movement;
-        unit.attacks = unit.attacksperturn;
+          units = this.getUnits(this.faction);
+      if (units.length > 0) {
+        for (u = 0; u < units.length; u++) {
+          unit = this.map[units[u].posY][units[u].posX].unit;
+          unit.moves = unit.movement;
+          unit.attacks = unit.attacksperturn;
+        }
+        this.banner = true;
+        this.action = 'beginning';
+        if (this.control === 'ai') {
+          window.setTimeout(function () { Game.aiFactionBot() }, 2000);
+        }
+      } else {
+        this.endTurn();
       }
-      this.banner = true;
-      this.action = 'beginning';
+    },
+    getUnits: function (faction) {
+      var y, x, space, units = [];
+      for (y = 0; y < 16; y++) {
+        for (x = 0; x < 16; x++) {
+          space = this.map[y][x];
+          if (space.unit && space.unit.faction === faction) { units.push(space.unit) }
+        }
+      }
+      return units;
     },
     showMoveRange: function (y, x, moves, path) {
       var origin = this.map[y][x],
@@ -672,8 +707,18 @@ var Game = new Vue ({
     },
     endTurn: function () {
       this.action = null;
+      this.active = null;
       this.target = null;
+      if (this.turn.facInd < this.factions.length - 1) {
+        this.turn.facInd += 1
+      } else {
+        this.turn.number += 1;
+        this.turn.facInd = 0;
+      }
       this.beginTurn();
+    },
+    aiFactionBot: function () {
+      window.setTimeout(function () { Game.endTurn() }, 1000);
     }
   },
   components: {
@@ -685,7 +730,7 @@ var Game = new Vue ({
 
 function keyHandler () {
   // console.log('keyCode: ' + event.keyCode); // Developer mode
-  if (Game.active && Game.active.unit && Game.active.unit.controlled) {
+  if (Game.control === 'player' && Game.active && Game.active.unit && Game.active.unit.control === 'player') {
     switch (event.keyCode) {
       case 13:
         if (Game.action === 'attacking') { $( '#btn-confatk' ).trigger( 'click' ); }

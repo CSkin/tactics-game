@@ -208,7 +208,7 @@ button {
 /* Transition Classes */
 
 .fade-enter-active, .fade-leave-active {
-  transition: opacity 200ms;
+  transition: opacity 200ms ease-in-out;
 }
 
 .fade-enter, .fade-leave-to {
@@ -224,7 +224,7 @@ button {
 }
 
 .banner-enter-to, .banner-leave {
-  left: calc(50% - 150px); /* px should be half of .banner width */
+  left: calc(50% - 150px);
 }
 
 .banner-leave-active {
@@ -232,7 +232,7 @@ button {
 }
 
 .banner-leave-to {
-  left: -300px; /* should equal .banner width */
+  left: -300px;
 }
 
 .moveEast-enter-active {
@@ -268,7 +268,7 @@ button {
 }
 
 .sayGoodbye-leave-active {
-  transition: opacity 1s .5s;
+  transition: opacity 1s 500ms;
 }
 
 .sayGoodbye-leave-to {
