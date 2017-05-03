@@ -65,6 +65,7 @@ function shuffle (array) {
     array[i] = array[j];
     array[j] = temp;
   }
+  return array;
 }
 
 $( document ).ready( function () {
@@ -386,7 +387,7 @@ var TurnBanner = {
       }
       transp = 'rgba(' + r + ', ' + g + ', ' + b + ', 0)';
       opaque = 'rgba(' + r + ', ' + g + ', ' + b + ', 1)';
-      return { background: 'linear-gradient(to left, '+transp+', '+opaque+', '+opaque+', '+opaque+', '+transp+')' }
+      return { background: 'linear-gradient(to left,'+transp+','+opaque+','+opaque+','+opaque+','+transp+')' }
     },
     bannerFore: function () {
       var r, g, b, transp, opaque;
@@ -396,7 +397,7 @@ var TurnBanner = {
       }
       transp = 'rgba(' + r + ', ' + g + ', ' + b + ', 0)';
       opaque = 'rgba(' + r + ', ' + g + ', ' + b + ', 1)';
-      return { background: 'linear-gradient(to left, '+transp+', '+opaque+', '+opaque+', '+opaque+', '+transp+')' }
+      return { background: 'linear-gradient(to left,'+transp+','+opaque+','+opaque+','+opaque+','+transp+')' }
     }
   },
   methods: {
@@ -415,10 +416,9 @@ var Game = new Vue ({
     mapImage: mapImage,
     map: loadLevel(),
     factions: loadFactions(),
-    turn: {
-      number: 1,          // turn counter
-      facInd: 0           // faction index
-    },
+    turn: 1,
+    factionIndex: 0,
+    unitIndex: 0,
     banner: false,        // controls turn animation
     action: 'beginning',  // 'beginning' / 'moving' / 'attacking' / 'ending'
     active: null,         // Space object
@@ -428,10 +428,13 @@ var Game = new Vue ({
   },
   computed: {
     faction: function () {
-      return this.factions[this.turn.facInd];
+      return this.factions[this.factionIndex];
     },
     control: function () {
-      return unitPlan.filter(function(obj) { return obj.faction === Game.faction })[0].control;
+      return unitPlan.filter(function (obj) { return obj.faction === Game.faction })[0].control;
+    },
+    units: function () {
+      return shuffle(this.getUnits(this.faction));
     }
   },
   watch: {
@@ -448,34 +451,6 @@ var Game = new Vue ({
     }
   },
   methods: {
-    beginTurn: function () {
-      var u, unit,
-          units = this.getUnits(this.faction);
-      if (units.length > 0) {
-        for (u = 0; u < units.length; u++) {
-          unit = this.map[units[u].posY][units[u].posX].unit;
-          unit.moves = unit.movement;
-          unit.attacks = unit.attacksperturn;
-        }
-        this.banner = true;
-        this.action = 'beginning';
-        if (this.control === 'ai') {
-          window.setTimeout(function () { Game.aiFactionBot() }, 2000);
-        }
-      } else {
-        this.endTurn();
-      }
-    },
-    getUnits: function (faction) {
-      var y, x, space, units = [];
-      for (y = 0; y < 16; y++) {
-        for (x = 0; x < 16; x++) {
-          space = this.map[y][x];
-          if (space.unit && space.unit.faction === faction) { units.push(space.unit) }
-        }
-      }
-      return units;
-    },
     showMoveRange: function (y, x, moves, path) {
       var origin = this.map[y][x],
           east = this.map[y][Math.min(x + 1, 15)],
@@ -496,8 +471,7 @@ var Game = new Vue ({
         { west.moves = moves - west.terrain.cost; west.path = path + 'w'; explore.push(goWest) }
       if (nort.terrain.cost <= moves && (!nort.moves || moves - nort.terrain.cost > nort.moves) && nort.unit === null)
         { nort.moves = moves - nort.terrain.cost; nort.path = path + 'n'; explore.push(goNort) }
-      shuffle(explore);
-      explore.forEach( function (go) { go(); });
+      shuffle(explore).forEach( function (go) { go(); } );
     },
     hideMoveRange: function () {
       var y, x,
@@ -674,12 +648,12 @@ var Game = new Vue ({
       };
       document.getElementById(attacker.id).animate(attack, 400);
       if (Math.random()*100 <= hitChance) {
-        window.setTimeout(function () { document.getElementById(defender.id).animate(hit, 200) }, 200);
-        window.setTimeout(function () { Game.dealDamage(defender.posY, defender.posX) }, 400);
+        window.setTimeout(function(){ document.getElementById(defender.id).animate(hit, 200) }, 200);
+        window.setTimeout(function(){ Game.dealDamage(defender.posY, defender.posX) }, 400);
       } else {
-        window.setTimeout(function () { document.getElementById(defender.id).animate(miss, 300) }, 100);
+        window.setTimeout(function(){ document.getElementById(defender.id).animate(miss, 300) }, 100);
       }
-      window.setTimeout(function () {
+      window.setTimeout(function(){
         if (!counter && Game.counter > 0 && defender.condition !== 'Defeated') {
           Game.attackUnit('counter');
         } else {
@@ -695,7 +669,7 @@ var Game = new Vue ({
         case 'Critical': unit.condition = 'Defeated'; break;
       }
       if (unit.condition === 'Defeated') {
-        window.setTimeout(function () { Game.map[y][x].unit = null }, 500)
+        window.setTimeout(function(){ Game.map[y][x].unit = null }, 500)
       }
     },
     endAttack: function () {
@@ -705,20 +679,61 @@ var Game = new Vue ({
       this.attack = null;
       this.counter = null;
     },
+    beginTurn: function () {
+      var u, unit, units = this.units;
+      if (units.length > 0) {
+        for (u = 0; u < units.length; u++) {
+          unit = this.map[units[u].posY][units[u].posX].unit;
+          unit.moves = unit.movement;
+          unit.attacks = unit.attacksperturn;
+        }
+        this.banner = true;
+        this.action = 'beginning';
+        if (this.control === 'ai') {
+          window.setTimeout(function(){ Game.aiFaction() }, 2000);
+        }
+      } else {
+        this.endTurn();
+      }
+    },
+    getUnits: function (faction) {
+      var y, x, space, units = [];
+      for (y = 0; y < 16; y++) {
+        for (x = 0; x < 16; x++) {
+          space = this.map[y][x];
+          if (space.unit && space.unit.faction === faction) { units.push(space.unit) }
+        }
+      }
+      return units;
+    },
+    aiFaction: function () {
+      var unitFunc;
+      if (this.unitIndex < this.units.length) {
+        switch (this.units[this.unitIndex].behavior) {
+          case 'dumb': unitFunc = this.aiUnitDumb; break;
+        }
+        window.setTimeout(function(){ unitFunc() }, 500);
+      } else {
+        this.endTurn();
+      }
+    },
+    aiUnitDumb: function () {
+      console.log(this.units[this.unitIndex].name + ' is ' + this.units[this.unitIndex].behavior + '.');
+      this.unitIndex += 1;
+      window.setTimeout(function(){ Game.aiFaction() }, 500);
+    },
     endTurn: function () {
+      if (this.factionIndex < this.factions.length - 1) {
+        this.factionIndex += 1;
+      } else {
+        this.turn += 1;
+        this.factionIndex = 0;
+      }
+      this.unitIndex = 0;
       this.action = null;
       this.active = null;
       this.target = null;
-      if (this.turn.facInd < this.factions.length - 1) {
-        this.turn.facInd += 1
-      } else {
-        this.turn.number += 1;
-        this.turn.facInd = 0;
-      }
       this.beginTurn();
-    },
-    aiFactionBot: function () {
-      window.setTimeout(function () { Game.endTurn() }, 1000);
     }
   },
   components: {
@@ -754,6 +769,6 @@ function keyHandler () {
 
 $( document ).keyup( keyHandler );
 
-window.setTimeout(function () { Game.beginTurn() }, 500);
+window.setTimeout(function(){ Game.beginTurn() }, 500);
 
 });
