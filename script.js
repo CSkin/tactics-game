@@ -72,7 +72,7 @@ $( document ).ready( function () {
 
 var Terrain = {
   // To use terrain sprites instead of map image, set v-if to true.
-  template: "<div v-if='false' class='terrain space' :class='terrain.type' tabindex=0></div>",
+  template: "<div v-if='false' class='terrain space' :class='terrain.type'></div>",
   props: ['terrain']
 };
 
@@ -90,8 +90,8 @@ var Highlight = {
           distance = this.space.distance;
       return {
         movable: path,
-        inrange: distance && (!unit || unit.friendly),
-        attackable: distance && unit && !unit.friendly
+        attackable: distance && (!unit || unit.friendly === Game.active.unit.friendly),
+        targeted: distance && unit && unit.friendly !== Game.active.unit.friendly
       };
     }
   }
@@ -100,7 +100,7 @@ var Highlight = {
 var Unit = {
   template: `
   <transition :name='dynamicTransition' @after-enter='moveHandler'>
-    <img :id= 'unit.id' v-if='unit' class='unit space' :src='unit.sprite' tabindex=0></img>
+    <img :id= 'unit.id' v-if='unit' class='unit space' :src='unit.sprite'></img>
   </transition>
   `,
   props: ['unit'],
@@ -136,7 +136,7 @@ var Unit = {
 
 var Space = {
   template: `
-    <div class='space' @click='clickHandler' tabindex=0>
+    <div class='space' @click='clickHandler'>
       <terrain :terrain='space.terrain'></terrain>
       <highlight :space='space'></highlight>
       <unit :unit='space.unit'></unit>
@@ -654,7 +654,7 @@ var Game = new Vue ({
       document.getElementById(attacker.id).animate(attack, 500);
       if (Math.random()*100 <= hitChance) {
         window.setTimeout(function(){ document.getElementById(defender.id).animate(hit, 250) }, 250);
-        window.setTimeout(function(){ Game.dealDamage(defender.posY, defender.posX) }, 500);
+        window.setTimeout(function(){ Game.dealDamage(defender.posY, defender.posX) }, 250);
       } else {
         window.setTimeout(function(){ document.getElementById(defender.id).animate(miss, 350) }, 150);
       }
@@ -731,30 +731,31 @@ var Game = new Vue ({
       var unit = this.units[this.unitIndex];
       this.active = this.map[unit.posY][unit.posX];
       unit = this.active.unit;
-      window.setTimeout(function(){ Game.showAttackRange() }, 500);
-      window.setTimeout(function(){ Game.aiChooseTarget() }, 1000);
+      window.setTimeout(function(){
+        Game.showAttackRange();
+        Game.aiChooseTarget();
+      }, 500);
       window.setTimeout(function(){
         if (Game.target) {
           Game.attackUnit();
-          window.setTimeout(function(){ Game.aiPassControl() }, 2500);
+          window.setTimeout(function(){
+            if (Game.active.unit.condition !== 'Defeated' && Game.target.unit.condition !== 'Defeated') {
+              window.setTimeout(function(){ Game.aiPassControl() }, 500);
+            }
+            else {
+              window.setTimeout(function(){ Game.aiPassControl() }, 2000);
+            }
+          }, 1000);
         } else {
           Game.aiPassControl();
         }
-      }, 1500);
+      }, 1000);
     },
     aiChooseTarget: function () {
       var y, x, space, targets = [], bestAttack = 0,
           posY = this.active.unit.posY,
           posX = this.active.unit.posX,
-          range = this.active.unit.range,
-          betterAttack = function (target) {
-            if (target.attack >= bestAttack) {
-              bestAttack = target.attack;
-              return true;
-            } else {
-              return false;
-            }
-          };
+          range = this.active.unit.range;
       for (y = Math.max(posY - range, 0); y <= Math.min(posY + range, 15); y++) {
         for (x = Math.max(posX - range, 0); x <= Math.min(posX + range, 15); x++) {
           space = this.map[y][x];
@@ -765,7 +766,8 @@ var Game = new Vue ({
         }
       }
       if (targets.length > 0) {
-        target = shuffle(targets.filter(betterAttack))[0];
+        targets.forEach(function(target){ if (target.attack > bestAttack) { bestAttack = target.attack } });
+        target = shuffle(targets.filter(target => target.attack === bestAttack))[0];
         this.hideAttackRange(target.posY, target.posX);
         this.targetUnit(target.posY, target.posX);
       } else {
