@@ -47,7 +47,7 @@ function Space (posY, posX, terrain) {
   this.distance = null;
 }
 
-function Unit (id, faction, sprite, name, offense, defense, range, movement, posY, posX, friendly, control, ai) {
+function Unit (id, faction, sprite, name, offense, defense, range, movement, posY, posX, friendly, control, behavior) {
   this.id = id;
   this.faction = faction;
   this.sprite = 'sprites/' + sprite;
@@ -67,11 +67,11 @@ function Unit (id, faction, sprite, name, offense, defense, range, movement, pos
   this.posX = posX;
   this.friendly = friendly;
   this.control = control;
-  if (ai) { this.ai = ai }
+  if (behavior) { this.behavior = behavior }
 }
 
 var player0 = new Unit('player0', 'Player', 'player.png', 'Player Unit', 1, 2, 3, 5, 9, 4, true, 'player'),
-    enemy0  = new Unit('enemy0', 'Enemy', 'enemy.png', 'Enemy Unit', 2, 1, 3, 5, 6, 11, false, 'ai', 'dumb');
+    enemy0  = new Unit('enemy0', 'Enemy', 'enemy.png', 'Enemy Unit', 2, 1, 3, 5, 6, 11, false, 'ai', 'sentry');
 
 var unitPlan = [
   {

@@ -72,7 +72,7 @@ $( document ).ready( function () {
 
 var Terrain = {
   // To use terrain sprites instead of map image, set v-if to true.
-  template: "<div v-if='false' class='terrain space' :class='terrain.type'></div>",
+  template: "<div v-if='false' class='terrain space' :class='terrain.type' tabindex=0></div>",
   props: ['terrain']
 };
 
@@ -136,7 +136,7 @@ var Unit = {
 
 var Space = {
   template: `
-    <div class='space' @click='clickHandler'>
+    <div class='space' @click='clickHandler' tabindex=0>
       <terrain :terrain='space.terrain'></terrain>
       <highlight :space='space'></highlight>
       <unit :unit='space.unit'></unit>
@@ -161,7 +161,10 @@ var Space = {
             }
             break;
           case 'attacking':
-            if (this.space.distance && unit && !unit.friendly) { Game.targetUnit(y, x) }
+            if (this.space.distance && unit && !unit.friendly) {
+              Game.hideAttackRange(y, x);
+              Game.targetUnit(y, x);
+            }
             else {
               $( '#btn-unattack' ).trigger( 'click' );
               this.selectSpace(y, x);
@@ -292,11 +295,7 @@ var UnitActions = {
       Game.target = null;
     },
     cancelAttack: function () {
-      Game.hideAttackRange();
-      Game.action = null;
-      Game.target = null;
-      Game.attack = null;
-      Game.counter = null;
+      Game.cancelAttack();
     },
     endAttack: function () {
       Game.endAttack();
@@ -431,7 +430,7 @@ var Game = new Vue ({
       return this.factions[this.factionIndex];
     },
     control: function () {
-      return unitPlan.filter(function (obj) { return obj.faction === Game.faction })[0].control;
+      return unitPlan.filter(function (f) { return f.faction === Game.faction })[0].control;
     },
     units: function () {
       return shuffle(this.getUnits(this.faction));
@@ -561,6 +560,13 @@ var Game = new Vue ({
         }
       }
     },
+    cancelAttack: function () {
+      this.hideAttackRange();
+      this.action = null;
+      this.target = null;
+      this.attack = null;
+      this.counter = null;
+    },
     hideAttackRange: function (targetY, targetX) {
       var y, x, distance, targetDistance,
           posY = this.active.unit.posY,
@@ -575,7 +581,6 @@ var Game = new Vue ({
       if (targetY && targetX) { this.map[targetY][targetX].distance = targetDistance }
     },
     targetUnit: function (y, x) {
-      this.hideAttackRange(y, x);
       this.target = this.map[y][x];
       var attacker = this.active.unit,
           defender = this.target.unit,
@@ -646,12 +651,12 @@ var Game = new Vue ({
         paddingLeft: ['32px', '32px'],
         easing: 'ease-in-out'
       };
-      document.getElementById(attacker.id).animate(attack, 400);
+      document.getElementById(attacker.id).animate(attack, 500);
       if (Math.random()*100 <= hitChance) {
-        window.setTimeout(function(){ document.getElementById(defender.id).animate(hit, 200) }, 200);
-        window.setTimeout(function(){ Game.dealDamage(defender.posY, defender.posX) }, 400);
+        window.setTimeout(function(){ document.getElementById(defender.id).animate(hit, 250) }, 250);
+        window.setTimeout(function(){ Game.dealDamage(defender.posY, defender.posX) }, 500);
       } else {
-        window.setTimeout(function(){ document.getElementById(defender.id).animate(miss, 300) }, 100);
+        window.setTimeout(function(){ document.getElementById(defender.id).animate(miss, 350) }, 150);
       }
       window.setTimeout(function(){
         if (!counter && Game.counter > 0 && defender.condition !== 'Defeated') {
@@ -659,7 +664,7 @@ var Game = new Vue ({
         } else {
           Game.endAttack();
         }
-      }, 400);
+      }, 500);
     },
     dealDamage: function (y, x) {
       var unit = this.map[y][x].unit;
@@ -711,16 +716,65 @@ var Game = new Vue ({
       if (this.unitIndex < this.units.length) {
         switch (this.units[this.unitIndex].behavior) {
           case 'dumb': unitFunc = this.aiUnitDumb; break;
+          case 'sentry': unitFunc = this.aiUnitSentry; break;
         }
         window.setTimeout(function(){ unitFunc() }, 500);
       } else {
+        this.unitIndex = 0;
         this.endTurn();
       }
     },
     aiUnitDumb: function () {
-      console.log(this.units[this.unitIndex].name + ' is ' + this.units[this.unitIndex].behavior + '.');
+      window.setTimeout(function(){ Game.aiPassControl() }, 500);
+    },
+    aiUnitSentry: function () {
+      var unit = this.units[this.unitIndex];
+      this.active = this.map[unit.posY][unit.posX];
+      unit = this.active.unit;
+      window.setTimeout(function(){ Game.showAttackRange() }, 500);
+      window.setTimeout(function(){ Game.aiChooseTarget() }, 1000);
+      window.setTimeout(function(){
+        if (Game.target) {
+          Game.attackUnit();
+          window.setTimeout(function(){ Game.aiPassControl() }, 2500);
+        } else {
+          Game.aiPassControl();
+        }
+      }, 1500);
+    },
+    aiChooseTarget: function () {
+      var y, x, space, targets = [], bestAttack = 0,
+          posY = this.active.unit.posY,
+          posX = this.active.unit.posX,
+          range = this.active.unit.range,
+          betterAttack = function (target) {
+            if (target.attack >= bestAttack) {
+              bestAttack = target.attack;
+              return true;
+            } else {
+              return false;
+            }
+          };
+      for (y = Math.max(posY - range, 0); y <= Math.min(posY + range, 15); y++) {
+        for (x = Math.max(posX - range, 0); x <= Math.min(posX + range, 15); x++) {
+          space = this.map[y][x];
+          if (space.distance && space.unit && space.unit.friendly !== this.active.unit.friendly) {
+            this.targetUnit(y, x);
+            targets.push({ posY: y, posX: x, attack: this.attack });
+          }
+        }
+      }
+      if (targets.length > 0) {
+        target = shuffle(targets.filter(betterAttack))[0];
+        this.hideAttackRange(target.posY, target.posX);
+        this.targetUnit(target.posY, target.posX);
+      } else {
+        this.cancelAttack();
+      }
+    },
+    aiPassControl: function () {
       this.unitIndex += 1;
-      window.setTimeout(function(){ Game.aiFaction() }, 500);
+      this.aiFaction();
     },
     endTurn: function () {
       if (this.factionIndex < this.factions.length - 1) {
@@ -729,7 +783,6 @@ var Game = new Vue ({
         this.turn += 1;
         this.factionIndex = 0;
       }
-      this.unitIndex = 0;
       this.action = null;
       this.active = null;
       this.target = null;
