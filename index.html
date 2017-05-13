@@ -12,9 +12,9 @@
   <body>
     <main id='game'>
       
-      <div id='toppanel'>
+      <div id='top-panel'>
       
-        <div id='leftpanel' class='panel'>
+        <div id='top-left' class='panel'>
           <side-panel
             side='left'
             :space='active'
@@ -24,11 +24,11 @@
           </side-panel>
         </div>
         
-        <div id='map' class='panel' :style='mapImage'>
+        <div id='top-center' class='panel' :style='mapImage'>
           <row v-for='row in map' :key='row' :row='row'></row>
         </div>
         
-        <div id='rightpanel' class='panel'>
+        <div id='top-right' class='panel'>
           <side-panel
             side='right'
             :space='target'
@@ -42,7 +42,15 @@
       
       </div>
       
-      <div id='bottompanel' class='panel'></div>
+      <div id='bottom-panel'>
+        
+        <div id='bottom-left' class='panel'></div>
+        
+        <div id='bottom-center' class='panel'></div>
+        
+        <div id='bottom-right' class='panel'></div>
+        
+      </div>
       
     </main>
   </body>

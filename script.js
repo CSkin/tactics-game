@@ -259,55 +259,39 @@ var UnitActions = {
   template: `
   <div class='ui' v-if="unit.control === 'player'">
     <p class='heading'><img class='icon' src='sprites/actions-icon.png'>Actions</p>
-    <p v-if="!action || action === 'moving'">
-      <button id='btn-move' v-if='!action' :disabled='unit.moves === 0' @click='beginMove'>Move (M)</button>
-      <button id='btn-unmove' v-else @click='cancelMove'>Cancel Move (M)</button>
-    </p>
-    <p v-if="!action || action === 'attacking'">
-      <button id='btn-attack' v-if='!action' :disabled='unit.attacks === 0' @click='beginAttack'>Attack (A)</button>
-      <button id='btn-unattack' v-else @click='cancelAttack'>Cancel Attack (A)</button>
-    </p>
-    <div v-if="!action || action === 'ending'">
-      <p v-if='!action'><button id='btn-end' @click='beginEnd'>End Turn (T)</button></p>
-      <p v-else>
-        Really end turn?<br>
-        <button id='btn-unend' @click='cancelEnd'>Cancel (T)</button>
-        <button id='btn-confend' @click='endTurn'>Confirm (Return)</button>
-      </p>
+    <div id='action-buttons'>
+      <div id='move-holder' class='btn-holder'>
+        <img v-if="action !== 'moving' && unit.moves > 0" id='btn-move' src='sprites/btn-move.png' @click='beginMove'>
+      </div>
+      <div id='attack-holder' class='btn-holder'>
+        <img v-if="action !== 'attacking' && unit.attacks > 0" id='btn-attack' src='sprites/btn-attack.png' @click='beginAttack'>
+      </div>
+      <div id='cancel-holder' class='btn-holder'>
+        <img v-if='action' id='btn-cancel' src='sprites/btn-cancel.png' @click='cancelAction'>
+      </div>
     </div>
   </div>
   `,
   props: ['action', 'unit'],
   methods: {
     beginMove: function () {
+      if (this.action) { this.cancelAction() }
       var unit = Game.active.unit;
       Game.showMoveRange(unit.posY, unit.posX, unit.moves, '');
       Game.action = 'moving';
       Game.target = null;
     },
-    cancelMove: function () {
-      Game.hideMoveRange();
-      Game.action = null;
-    },
     beginAttack: function () {
+      if (this.action) { this.cancelAction() }
       Game.showAttackRange();
       Game.action = 'attacking';
       Game.target = null;
     },
-    cancelAttack: function () {
-      Game.cancelAttack();
-    },
-    endAttack: function () {
-      Game.endAttack();
-    },
-    beginEnd: function () {
-      Game.action = 'ending';
-    },
-    cancelEnd: function () {
-      Game.action = null;
-    },
-    endTurn: function () {
-      Game.endTurn();
+    cancelAction: function () {
+      switch (this.action) {
+        case 'moving': Game.cancelMove(); break;
+        case 'attacking': Game.cancelAttack(); break;
+      }
     }
   }
 };
@@ -471,6 +455,10 @@ var Game = new Vue ({
       if (nort.terrain.cost <= moves && (!nort.moves || moves - nort.terrain.cost > nort.moves) && nort.unit === null)
         { nort.moves = moves - nort.terrain.cost; nort.path = path + 'n'; explore.push(goNort) }
       shuffle(explore).forEach( function (go) { go(); } );
+    },
+    cancelMove: function () {
+      this.hideMoveRange();
+      this.action = null;
     },
     hideMoveRange: function () {
       var y, x,
@@ -799,24 +787,17 @@ var Game = new Vue ({
 });
 
 function keyHandler () {
-  // console.log('keyCode: ' + event.keyCode); // Developer mode
+  console.log('keyCode: ' + event.keyCode); // Developer mode
   if (Game.control === 'player' && Game.active && Game.active.unit && Game.active.unit.control === 'player') {
     switch (event.keyCode) {
-      case 13:
-        if (Game.action === 'attacking') { $( '#btn-confatk' ).trigger( 'click' ); }
-        else if (Game.action === 'ending') { $( '#btn-confend' ).trigger( 'click' ); }
+      case 65: // a
+        $( '#btn-attack' ).trigger( 'click' );
         break;
-      case 65:
-        if (Game.action !== 'attacking') { $( '#btn-attack' ).trigger( 'click' ); }
-        else { $( '#btn-unattack' ).trigger( 'click' ); }
+      case 67: // c
+        $( '#btn-cancel' ).trigger( 'click' );
         break;
-      case 77:
-        if (Game.action !== 'moving') { $( '#btn-move' ).trigger( 'click' ); }
-        else { $( '#btn-unmove' ).trigger( 'click' ); }
-        break;
-      case 84:
-        if (Game.action !== 'ending') { $( '#btn-end' ).trigger( 'click' ); }
-        else { $( '#btn-unend' ).trigger( 'click' ); }
+      case 77: // m
+        $( '#btn-move' ).trigger( 'click' );
         break;
     }
   }
