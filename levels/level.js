@@ -70,15 +70,14 @@ function Unit (id, faction, sprite, name, offense, defense, range, movement, pos
   if (behavior) { this.behavior = behavior }
 }
 
-var player0 = new Unit('player0', 'Player', 'player.png', 'Player Unit', 1, 2, 3, 5, 6, 9, true, 'player'),
-    player1 = new Unit('player1', 'Player', 'player.png', 'Player Unit', 1, 2, 3, 5, 8, 11, true, 'player'),
+var player0 = new Unit('player0', 'Player', 'player.png', 'Player Unit', 1, 2, 3, 5, 9, 4, true, 'player'),
     enemy0  = new Unit('enemy0', 'Enemy', 'enemy.png', 'Enemy Unit', 2, 1, 3, 5, 6, 11, false, 'ai', 'sentry');
 
 var unitPlan = [
   {
     faction: 'Player',
     control: 'player',
-    units: [ player0, player1 ]
+    units: [ player0 ]
   }, {
     faction: 'Enemy',
     control: 'ai',

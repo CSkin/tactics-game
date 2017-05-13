@@ -1,12 +1,13 @@
 body {
+  display: flex;
+  justify-content: center;
   background-color: #708090;
   font-family: sans-serif;
 }
 
 main {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
+  width: 1024px;
+  height: 768px;
 }
 
 p {
@@ -22,27 +23,30 @@ button {
   font-size: 13px;
 }
 
+#toppanel {
+  display: flex;
+}
+
+#leftpanel {
+  width: 248px;
+  height: 512px;
+  margin-right: 5px;
+}
+
 #map {
   width: 512px;
   height: 512px;
 }
 
-#leftpanel {
-  width: 256px;
-  height: 512px;
-  margin-right: 5px;
-}
-
 #rightpanel {
-  width: 256px;
+  width: 248px;
   height: 512px;
   margin-left: 5px;
 }
 
 #bottompanel {
-  display: none;
-  width: 1038px;
-  height: 256px;
+  width: 1022px;
+  height: 247px;
   margin-top: 5px;
 }
 

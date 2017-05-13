@@ -234,8 +234,8 @@ var UnitInfo = {
 var UnitCombat = {
   template: `
   <div class='ui' v-if='hit'>
-    <p class='heading'><img class='icon' src='sprites/combat-icon.png'>Combat Info</p>
-    <p>{{ type }} success chance: <b :style='gradient'>{{ hit }}%</b></p>
+    <p class='heading'><img class='icon' src='sprites/combat-icon.png'>Combat</p>
+    <p>{{ type }} hit chance: <b :style='gradient'>{{ hit }}%</b></p>
   </div>
   `,
   props: ['type', 'hit'],
@@ -268,10 +268,10 @@ var UnitActions = {
       <button id='btn-unattack' v-else @click='cancelAttack'>Cancel Attack (A)</button>
     </p>
     <div v-if="!action || action === 'ending'">
-      <p v-if='!action'><button id='btn-end' @click='beginEnd'>End Turn (E)</button></p>
+      <p v-if='!action'><button id='btn-end' @click='beginEnd'>End Turn (T)</button></p>
       <p v-else>
         Really end turn?<br>
-        <button id='btn-unend' @click='cancelEnd'>Cancel (E)</button>
+        <button id='btn-unend' @click='cancelEnd'>Cancel (T)</button>
         <button id='btn-confend' @click='endTurn'>Confirm (Return)</button>
       </p>
     </div>
@@ -810,13 +810,13 @@ function keyHandler () {
         if (Game.action !== 'attacking') { $( '#btn-attack' ).trigger( 'click' ); }
         else { $( '#btn-unattack' ).trigger( 'click' ); }
         break;
-      case 69:
-        if (Game.action !== 'ending') { $( '#btn-end' ).trigger( 'click' ); }
-        else { $( '#btn-unend' ).trigger( 'click' ); }
-        break;
       case 77:
         if (Game.action !== 'moving') { $( '#btn-move' ).trigger( 'click' ); }
         else { $( '#btn-unmove' ).trigger( 'click' ); }
+        break;
+      case 84:
+        if (Game.action !== 'ending') { $( '#btn-end' ).trigger( 'click' ); }
+        else { $( '#btn-unend' ).trigger( 'click' ); }
         break;
     }
   }
