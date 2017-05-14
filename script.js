@@ -266,6 +266,9 @@ var UnitActions = {
       <div id='attack-holder' class='btn-holder'>
         <img v-if="action !== 'attacking' && unit.attacks > 0" id='btn-attack' src='sprites/btn-attack.png' @click='beginAttack'>
       </div>
+      <div id='equip-holder' class='btn-holder'>
+        <img v-if="action !== 'equipping'" id='btn-equip' src='sprites/btn-equip.png' @click='beginEquip'>
+      </div>
       <div id='cancel-holder' class='btn-holder'>
         <img v-if='action' id='btn-cancel' src='sprites/btn-cancel.png' @click='cancelAction'>
       </div>
@@ -287,10 +290,16 @@ var UnitActions = {
       Game.action = 'attacking';
       Game.target = null;
     },
+    beginEquip: function () {
+      if (this.action) { this.cancelAction() }
+      console.log('Trying to equip.');
+      Game.action = 'equipping';
+    },
     cancelAction: function () {
       switch (this.action) {
         case 'moving': Game.cancelMove(); break;
         case 'attacking': Game.cancelAttack(); break;
+        case 'equipping': Game.cancelEquip(); break;
       }
     }
   }
@@ -433,7 +442,7 @@ var Game = new Vue ({
       return this.factions[this.factionIndex];
     },
     control: function () {
-      return unitPlan.filter(function (f) { return f.faction === Game.faction })[0].control;
+      return unitPlan.filter( f => f.faction === this.faction )[0].control;
     },
     units: function () {
       return shuffle(this.getUnits(this.faction));
@@ -691,6 +700,9 @@ var Game = new Vue ({
       this.attack = null;
       this.counter = null;
     },
+    cancelEquip: function () {
+      this.action = null;
+    },
     beginTurn: function () {
       var u, unit, units = this.units;
       if (units.length > 0) {
@@ -815,6 +827,9 @@ function keyHandler () {
         break;
       case 67: // c
         $( '#btn-cancel' ).trigger( 'click' );
+        break;
+      case 69: // e
+        $( '#btn-equip' ).trigger( 'click' );
         break;
       case 77: // m
         $( '#btn-move' ).trigger( 'click' );

@@ -149,13 +149,17 @@ button {
   background-image: url('sprites/btn-attack-disabled.png');
 }
 
+#equip-holder {
+  background-image: url('sprites/btn-equip-disabled.png');
+}
+
 #cancel-holder {
   background-image: url('sprites/btn-cancel-disabled.png');
 }
 
 #end-holder {
   width: 180px;
-  height: 40px;
+  height: 35px;
   margin-top: 5px;
   background-image: url('sprites/btn-end-disabled.png');
 }
