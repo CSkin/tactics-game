@@ -48,7 +48,15 @@
         
         <div id='bottom-center' class='panel'></div>
         
-        <div id='bottom-right' class='panel'></div>
+        <div id='bottom-right' class='panel'>
+          <status-panel
+            :turn='turn'
+            :faction='faction'
+            :control='control'
+            :units='units.length'
+            :action='action'>
+          </status-panel>
+        </div>
         
       </div>
       

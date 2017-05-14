@@ -153,6 +153,13 @@ button {
   background-image: url('sprites/btn-cancel-disabled.png');
 }
 
+#end-holder {
+  width: 180px;
+  height: 40px;
+  margin-top: 5px;
+  background-image: url('sprites/btn-end-disabled.png');
+}
+
 .banner {
   width: 300px;
 }

@@ -100,7 +100,7 @@ var Highlight = {
 var Unit = {
   template: `
   <transition :name='dynamicTransition' @after-enter='moveHandler'>
-    <img :id= 'unit.id' v-if='unit' class='unit space' :src='unit.sprite'></img>
+    <img :id='unit.id' v-if='unit' class='unit space' :src='unit.sprite'></img>
   </transition>
   `,
   props: ['unit'],
@@ -233,7 +233,7 @@ var UnitInfo = {
 
 var UnitCombat = {
   template: `
-  <div class='ui' v-if='hit'>
+  <div v-if='hit' class='ui'>
     <p class='heading'><img class='icon' src='sprites/combat-icon.png'>Combat</p>
     <p>{{ type }} hit chance: <b :style='gradient'>{{ hit }}%</b></p>
   </div>
@@ -257,7 +257,7 @@ var UnitCombat = {
 
 var UnitActions = {
   template: `
-  <div class='ui' v-if="unit.control === 'player'">
+  <div v-if="unit.control === 'player'" class='ui'>
     <p class='heading'><img class='icon' src='sprites/actions-icon.png'>Actions</p>
     <div id='action-buttons'>
       <div id='move-holder' class='btn-holder'>
@@ -298,7 +298,7 @@ var UnitActions = {
 
 var TargetActions = {
   template: `
-  <div class='ui' v-if='hit || hit === 0'>
+  <div v-if='hit || hit === 0' class='ui'>
     <p class='heading'><img class='icon' src='sprites/actions-icon.png'>Actions</p>
     <p><button id='btn-confatk' @click='confirmAttack'>Confirm Attack (Return)</button></p>
   </div>
@@ -350,8 +350,27 @@ var SidePanel = {
   }
 };
 
+var StatusPanel = {
+  template: `
+  <div class='ui'>
+    <p>Turn: <b>{{ turn }}</b></p>
+    <p>Faction: <b>{{ faction }}</b></p>
+    <p>Units: <b>{{ units }}</b></p>
+    <div v-if="control === 'player'" id='end-holder'>
+      <img v-if='!action' id='btn-end' src='sprites/btn-end.png' @click='endTurn'>
+    </div>
+  </div>
+  `,
+  props: ['turn', 'faction', 'control', 'units', 'action'],
+  methods: {
+    endTurn: function () {
+      Game.endTurn();
+    }
+  }
+}
+
 var TurnBanner = {
-  template:`
+  template: `
   <transition name='banner' @after-enter='bannerIn' @after-leave='bannerOut'>
     <div id='banner-back' class='banner' :style='bannerBack'>
       <div id='banner-fore' class='banner' :style='bannerFore'>
@@ -782,6 +801,7 @@ var Game = new Vue ({
   components: {
     'row': Row,
     'side-panel': SidePanel,
+    'status-panel': StatusPanel,
     'turn-banner': TurnBanner
   }
 });
