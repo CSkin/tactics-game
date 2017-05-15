@@ -261,16 +261,16 @@ var UnitActions = {
     <p class='heading'><img class='icon' src='sprites/actions-icon.png'>Actions</p>
     <div id='action-buttons'>
       <div id='move-holder' class='btn-holder'>
-        <img v-if="action !== 'moving' && unit.moves > 0" id='btn-move' src='sprites/btn-move.png' @click='beginMove'>
+        <img v-if="action !== 'moving' && unit.moves > 0" id='btn-move' class='button' src='sprites/btn-move.png' title='Move (M)' @click='beginMove'>
       </div>
       <div id='attack-holder' class='btn-holder'>
-        <img v-if="action !== 'attacking' && unit.attacks > 0" id='btn-attack' src='sprites/btn-attack.png' @click='beginAttack'>
+        <img v-if="action !== 'attacking' && unit.attacks > 0" id='btn-attack' class='button' src='sprites/btn-attack.png' title='Attack (A)' @click='beginAttack'>
       </div>
       <div id='equip-holder' class='btn-holder'>
-        <img v-if="action !== 'equipping'" id='btn-equip' src='sprites/btn-equip.png' @click='beginEquip'>
+        <img v-if="action !== 'equipping'" id='btn-equip' class='button' src='sprites/btn-equip.png' title='Equip (E)' @click='beginEquip'>
       </div>
       <div id='cancel-holder' class='btn-holder'>
-        <img v-if='action' id='btn-cancel' src='sprites/btn-cancel.png' @click='cancelAction'>
+        <img v-if='action' id='btn-cancel' class='button' src='sprites/btn-cancel.png' title='Cancel (C)' @click='cancelAction'>
       </div>
     </div>
   </div>
@@ -366,7 +366,7 @@ var StatusPanel = {
     <p>Faction: <b>{{ faction }}</b></p>
     <p>Units: <b>{{ units }}</b></p>
     <div v-if="control === 'player'" id='end-holder'>
-      <img v-if='!action' id='btn-end' src='sprites/btn-end.png' @click='endTurn'>
+      <img v-if='!action' id='btn-end' class='button' src='sprites/btn-end.png' title='End Turn' @click='endTurn'>
     </div>
   </div>
   `,
@@ -431,11 +431,11 @@ var Game = new Vue ({
     factionIndex: 0,
     unitIndex: 0,
     banner: false,        // controls turn animation
-    action: 'beginning',  // 'beginning' / 'moving' / 'attacking' / 'ending'
+    action: 'beginning',  // 'beginning' / 'moving' / 'attacking' / 'equipping' / 'ending'
     active: null,         // Space object
     target: null,         // Space object
-    attack: null,         // attack success chance
-    counter: null         // counter success chance
+    attack: null,         // attack hit chance
+    counter: null         // counterattack hit chance
   },
   computed: {
     faction: function () {

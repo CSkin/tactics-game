@@ -19,10 +19,6 @@ div + span  {
   vertical-align: middle;
 }
 
-button {
-  font-size: 13px;
-}
-
 .panel {
   border: 1px solid black;
   background-color: #dfefff;
@@ -162,6 +158,10 @@ button {
   height: 35px;
   margin-top: 5px;
   background-image: url('sprites/btn-end-disabled.png');
+}
+
+.button {
+  cursor: pointer;
 }
 
 .banner {
