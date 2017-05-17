@@ -78,9 +78,9 @@ var Terrain = {
 
 var Highlight = {
   template: `
-  <transition name='fade'>
-    <div v-if='space.path || space.distance' class='highlight space' :class='classes'></div>
-  </transition>
+    <transition name='fade'>
+      <div v-if='space.path || space.distance' class='highlight space' :class='classes'></div>
+    </transition>
   `,
   props: ['space'],
   computed: {
@@ -99,9 +99,9 @@ var Highlight = {
 
 var Unit = {
   template: `
-  <transition :name='dynamicTransition' @after-enter='moveHandler'>
-    <img :id='unit.id' v-if='unit' class='unit space' :src='unit.sprite'></img>
-  </transition>
+    <transition :name='dynamicTransition' @after-enter='moveHandler'>
+      <img :id='unit.id' v-if='unit' class='unit space' :src='unit.sprite'></img>
+    </transition>
   `,
   props: ['unit'],
   computed: {
@@ -194,9 +194,9 @@ var Space = {
 
 var Row = {
   template: `
-  <div class='row'>
-    <space v-for='space in row' :key='space' :space='space'></space>
-  </div>
+    <div class='row'>
+      <space v-for='space in row' :key='space' :space='space'></space>
+    </div>
   `,
   props: ['row'],
   components: {
@@ -206,74 +206,50 @@ var Row = {
 
 var TerrainInfo = {
   template: `
-  <div class='ui'>
-    <div class='heading'><div class='icon' :class='terrain.type'></div>{{ terrain.name }}</div>
-    <p v-if='terrain.cost < 99'>Move cost: <b>{{ terrain.cost }}</b></p><p v-else>Impassable</p>
-    <p v-if='terrain.cover > 0'>Cover: <b>{{ terrain.cover }}</b></p>
-    <p v-if='terrain.facing'>Facing: <b>{{ terrain.facing }}</b></p>
-    <p v-if='terrain.elevation > 0'>Elevation: <b>{{ terrain.elevation }}</b></p>
-  </div>
+    <div class='ui'>
+      <div class='heading'><div class='icon' :class='terrain.type'></div>{{ terrain.name }}</div>
+      <p v-if='terrain.cost < 99'>Move cost: <b>{{ terrain.cost }}</b></p><p v-else>Impassable</p>
+      <p v-if='terrain.cover > 0'>Cover: <b>{{ terrain.cover }}</b></p>
+      <p v-if='terrain.facing'>Facing: <b>{{ terrain.facing }}</b></p>
+      <p v-if='terrain.elevation > 0'>Elevation: <b>{{ terrain.elevation }}</b></p>
+    </div>
   `,
   props: ['terrain']
 };
 
 var UnitInfo = {
   template: `
-  <div class='ui'>
-    <div class='heading'><div class='icon' :class='unit.faction'></div>{{ unit.name }}</div>
-    <p>Condition: <b :class='unit.condition'>{{ unit.condition }}</b></p>
-    <p>Offense: <b>{{ unit.offense }}</b></p>
-    <p>Defense: <b>{{ unit.defense }}</b> <b class='buff' v-if='unit.defBonus > 0'>+{{ unit.defBonus }}</b></p>
-    <p>Range: <b>{{ unit.range }}</b></p>
-    <p>Movement: <b>{{ unit.moves }} / {{ unit.movement }}</b></p>
-  </div>
+    <div class='ui'>
+      <div class='heading'><div class='icon' :class='unit.faction'></div>{{ unit.name }}</div>
+      <p>Condition: <b :class='unit.condition'>{{ unit.condition }}</b></p>
+      <p>Offense: <b>{{ unit.offense }}</b></p>
+      <p>Defense: <b>{{ unit.defense }}</b> <b class='buff' v-if='unit.defBonus > 0'>+{{ unit.defBonus }}</b></p>
+      <p>Range: <b>{{ unit.range }}</b></p>
+      <p>Movement: <b>{{ unit.moves }} / {{ unit.movement }}</b></p>
+    </div>
   `,
   props: ['unit']
 };
 
-var UnitCombat = {
-  template: `
-  <div v-if='hit' class='ui'>
-    <p class='heading'><img class='icon' src='sprites/combat-icon.png'>Combat</p>
-    <p>{{ type }} hit chance: <b :style='gradient'>{{ hit }}%</b></p>
-  </div>
-  `,
-  props: ['type', 'hit'],
-  computed: {
-    gradient: function () {
-      if (this.hit < 10) { return { color: '#bf0000' } }
-      else if (this.hit < 20) { return { color: '#d01b00' } }
-      else if (this.hit < 30) { return { color: '#e13600' } }
-      else if (this.hit < 40) { return { color: '#f25100' } }
-      else if (this.hit < 50) { return { color: '#ea6a00' } }
-      else if (this.hit < 60) { return { color: '#e28300' } }
-      else if (this.hit < 70) { return { color: '#da9c00' } }
-      else if (this.hit < 80) { return { color: '#97a406' } }
-      else if (this.hit < 90) { return { color: '#55ab0c' } }
-      else { return { color: '#12b312' } }
-    }
-  }
-};
-
 var UnitActions = {
   template: `
-  <div v-if="unit.control === 'player'" class='ui'>
-    <p class='heading'><img class='icon' src='sprites/actions-icon.png'>Actions</p>
-    <div id='action-buttons'>
-      <div id='move-holder' class='btn-holder'>
-        <img v-if="action !== 'moving' && unit.moves > 0" id='btn-move' class='button' src='sprites/btn-move.png' title='Move (M)' @click='beginMove'>
-      </div>
-      <div id='attack-holder' class='btn-holder'>
-        <img v-if="action !== 'attacking' && unit.attacks > 0" id='btn-attack' class='button' src='sprites/btn-attack.png' title='Attack (A)' @click='beginAttack'>
-      </div>
-      <div id='equip-holder' class='btn-holder'>
-        <img v-if="action !== 'equipping'" id='btn-equip' class='button' src='sprites/btn-equip.png' title='Equip (E)' @click='beginEquip'>
-      </div>
-      <div id='cancel-holder' class='btn-holder'>
-        <img v-if='action' id='btn-cancel' class='button' src='sprites/btn-cancel.png' title='Cancel (C)' @click='cancelAction'>
+    <div v-if="unit.control === 'player'" class='ui'>
+      <p class='heading'><img class='icon' src='sprites/actions-icon.png'>Actions</p>
+      <div id='action-buttons'>
+        <div id='move-holder' class='btn-holder'>
+          <img v-if="action !== 'moving' && unit.moves > 0" id='btn-move' class='button' src='sprites/btn-move.png' title='Move (M)' @click='beginMove'>
+        </div>
+        <div id='attack-holder' class='btn-holder'>
+          <img v-if="action !== 'attacking' && unit.attacks > 0" id='btn-attack' class='button' src='sprites/btn-attack.png' title='Attack (A)' @click='beginAttack'>
+        </div>
+        <div id='equip-holder' class='btn-holder'>
+          <img v-if="action !== 'equipping'" id='btn-equip' class='button' src='sprites/btn-equip.png' title='Equip (E)' @click='beginEquip'>
+        </div>
+        <div id='cancel-holder' class='btn-holder'>
+          <img v-if='action' id='btn-cancel' class='button' src='sprites/btn-cancel.png' title='Cancel (C)' @click='cancelAction'>
+        </div>
       </div>
     </div>
-  </div>
   `,
   props: ['action', 'unit'],
   methods: {
@@ -307,12 +283,12 @@ var UnitActions = {
 
 var TargetActions = {
   template: `
-  <div v-if='hit || hit === 0' class='ui'>
-    <p class='heading'><img class='icon' src='sprites/actions-icon.png'>Actions</p>
-    <div id='confatk-holder' class='btn-holder'>
-      <img v-if='btnEnabled' id='btn-confatk' class='button' src='sprites/btn-confatk.png' title='Confirm Attack (A)' @click='confirmAttack'>
+    <div v-if='hit || hit === 0' class='ui'>
+      <p class='heading'><img class='icon' src='sprites/actions-icon.png'>Actions</p>
+      <div id='confatk-holder' class='btn-holder'>
+        <img v-if='btnEnabled' id='btn-confatk' class='button' src='sprites/btn-confatk.png' title='Confirm Attack (A)' @click='confirmAttack'>
+      </div>
     </div>
-  </div>
   `,
   props: ['hit'],
   data: function () {
@@ -326,28 +302,108 @@ var TargetActions = {
   }
 };
 
+var UnitCombat = {
+  template: `
+    <div v-if='hit' class='ui'>
+      <p class='heading'><img class='icon' src='sprites/combat-icon.png'>Combat</p>
+      <p>{{ type }} hit chance: <b :style='gradient'>{{ hit }}%</b></p>
+    </div>
+  `,
+  props: ['type', 'hit'],
+  computed: {
+    gradient: function () {
+      if (this.hit < 10) { return { color: '#bf0000' } }
+      else if (this.hit < 20) { return { color: '#d01b00' } }
+      else if (this.hit < 30) { return { color: '#e13600' } }
+      else if (this.hit < 40) { return { color: '#f25100' } }
+      else if (this.hit < 50) { return { color: '#ea6a00' } }
+      else if (this.hit < 60) { return { color: '#e28300' } }
+      else if (this.hit < 70) { return { color: '#da9c00' } }
+      else if (this.hit < 80) { return { color: '#97a406' } }
+      else if (this.hit < 90) { return { color: '#55ab0c' } }
+      else { return { color: '#12b312' } }
+    }
+  }
+};
+
+var ItemSlot = {}
+
+var ItemHolder = {
+  template: `
+    <div class='item-holder'>
+      <img :src='typeCard'>
+      <div class='slot-container' :style='borderColor'>
+        <div class='item-slot' :style='slotBackground'></div>
+        <div class='item-slot' :style='slotBackground'></div>
+        <div class='item-slot' :style='slotBackground'></div>
+        <div class='item-slot' :style='slotBackground'></div>
+        <div class='item-slot' :style='slotBackground'></div>
+        <div class='item-slot' :style='slotBackground'></div>
+      </div>
+    </div>
+  `,
+  props: ['type', 'items'],
+  computed: {
+    typeCard: function () {
+      return 'sprites/' + this.type + '-card.png';
+    },
+    borderColor: function () {
+      switch (this.type) {
+        case 'weapon': return { border: '1px solid #800000' }
+        case 'clothing': return { border: '1px solid #000099' }
+        case 'accessory': return { border: '1px solid #005900' }
+      }
+    },
+    slotBackground: function () {
+      var imgUrl = "url('sprites/" + this.type + "-slot.png')";
+      return { backgroundImage: imgUrl }
+    }
+  },
+  components: {
+    'item-slot': ItemSlot
+  }
+}
+
+var UnitEquipment = {
+  template: `
+    <div class='ui'>
+      <p class='heading'><img class='icon' src='sprites/equipment-icon.png'>Equipment</p>
+      <div class='equipment'>
+        <item-holder type='weapon' :items='items.weapons'></item-holder>
+        <item-holder type='clothing' :items='items.clothing'></item-holder>
+        <item-holder type='accessory' :items='items.accessories'></item-holder>
+      </div>
+    </div>
+  `,
+  props: ['items'],
+  components: {
+    'item-holder': ItemHolder
+  }
+}
+
 var SidePanel = {
   template: `
-  <div>
-    <transition name='fade'>
-      <div v-if='space && space.terrain'>
-        <terrain-info :terrain='space.terrain'></terrain-info>
-      </div>
-    </transition>
-    <transition :name='dynamicTransition'>
-      <div v-if='space && space.unit'>
-        <unit-info :unit='space.unit'></unit-info>
-        <template v-if="side === 'left'">
-          <unit-actions v-if="control === 'player'" :action='action' :unit='space.unit'></unit-actions>
-          <unit-combat type='Attack' :hit='attack'></unit-combat>
-        </template>
-        <template v-else-if="side === 'right'">
-          <target-actions v-if="control === 'player'" :hit='counter'></target-actions>
-          <unit-combat type='Counter' :hit='counter'></unit-combat>
-        </template>
-      </div>
-    </transition>
-  </div>
+    <div>
+      <transition name='fade'>
+        <div v-if='space && space.terrain'>
+          <terrain-info :terrain='space.terrain'></terrain-info>
+        </div>
+      </transition>
+      <transition :name='dynamicTransition'>
+        <div v-if='space && space.unit'>
+          <unit-info :unit='space.unit'></unit-info>
+          <template v-if="side === 'left'">
+            <unit-actions v-if="control === 'player'" :action='action' :unit='space.unit'></unit-actions>
+            <unit-combat type='Attack' :hit='attack'></unit-combat>
+          </template>
+          <template v-else-if="side === 'right'">
+            <target-actions v-if="control === 'player'" :hit='counter'></target-actions>
+            <unit-combat type='Counter' :hit='counter'></unit-combat>
+          </template>
+          <unit-equipment v-if="action === 'equipping'" :items='space.unit.items'></unit-equipment>
+        </div>
+      </transition>
+    </div>
   `,
   props: ['side', 'space', 'action', 'attack', 'counter', 'control'],
   computed: {
@@ -361,20 +417,21 @@ var SidePanel = {
     'unit-info': UnitInfo,
     'unit-combat': UnitCombat,
     'unit-actions': UnitActions,
-    'target-actions': TargetActions
+    'target-actions': TargetActions,
+    'unit-equipment': UnitEquipment
   }
 };
 
 var StatusPanel = {
   template: `
-  <div class='ui'>
-    <p>Turn: <b>{{ turn }}</b></p>
-    <p>Faction: <b>{{ faction }}</b></p>
-    <p>Units: <b>{{ units }}</b></p>
-    <div v-if="control === 'player'" id='end-holder'>
-      <img v-if='!action' id='btn-end' class='button' src='sprites/btn-end.png' title='End Turn' @click='endTurn'>
+    <div class='ui'>
+      <p>Turn: <b>{{ turn }}</b></p>
+      <p>Faction: <b>{{ faction }}</b></p>
+      <p>Units: <b>{{ units }}</b></p>
+      <div v-if="control === 'player'" id='end-holder'>
+        <img v-if='!action' id='btn-end' class='button' src='sprites/btn-end.png' title='End Turn' @click='endTurn'>
+      </div>
     </div>
-  </div>
   `,
   props: ['turn', 'faction', 'control', 'units', 'action'],
   methods: {
@@ -386,13 +443,13 @@ var StatusPanel = {
 
 var TurnBanner = {
   template: `
-  <transition name='banner' @after-enter='bannerIn' @after-leave='bannerOut'>
-    <div id='banner-back' class='banner' :style='bannerBack'>
-      <div id='banner-fore' class='banner' :style='bannerFore'>
-        <div id='banner-text' class='banner'>{{ faction.toUpperCase() }} TURN</div>
+    <transition name='banner' @after-enter='bannerIn' @after-leave='bannerOut'>
+      <div id='banner-back' class='banner' :style='bannerBack'>
+        <div id='banner-fore' class='banner' :style='bannerFore'>
+          <div id='banner-text' class='banner'>{{ faction.toUpperCase() }} TURN</div>
+        </div>
       </div>
-    </div>
-  </transition>
+    </transition>
   `,
   props: ['faction'],
   computed: {
