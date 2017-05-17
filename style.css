@@ -91,6 +91,7 @@ div + span  {
   z-index: 2;
   top: 0;
   left: 0;
+  cursor: pointer;
 }
 
 .ui {
@@ -153,6 +154,10 @@ div + span  {
   background-image: url('sprites/btn-cancel-disabled.png');
 }
 
+#confatk-holder {
+  background-image: url('sprites/btn-confatk-disabled.png');
+}
+
 #end-holder {
   width: 180px;
   height: 35px;
@@ -195,6 +200,7 @@ div + span  {
 .movable {
   background-color: rgb(0, 191, 255);
   background-color: rgba(0, 191, 255, 0.7);
+  cursor: pointer;
 }
 
 .attackable {

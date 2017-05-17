@@ -156,7 +156,7 @@ var Space = {
           case 'moving':
             if (path) { Game.moveUnit(Game.active.posY, Game.active.posX, path) }
             else {
-              $( '#btn-unmove' ).trigger( 'click' );
+              $( '#btn-cancel' ).trigger( 'click' );
               this.selectSpace(y, x);
             }
             break;
@@ -166,12 +166,12 @@ var Space = {
               Game.targetUnit(y, x);
             }
             else {
-              $( '#btn-unattack' ).trigger( 'click' );
+              $( '#btn-cancel' ).trigger( 'click' );
               this.selectSpace(y, x);
             }
             break;
-          case 'ending':
-            $( '#btn-unend' ).trigger( 'click' );
+          case 'equipping':
+            $( '#btn-cancel' ).trigger( 'click' );
             this.selectSpace(y, x);
             break;
           default:
@@ -309,12 +309,18 @@ var TargetActions = {
   template: `
   <div v-if='hit || hit === 0' class='ui'>
     <p class='heading'><img class='icon' src='sprites/actions-icon.png'>Actions</p>
-    <p><button id='btn-confatk' @click='confirmAttack'>Confirm Attack (Return)</button></p>
+    <div id='confatk-holder' class='btn-holder'>
+      <img v-if='btnEnabled' id='btn-confatk' class='button' src='sprites/btn-confatk.png' title='Confirm Attack (A)' @click='confirmAttack'>
+    </div>
   </div>
   `,
   props: ['hit'],
+  data: function () {
+    return { btnEnabled: true }
+  },
   methods: {
     confirmAttack: function () {
+      this.btnEnabled = false;
       Game.attackUnit();
     }
   }
@@ -332,18 +338,18 @@ var SidePanel = {
       <div v-if='space && space.unit'>
         <unit-info :unit='space.unit'></unit-info>
         <template v-if="side === 'left'">
+          <unit-actions v-if="control === 'player'" :action='action' :unit='space.unit'></unit-actions>
           <unit-combat type='Attack' :hit='attack'></unit-combat>
-          <unit-actions :action='action' :unit='space.unit'></unit-actions>
         </template>
         <template v-else-if="side === 'right'">
+          <target-actions v-if="control === 'player'" :hit='counter'></target-actions>
           <unit-combat type='Counter' :hit='counter'></unit-combat>
-          <target-actions :hit='counter'></target-actions>
         </template>
       </div>
     </transition>
   </div>
   `,
-  props: ['side', 'space', 'action', 'attack', 'counter'],
+  props: ['side', 'space', 'action', 'attack', 'counter', 'control'],
   computed: {
     dynamicTransition: function () {
       if (this.space && this.space.unit && this.space.unit.condition === 'Defeated') { return 'sayGoodbye' }
@@ -431,7 +437,7 @@ var Game = new Vue ({
     factionIndex: 0,
     unitIndex: 0,
     banner: false,        // controls turn animation
-    action: 'beginning',  // 'beginning' / 'moving' / 'attacking' / 'equipping' / 'ending'
+    action: 'beginning',  // 'beginning' / 'moving' / 'attacking' / 'equipping'
     active: null,         // Space object
     target: null,         // Space object
     attack: null,         // attack hit chance
@@ -823,7 +829,11 @@ function keyHandler () {
   if (Game.control === 'player' && Game.active && Game.active.unit && Game.active.unit.control === 'player') {
     switch (event.keyCode) {
       case 65: // a
-        $( '#btn-attack' ).trigger( 'click' );
+        if (Game.action !== 'attacking') {
+          $( '#btn-attack' ).trigger( 'click' );
+        } else {
+          $( '#btn-confatk' ).trigger( 'click' );
+        }
         break;
       case 67: // c
         $( '#btn-cancel' ).trigger( 'click' );
