@@ -100,7 +100,7 @@ var Highlight = {
 var Unit = {
   template: `
     <transition :name='dynamicTransition' @after-enter='moveHandler'>
-      <img :id='unit.id' v-if='unit' class='unit space' :src='unit.sprite'></img>
+      <img v-if='unit' :id='unit.id' class='unit space' :src='unit.sprite' :title='unit.name'></img>
     </transition>
   `,
   props: ['unit'],
@@ -326,19 +326,27 @@ var UnitCombat = {
   }
 };
 
-var ItemSlot = {}
+var ItemSlot = {
+  template: `
+    <div class='item-slot' :style='slotBackground'>
+      <img v-if='item' class='item' :src='item.sprite' :title='item.name'>
+    </div>
+  `,
+  props: ['type', 'n', 'item'],
+  computed: {
+    slotBackground: function () {
+      var imgUrl = "url('sprites/" + this.type + "-slot.png')";
+      return { backgroundImage: imgUrl }
+    }
+  }
+}
 
 var ItemHolder = {
   template: `
     <div class='item-holder'>
       <img :src='typeCard'>
       <div class='slot-container' :style='borderColor'>
-        <div class='item-slot' :style='slotBackground'></div>
-        <div class='item-slot' :style='slotBackground'></div>
-        <div class='item-slot' :style='slotBackground'></div>
-        <div class='item-slot' :style='slotBackground'></div>
-        <div class='item-slot' :style='slotBackground'></div>
-        <div class='item-slot' :style='slotBackground'></div>
+        <item-slot v-for='n in 6' :type='type' :n='n' :item='itemData[n - 1]' :key='n'></item-slot>
       </div>
     </div>
   `,
@@ -354,9 +362,14 @@ var ItemHolder = {
         case 'accessory': return { border: '1px solid #005900' }
       }
     },
-    slotBackground: function () {
-      var imgUrl = "url('sprites/" + this.type + "-slot.png')";
-      return { backgroundImage: imgUrl }
+    itemData: function () {
+      var itemData = [null, null, null, null, null, null];
+      this.items.forEach( function (item) {
+        item.slots.forEach( function (slot, index) {
+          itemData[slot - 1] = { name: item.name, sprite: item.sprites[index] };
+        });
+      });
+      return itemData;
     }
   },
   components: {
@@ -545,7 +558,7 @@ var Game = new Vue ({
         { west.moves = moves - west.terrain.cost; west.path = path + 'w'; explore.push(goWest) }
       if (nort.terrain.cost <= moves && (!nort.moves || moves - nort.terrain.cost > nort.moves) && nort.unit === null)
         { nort.moves = moves - nort.terrain.cost; nort.path = path + 'n'; explore.push(goNort) }
-      shuffle(explore).forEach( function (go) { go(); } );
+      shuffle(explore).forEach( function (f) { f(); } );
     },
     cancelMove: function () {
       this.hideMoveRange();
@@ -848,7 +861,7 @@ var Game = new Vue ({
         }
       }
       if (targets.length > 0) {
-        targets.forEach(function(target){ if (target.attack > bestAttack) { bestAttack = target.attack } });
+        targets.forEach(function(target) { if (target.attack > bestAttack) { bestAttack = target.attack } });
         target = shuffle(targets.filter(target => target.attack === bestAttack))[0];
         this.hideAttackRange(target.posY, target.posX);
         this.targetUnit(target.posY, target.posX);

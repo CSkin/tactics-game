@@ -52,25 +52,27 @@ class Space {
 }
 
 class Item {
-  constructor(sprite, name, descrip, position, sprites) {
+  constructor(id, sprite, name, descrip, slots, sprites) {
+    this.id = id;
     this.sprite = 'sprites/' + sprite;
     this.name = name;
     this.descrip = descrip;
-    this.position = position;
+    this.slots = slots;
     this.sprites = sprites.map( s => 'sprites/' + s );
   }
 }
 
 class Weapon extends Item {
-  constructor(sprite, name, descrip, power, range, position, sprites, equipped) {
-    super(sprite, name, descrip, position, sprites);
+  constructor(id, sprite, name, descrip, power, range, slots, sprites, equipped) {
+    super(id, sprite, name, descrip, slots, sprites);
+    this.type = 'weapon';
     this.power = power;
     this.range = range;
     this.equipped = equipped;
   }
 }
 
-var heavyStick = new Weapon('log.png', 'Heavy Stick', 'An unusually heavy stick.', 1, 1, [1], ['log.png'], true);
+var claws = new Weapon('claws', 'claws.png', 'Claws', 'Sharp claws built for rending flesh.', 1, 1, [1], ['claws.png'], true);
 
 class Unit {
   constructor(id, faction, sprite, name, offense, defense, range, movement, weapons, clothing, accessories, posY, posX, friendly, control, behavior) {
@@ -103,7 +105,7 @@ class Unit {
   }
 }
 
-var player0 = new Unit('player0', 'Player', 'player.png', 'Player Unit', 1, 2, 3, 5, [heavyStick], [], [], 9, 4, true, 'player'),
+var player0 = new Unit('player0', 'Player', 'player.png', 'Player Unit', 1, 2, 3, 5, [claws], [], [], 9, 4, true, 'player'),
     enemy0  = new Unit('enemy0', 'Enemy', 'enemy.png', 'Enemy Unit', 2, 1, 3, 5, [], [], [], 6, 11, false, 'ai', 'sentry');
 
 var unitPlan = [

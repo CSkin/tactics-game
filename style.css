@@ -190,6 +190,10 @@ div + span  {
   height: 32px;
 }
 
+.item {
+  cursor: pointer;
+}
+
 .banner {
   width: 300px;
 }
