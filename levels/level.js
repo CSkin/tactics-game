@@ -52,19 +52,27 @@ class Space {
 }
 
 class Item {
-  constructor(id, sprite, name, descrip, slots, sprites) {
+  constructor(id, name, descrip, slots) {
     this.id = id;
-    this.sprite = 'sprites/' + sprite;
+    this.sprite = 'sprites/' + id + '.png';
     this.name = name;
     this.descrip = descrip;
     this.slots = slots;
-    this.sprites = sprites.map( s => 'sprites/' + s );
+    if (slots.length === 1) {
+      this.sprites = [this.sprite];
+    } else {
+      var n, sprites = [];
+      for (n = 1; n <= slots.length; n++) {
+        sprites.push('sprites/' + id + String(n) + '.png');
+      }
+      this.sprites = sprites;
+    }
   }
 }
 
 class Weapon extends Item {
-  constructor(id, sprite, name, descrip, power, range, slots, sprites, equipped) {
-    super(id, sprite, name, descrip, slots, sprites);
+  constructor(id, name, descrip, slots, power, range, equipped) {
+    super(id, name, descrip, slots);
     this.type = 'weapon';
     this.power = power;
     this.range = range;
@@ -72,7 +80,9 @@ class Weapon extends Item {
   }
 }
 
-var claws = new Weapon('claws', 'claws.png', 'Claws', 'Sharp claws built for rending flesh.', 1, 1, [1], ['claws.png'], true);
+var claws = new Weapon('claws', 'Claws', 'Sharp claws. Built for digging.', [1], 1, [1, 1], true),
+    stones = new Weapon('stones', 'Stones', 'A bunch of stones. Good for throwing.', [2], 1, [2, 3], false),
+    stick = new Weapon('stick', 'Heavy Stick', 'An unusually heavy stick.', [3, 5], 2, [1, 1], false);
 
 class Unit {
   constructor(id, faction, sprite, name, offense, defense, range, movement, weapons, clothing, accessories, posY, posX, friendly, control, behavior) {
@@ -105,7 +115,7 @@ class Unit {
   }
 }
 
-var player0 = new Unit('player0', 'Player', 'player.png', 'Player Unit', 1, 2, 3, 5, [claws], [], [], 9, 4, true, 'player'),
+var player0 = new Unit('player0', 'Player', 'player.png', 'Player Unit', 1, 2, 3, 5, [claws, stones, stick], [], [], 9, 4, true, 'player'),
     enemy0  = new Unit('enemy0', 'Enemy', 'enemy.png', 'Enemy Unit', 2, 1, 3, 5, [], [], [], 6, 11, false, 'ai', 'sentry');
 
 var unitPlan = [
