@@ -233,7 +233,7 @@ var UnitInfo = {
 
 var UnitActions = {
   template: `
-    <div v-if="unit.control === 'player'" class='ui'>
+    <div class='ui'>
       <p class='heading'><img class='icon' src='sprites/actions-icon.png'>Actions</p>
       <div id='action-buttons'>
         <div id='move-holder' class='btn-holder'>
@@ -256,20 +256,20 @@ var UnitActions = {
     beginMove: function () {
       if (this.action) { this.cancelAction() }
       var unit = Game.active.unit;
-      Game.showMoveRange(unit.posY, unit.posX, unit.moves, '');
-      Game.action = 'moving';
       Game.target = null;
+      Game.action = 'moving';
+      Game.showMoveRange(unit.posY, unit.posX, unit.moves, '');
     },
     beginAttack: function () {
       if (this.action) { this.cancelAction() }
-      Game.showAttackRange();
-      Game.action = 'attacking';
       Game.target = null;
+      Game.action = 'attacking';
+      Game.showAttackRange();
     },
     beginEquip: function () {
       if (this.action) { this.cancelAction() }
-      console.log('Trying to equip.');
       Game.action = 'equipping';
+      this.$nextTick(function(){ Game.makeItemsDraggable() });
     },
     cancelAction: function () {
       switch (this.action) {
@@ -283,7 +283,7 @@ var UnitActions = {
 
 var TargetActions = {
   template: `
-    <div v-if='hit || hit === 0' class='ui'>
+    <div class='ui'>
       <p class='heading'><img class='icon' src='sprites/actions-icon.png'>Actions</p>
       <div id='confatk-holder' class='btn-holder'>
         <img v-if='btnEnabled' id='btn-confatk' class='button' src='sprites/btn-confatk.png' title='Confirm Attack (A)' @click='confirmAttack'>
@@ -304,7 +304,7 @@ var TargetActions = {
 
 var UnitCombat = {
   template: `
-    <div v-if='hit' class='ui'>
+    <div class='ui'>
       <p class='heading'><img class='icon' src='sprites/combat-icon.png'>Combat</p>
       <p>{{ type }} hit chance: <b :style='gradient'>{{ hit }}%</b></p>
     </div>
@@ -328,8 +328,8 @@ var UnitCombat = {
 
 var ItemSlot = {
   template: `
-    <div class='item-slot' :style='slotBackground'>
-      <img v-if='item' class='item' :src='item.sprite' :title='item.name'>
+    <div :id='type + n' class='item-slot' :style='slotBackground'>
+      <img v-if='item' :id='item.id' class='item' :src='item.sprite' :title='item.name'>
     </div>
   `,
   props: ['type', 'n', 'item'],
@@ -344,17 +344,14 @@ var ItemSlot = {
 var ItemHolder = {
   template: `
     <div class='item-holder'>
-      <img :src='typeCard'>
+      <img :src="'sprites/' + type + '-card.png'">
       <div class='slot-container' :style='borderColor'>
-        <item-slot v-for='n in 6' :type='type' :n='n' :item='itemData[n - 1]' :key='n'></item-slot>
+        <item-slot v-for='n in 6' :type='type' :n='n - 1' :item='itemData[n - 1]' :key='n - 1'></item-slot>
       </div>
     </div>
   `,
   props: ['type', 'items'],
   computed: {
-    typeCard: function () {
-      return 'sprites/' + this.type + '-card.png';
-    },
     borderColor: function () {
       switch (this.type) {
         case 'weapon': return { border: '1px solid #800000' }
@@ -366,7 +363,7 @@ var ItemHolder = {
       var itemData = [null, null, null, null, null, null];
       this.items.forEach( function (item) {
         item.slots.forEach( function (slot, index) {
-          itemData[slot - 1] = { name: item.name, sprite: item.sprites[index] };
+          itemData[slot] = { id: item.id, name: item.name, sprite: item.sprites[index] };
         });
       });
       return itemData;
@@ -406,12 +403,12 @@ var SidePanel = {
         <div v-if='space && space.unit'>
           <unit-info :unit='space.unit'></unit-info>
           <template v-if="side === 'left'">
-            <unit-actions v-if="control === 'player'" :action='action' :unit='space.unit'></unit-actions>
-            <unit-combat type='Attack' :hit='attack'></unit-combat>
+            <unit-actions v-if="control === 'player' && space.unit.control === 'player'" :action='action' :unit='space.unit'></unit-actions>
+            <unit-combat v-if='attack' type='Attack' :hit='attack'></unit-combat>
           </template>
           <template v-else-if="side === 'right'">
-            <target-actions v-if="control === 'player'" :hit='counter'></target-actions>
-            <unit-combat type='Counter' :hit='counter'></unit-combat>
+            <target-actions v-if="control === 'player' && (counter || counter === 0)" :hit='counter'></target-actions>
+            <unit-combat v-if='counter' type='Counter' :hit='counter'></unit-combat>
           </template>
           <unit-equipment v-if="action === 'equipping'" :items='space.unit.items'></unit-equipment>
         </div>
@@ -522,6 +519,20 @@ var Game = new Vue ({
     },
     units: function () {
       return shuffle(this.getUnits(this.faction));
+    },
+    equipment: function () {
+      var s, filtered,
+          items = this.active.unit.items,
+          itemsArray = [items.weapons, items.clothing, items.accessories],
+          equipArray = [[], [], []];
+      itemsArray.forEach( function (type, index) {
+        for (s = 0; s < 6; s++) {
+          filtered = type.filter( i => i.slots.includes(s) );
+          if (filtered.length > 0) { equipArray[index].push(filtered[0].id) }
+          else { equipArray[index].push(null) }
+        }
+      });
+      return { weapons: equipArray[0], clothing: equipArray[1], accessories: equipArray[2] }
     }
   },
   watch: {
@@ -776,6 +787,35 @@ var Game = new Vue ({
       this.attack = null;
       this.counter = null;
     },
+    makeItemsDraggable: function () {
+      $( '.item' ).draggable({
+        cursor: '-webkit-grabbing',
+        revert: 'invalid',
+        snap: '.item-slot',
+        snapMode: 'inner',
+        snapTolerance: 16,
+        stack: '.item',
+        start: function(event, ui){
+          console.log('Dragging has begun!');
+          $(this).css('cursor', '-webkit-grabbing');
+          Game.findDroppableSlots(event.target.parentNode.id);
+        },
+        stop: function(event, ui){
+          console.log('Dragging has stopped.');
+          $(this).css('cursor', 'initial');
+        }
+      });
+    },
+    findDroppableSlots: function (id) {
+      var itemType = id.slice(0, -1),
+          slotNum = id.slice(-1);
+      switch (itemType) {
+        case 'weapon': itemType += 's'; break;
+        case 'clothing': break;
+        case 'accessory': itemType = 'accessories'; break;
+      }
+      
+    },
     cancelEquip: function () {
       this.action = null;
     },
@@ -861,7 +901,7 @@ var Game = new Vue ({
         }
       }
       if (targets.length > 0) {
-        targets.forEach(function(target) { if (target.attack > bestAttack) { bestAttack = target.attack } });
+        targets.forEach( function (target) { if (target.attack > bestAttack) { bestAttack = target.attack } });
         target = shuffle(targets.filter(target => target.attack === bestAttack))[0];
         this.hideAttackRange(target.posY, target.posX);
         this.targetUnit(target.posY, target.posX);

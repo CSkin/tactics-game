@@ -192,6 +192,7 @@ div + span  {
 
 .item {
   cursor: pointer;
+  cursor: -webkit-grab;
 }
 
 .banner {
