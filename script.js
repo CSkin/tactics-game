@@ -329,7 +329,7 @@ var UnitCombat = {
 var ItemSlot = {
   template: `
     <div :id='type + n' class='item-slot' :style='slotBackground'>
-      <img v-if='item' :id='item.id' class='item' :src='item.sprite' :title='item.name'>
+      <img v-if='item' :id="item.id + '-' + n" class='item' :src='item.sprite' :title='item.name'>
     </div>
   `,
   props: ['type', 'n', 'item'],
@@ -374,7 +374,7 @@ var ItemHolder = {
   }
 }
 
-var UnitEquipment = {
+var UnitItems = {
   template: `
     <div class='ui'>
       <p class='heading'><img class='icon' src='sprites/equipment-icon.png'>Equipment</p>
@@ -410,7 +410,7 @@ var SidePanel = {
             <target-actions v-if="control === 'player' && (counter || counter === 0)" :hit='counter'></target-actions>
             <unit-combat v-if='counter' type='Counter' :hit='counter'></unit-combat>
           </template>
-          <unit-equipment v-if="action === 'equipping'" :items='space.unit.items'></unit-equipment>
+          <unit-items v-if="action === 'equipping'" :items='space.unit.items'></unit-items>
         </div>
       </transition>
     </div>
@@ -428,7 +428,7 @@ var SidePanel = {
     'unit-combat': UnitCombat,
     'unit-actions': UnitActions,
     'target-actions': TargetActions,
-    'unit-equipment': UnitEquipment
+    'unit-items': UnitItems
   }
 };
 
@@ -520,19 +520,21 @@ var Game = new Vue ({
     units: function () {
       return shuffle(this.getUnits(this.faction));
     },
-    equipment: function () {
-      var s, filtered,
-          items = this.active.unit.items,
-          itemsArray = [items.weapons, items.clothing, items.accessories],
-          equipArray = [[], [], []];
-      itemsArray.forEach( function (type, index) {
-        for (s = 0; s < 6; s++) {
-          filtered = type.filter( i => i.slots.includes(s) );
-          if (filtered.length > 0) { equipArray[index].push(filtered[0].id) }
-          else { equipArray[index].push(null) }
-        }
-      });
-      return { weapons: equipArray[0], clothing: equipArray[1], accessories: equipArray[2] }
+    itemMap: function () {
+      if (this.active && this.active.unit) {
+        var s, filtered,
+            items = this.active.unit.items,
+            itemList = [items.weapons, items.clothing, items.accessories],
+            itemMap = [[], [], []];
+        itemList.forEach( function (type, index) {
+          for (s = 0; s < 6; s++) {
+            filtered = type.filter( i => i.slots.includes(s) );
+            if (filtered.length > 0) { itemMap[index].push(filtered[0].id) }
+            else { itemMap[index].push(null) }
+          }
+        });
+        return { weapons: itemMap[0], clothing: itemMap[1], accessories: itemMap[2] };
+      }
     }
   },
   watch: {
@@ -791,33 +793,71 @@ var Game = new Vue ({
       $( '.item' ).draggable({
         cursor: '-webkit-grabbing',
         revert: 'invalid',
-        snap: '.item-slot',
+        snap: '.ui-droppable',
         snapMode: 'inner',
-        snapTolerance: 16,
+        snapTolerance: 8,
         stack: '.item',
         start: function(event, ui){
-          console.log('Dragging has begun!');
           $(this).css('cursor', '-webkit-grabbing');
-          Game.findDroppableSlots(event.target.parentNode.id);
+          var slotId = event.target.parentNode.id;
+          Game.findDroppableSlots(slotId.slice(0, -1), Number(slotId.slice(-1)), event.target.id.slice(0, -2));
         },
         stop: function(event, ui){
-          console.log('Dragging has stopped.');
-          $(this).css('cursor', 'initial');
+          $(this).css('cursor', '-webkit-grab');
+          Game.resetDragNDrop();
         }
       });
     },
-    findDroppableSlots: function (id) {
-      var itemType = id.slice(0, -1),
-          slotNum = id.slice(-1);
-      switch (itemType) {
-        case 'weapon': itemType += 's'; break;
-        case 'clothing': break;
-        case 'accessory': itemType = 'accessories'; break;
-      }
-      
-    },
     cancelEquip: function () {
       this.action = null;
+    },
+    findDroppableSlots: function (itemType, slotNum, itemId) {
+      var itemHolder = this.itemMap[this.convertItemType(itemType)],
+          itemFootprint = [],
+          slots = [0, 1, 2, 3, 4, 5].filter(s => s !== slotNum),
+          droppable = [],
+          cinderella; // does the foot (item) fit the shoe (slot)?
+      itemHolder.forEach( function (item, index) {
+        if (item === itemId) {
+          itemFootprint.push(slotNum - index);
+          itemHolder[index] = null;
+        }
+      });
+      slots.forEach( function (slot) {
+        cinderella = true;
+        itemFootprint.forEach( function (toe) {
+          if (itemHolder[slot + toe] !== null) { cinderella = false; }
+        });
+        if (cinderella) { droppable.push(itemType + slot) }
+      });
+      droppable = droppable.map( s => '#' + s ).join(',');
+      this.makeSlotsDroppable(droppable);
+    },
+    convertItemType: function (itemType) {
+      switch (itemType) {
+        case 'weapon': return 'weapons';
+        case 'clothing': return 'clothing';
+        case 'accessory': return 'accessories';
+      }
+    },
+    makeSlotsDroppable: function (droppable) {
+      $( droppable ).droppable({
+        drop: function (event, ui) {
+          var y = Game.active.unit.posY, x = Game.active.unit.posX,
+              itemType = Game.convertItemType(event.target.id.slice(0, -1)),
+              itemList = Game.map[y][x].unit.items[itemType],
+              itemId = ui.draggable[0].id.slice(0, -2),
+              itemIndex = itemList.indexOf(itemList.filter( i => i.id === itemId )[0]),
+              itemSlots = itemList[itemIndex].slots,
+              translation = event.target.id.slice(-1) - ui.draggable[0].id.slice(-1);
+          Game.map[y][x].unit.items[itemType][itemIndex].slots = itemSlots.map( s => s + translation );
+        }
+      });
+    },
+    resetDragNDrop: function () {
+      $( '.ui-draggable' ).draggable( 'destroy' );
+      $( '.ui-droppable' ).droppable( 'destroy' );
+      Vue.nextTick(function(){ Game.makeItemsDraggable() });
     },
     beginTurn: function () {
       var u, unit, units = this.units;
