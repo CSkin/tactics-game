@@ -54,7 +54,7 @@ class Space {
 class Item {
   constructor(id, name, descrip, slots) {
     this.id = id;
-    this.sprite = 'sprites/' + id + '.png';
+    this.sprite = 'sprites/' + id.replace(/\d/, '') + '.png';
     this.name = name;
     this.descrip = descrip;
     this.slots = slots;
