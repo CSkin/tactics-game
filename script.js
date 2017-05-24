@@ -269,7 +269,7 @@ var UnitActions = {
     beginEquip: function () {
       if (this.action) { this.cancelAction() }
       Game.action = 'equipping';
-      this.$nextTick(function(){ Game.makeItemsDraggable() });
+      Vue.nextTick(function(){ Game.makeItemsDraggable('.item') });
     },
     cancelAction: function () {
       switch (this.action) {
@@ -329,7 +329,7 @@ var UnitCombat = {
 var ItemSlot = {
   template: `
     <div :id='type + n' class='item-slot' :style='slotBackground'>
-      <img v-if='item' :id="item.id + '-' + n" class='item' :src='item.sprite' :title='item.name'>
+      <img v-if='item' :id="item.id + '-' + n" class='item' :class='item.id' :src='item.sprite' :title='item.name'>
     </div>
   `,
   props: ['type', 'n', 'item'],
@@ -773,33 +773,45 @@ var Game = new Vue ({
       this.attack = null;
       this.counter = null;
     },
-    makeItemsDraggable: function () {
-      console.log('Making items draggable.');
-      $( '.item' ).draggable({
-        revert: 'invalid',
-        snap: '.ui-droppable',
-        snapMode: 'inner',
-        snapTolerance: 8,
-        stack: '.item',
-        start: function(event, ui){
-          console.log('Starting drag.');
-          $(this).css('cursor', '-webkit-grabbing');
-          var slotId = event.target.parentNode.id;
-          Game.findDroppableSlots(slotId.slice(0, -1), Number(slotId.slice(-1)), event.target.id.slice(0, -2));
-        },
-        stop: function(event, ui){
-          console.log('Stopping drag.');
-          $(this).css('cursor', '-webkit-grab');
-          $( '.ui-droppable' ).droppable( 'destroy' );
-        }
+    makeItemsDraggable: function (selector) {
+      $( selector ).toArray().forEach( function (item) {
+        var itemSrc = item.src.match(/sprites\/.*\.png/)[0],
+            cursorOffset = Game.findCursorOffset(itemSrc),
+            helperSrc = itemSrc.replace(/\d/, ''),
+            itemClass = '.' + item.classList[1];
+        $( '#' + item.id ).draggable({
+          cursor: '-webkit-grabbing',
+          cursorAt: cursorOffset,
+          helper: function(){ return $( '<img>', { src: helperSrc } ) },
+          revert: 'invalid',
+          start: function (event, ui) {
+            $( itemClass ).hide();
+            var slotId = event.target.parentNode.id;
+            Game.findDroppableSlots(slotId.slice(0, -1), Number(slotId.slice(-1)), event.target.id.slice(0, -2));
+          },
+          stop: function (event, ui) {
+            $( itemClass ).show();
+            $( '.ui-droppable' ).droppable( 'destroy' );
+          }
+        });
       });
+    },
+    findCursorOffset: function (src) {
+      if (src.match(/\d/)) {
+        switch (Number(src.match(/\d/)[0])) {
+          case 0: return { top: 16, left: 16 }
+          case 1: return { top: 16, left: 48 }
+          case 2: return { top: 48, left: 16 }
+          case 3: return { top: 48, left: 48 }
+          case 4: return { top: 80, left: 16 }
+          case 5: return { top: 80, left: 48 }
+        }
+      } else { return { top: 16, left: 16 } }
     },
     cancelEquip: function () {
       this.action = null;
     },
     findDroppableSlots: function (itemType, slotNum, itemId) {
-      console.log('Finding droppable slots.');
-      console.log(itemType + ', ' + slotNum + ', ' + itemId);
       var itemList = this.active.unit.items[this.convertItemType(itemType)],
           itemMap = [null, null, null, null, null, null],
           itemFootprint = [],
@@ -811,16 +823,12 @@ var Game = new Vue ({
           itemMap[slot] = item.id;
         });
       });
-      console.log(itemMap);
       itemMap.forEach( function (slot, index) {
         if (slot === itemId) {
           itemFootprint.push(index - slotNum);
           itemMap[index] = null;
         }
       });
-      console.log(itemMap);
-      console.log(itemFootprint);
-      console.log(slots);
       slots.forEach( function (slot) {
         cinderella = true;
         itemFootprint.forEach( function (toe) {
@@ -828,7 +836,6 @@ var Game = new Vue ({
         });
         if (cinderella) { droppable.push(itemType + slot) }
       });
-      console.log(droppable);
       droppable = droppable.map( s => '#' + s ).join(',');
       this.makeSlotsDroppable(droppable);
     },
@@ -839,22 +846,22 @@ var Game = new Vue ({
         case 'accessory': return 'accessories';
       }
     },
-    makeSlotsDroppable: function (droppable) {
-      console.log('Making slots droppable.');
-      $( droppable ).droppable({
+    makeSlotsDroppable: function (selector) {
+      $( selector ).droppable({
+        tolerance: 'pointer',
         drop: function (event, ui) {
-          console.log('Dropping item.');
           var y = Game.active.unit.posY, x = Game.active.unit.posX,
               itemType = Game.convertItemType(event.target.id.slice(0, -1)),
               itemList = Game.map[y][x].unit.items[itemType],
               itemId = ui.draggable[0].id.slice(0, -2),
               itemIndex = itemList.indexOf(itemList.filter( i => i.id === itemId )[0]),
               itemSlots = itemList[itemIndex].slots,
-              translation = Number(event.target.id.slice(-1)) - Number(ui.draggable[0].id.slice(-1));
+              translation = Number(event.target.id.slice(-1)) - Number(ui.draggable[0].id.slice(-1)),
+              itemString = itemSlots.map( s => '#' + itemId + '-' + (s + translation) ).join(',');
           Game.map[y][x].unit.items[itemType][itemIndex].slots = [];
           Vue.nextTick(function(){
             Game.map[y][x].unit.items[itemType][itemIndex].slots = itemSlots.map( s => s + translation );
-            Vue.nextTick(function(){ Game.makeItemsDraggable() });
+            Vue.nextTick(function(){ Game.makeItemsDraggable(itemString) });
           });
         }
       });
