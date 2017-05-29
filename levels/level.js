@@ -63,7 +63,7 @@ class Item {
     } else {
       var n, sprites = [];
       for (n = 0; n < slots.length; n++) {
-        sprites.push('sprites/' + id.replace(/\d/, '') + (slots[n] - slots[0]) + '.png');
+        sprites.push('sprites/' + id + slots[n] + '.png');
       }
       this.sprites = sprites;
     }
@@ -80,9 +80,31 @@ class Weapon extends Item {
   }
 }
 
-var claws = new Weapon('claws', 'Claws', 'Sharp claws. Built for digging.', [0], 1, [1, 1], true),
-    stones = new Weapon('stones', 'Stones', 'A bunch of stones. Good for throwing.', [1], 1, [2, 3], false),
-    stick = new Weapon('stick', 'Heavy Stick', 'An unusually heavy stick.', [2, 4], 2, [1, 1], false);
+class Clothing extends Item {
+  constructor(id, name, descrip, slots, armor, moveBonus) {
+    super(id, name, descrip, slots);
+    this.type = 'clothing';
+    this.armor = armor;
+    this.moveBonus = moveBonus;
+  }
+}
+
+class Accessory extends Item {
+  constructor(id, name, descrip, slots, effect) {
+    super(id, name, descrip, slots);
+    this.type = 'accessory';
+    this.effect = effect;
+  }
+}
+
+var claws = new Weapon('claws', 'Claws', 'Built for digging but useful in a fight.', [0], 1, [1, 1], true),
+    stones = new Weapon('stones', 'Stones', 'The original projectile weapon.', [1], 1, [2, 3], false),
+    stick = new Weapon('stick', 'Heavy Stick', 'An unusually heavy stick.', [0, 2], 2, [1, 1], false),
+    tunic = new Clothing('tunic', 'Tunic', 'Comfy and easy to wear.', [0], 1, 0),
+    boots = new Clothing('boots', 'Boots', "Made for walkin'.", [5], 0, 1),
+    salve1 = new Accessory('salve', 'Salve', 'Heals most any wound.', [0], 'heal'),
+    salve2 = new Accessory('salve', 'Salve', 'Heals most any wound.', [1], 'heal');
+    
 
 class Unit {
   constructor(id, faction, sprite, name, offense, defense, range, movement, weapons, clothing, accessories, posY, posX, friendly, control, behavior) {
@@ -115,7 +137,7 @@ class Unit {
   }
 }
 
-var player0 = new Unit('player0', 'Player', 'player.png', 'Player Unit', 1, 2, 3, 5, [claws, stones, stick], [], [], 9, 4, true, 'player'),
+var player0 = new Unit('player0', 'Player', 'player.png', 'Player Unit', 1, 2, 3, 5, [stick, stones], [tunic, boots], [salve1, salve2], 9, 4, true, 'player'),
     enemy0  = new Unit('enemy0', 'Enemy', 'enemy.png', 'Enemy Unit', 2, 1, 3, 5, [], [], [], 6, 11, false, 'ai', 'sentry');
 
 var unitPlan = [
