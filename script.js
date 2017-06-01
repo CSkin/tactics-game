@@ -222,13 +222,14 @@ var UnitInfo = {
     <div class='ui'>
       <div class='heading'><div class='icon' :class='unit.faction'></div>{{ unit.name }}</div>
       <p>Condition: <b :class='unit.condition'>{{ unit.condition }}</b></p>
-      <p>Offense: <b>{{ unit.offense }}</b></p>
-      <p>Defense: <b>{{ unit.defense }}</b> <b class='buff' v-if='unit.defBonus > 0'>+{{ unit.defBonus }}</b></p>
-      <p>Range: <b>{{ unit.range }}</b></p>
-      <p>Movement: <b>{{ unit.moves }} / {{ unit.movement }}</b></p>
+      <p>Strength: <b>{{ unit.strength }}</b></p>
+      <p>Skill: <b>{{ unit.skill }}</b></p>
+      <p>Agility: <b>{{ unit.agility }}</b></p>
+      <p>Toughness: <b>{{ unit.toughness }}</b></p>
+      <p>Equipped: <b>{{ unit.equipped.name }}</b></p>
     </div>
   `,
-  props: ['unit']
+  props: ['unit', 'terrain']
 };
 
 var UnitActions = {
@@ -401,7 +402,7 @@ var SidePanel = {
       </transition>
       <transition :name='dynamicTransition'>
         <div v-if='space && space.unit'>
-          <unit-info :unit='space.unit'></unit-info>
+          <unit-info :unit='space.unit' :terrain='space.terrain'></unit-info>
           <template v-if="side === 'left'">
             <unit-actions v-if="control === 'player' && space.unit.control === 'player'" :action='action' :unit='space.unit'></unit-actions>
             <unit-combat v-if='attack' type='Attack' :hit='attack'></unit-combat>
@@ -521,19 +522,6 @@ var Game = new Vue ({
       return shuffle(this.getUnits(this.faction));
     }
   },
-  watch: {
-    active: function () {
-      if (this.active && this.active.unit) {
-        this.map[this.active.unit.posY][this.active.unit.posX].unit.defBonus = this.defenseBonus(this.active, this.target);
-      }
-    },
-    target: function () {
-      if (this.active && this.active.unit && this.target) {
-        this.map[this.active.unit.posY][this.active.unit.posX].unit.defBonus = this.defenseBonus(this.active, this.target);
-        this.map[this.target.unit.posY][this.target.unit.posX].unit.defBonus = this.defenseBonus(this.target, this.active);
-      }
-    }
-  },
   methods: {
     showMoveRange: function (y, x, moves, path) {
       var origin = this.map[y][x],
@@ -617,7 +605,9 @@ var Game = new Vue ({
       var f, y, x, s, distance, angle, width, shadows = [], inLineOfSight,
           posY = this.active.unit.posY,
           posX = this.active.unit.posX,
-          range = this.active.unit.range,
+          range = this.active.unit.items.weapons.filter( weapon => weapon.equipped === true )[0].range,
+          rangeFrom = range[0],
+          rangeTo = range[1],
           findShadows = function (y, x) {
             if (!Game.map[y][x].terrain.seeThru) {
               distance = Math.abs(posY - y) + Math.abs(posX - x);
@@ -628,7 +618,7 @@ var Game = new Vue ({
           },
           findAttackRange = function (y, x) {
             distance = Math.abs(posY - y) + Math.abs(posX - x);
-            if (distance <= range && Game.map[y][x].terrain.seeThru) {
+            if (distance >= rangeFrom && distance <= rangeTo && Game.map[y][x].terrain.seeThru) {
               inLineOfSight = true;
               angle = Math.atan2(y - posY, x - posX);
               for (s = 0; s < shadows.length; s++) {
@@ -642,8 +632,8 @@ var Game = new Vue ({
           },
           functions = [findShadows, findAttackRange];
       for (f = 0; f < 2; f++) {
-        for (y = Math.max(posY - range, 0); y <= Math.min(posY + range, 15); y++) {
-          for (x = Math.max(posX - range, 0); x <= Math.min(posX + range, 15); x++) {
+        for (y = Math.max(posY - rangeTo, 0); y <= Math.min(posY + rangeTo, 15); y++) {
+          for (x = Math.max(posX - rangeTo, 0); x <= Math.min(posX + rangeTo, 15); x++) {
             functions[f](y, x);
           }
         }
@@ -660,7 +650,7 @@ var Game = new Vue ({
       var y, x, distance, targetDistance,
           posY = this.active.unit.posY,
           posX = this.active.unit.posX,
-          range = this.active.unit.range;
+          range = this.active.unit.items.weapons.filter( weapon => weapon.equipped === true )[0].range[1];
       if (targetY && targetX) { targetDistance = this.map[targetY][targetX].distance }
       for (y = Math.max(posY - range, 0); y <= Math.min(posY + range, 15); y++) {
         for (x = Math.max(posX - range, 0); x <= Math.min(posX + range, 15); x++) {
@@ -684,24 +674,6 @@ var Game = new Vue ({
       } else {
         this.counter = 0;
       }
-    },
-    defenseBonus: function (defender, attacker) {
-      var defBonus = 0,
-          cover = defender.terrain.cover,
-          facing = defender.terrain.facing;
-      if (!facing) { defBonus += cover }
-      if (attacker) {
-        if (facing) {
-          switch (facing) {
-            case 'East': if (attacker.posX > defender.posX) { defBonus += cover } break;
-            case 'South': if (attacker.posY > defender.posY) { defBonus += cover } break;
-            case 'West': if (attacker.posX < defender.posX) { defBonus += cover } break;
-            case 'North': if (attacker.posY < defender.posY) { defBonus += cover } break;
-          }
-        }
-        defBonus += Math.abs(defender.posY - attacker.posY) + Math.abs(defender.posX - attacker.posX) - 1;
-      }
-      return defBonus;
     },
     attackUnit: function (counter) {
       var attacker, defender, hitChance, spacesY, spacesX, pixelsY, pixelsX, evadeSprite, attack, hit, miss;
