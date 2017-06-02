@@ -291,7 +291,6 @@ var TargetActions = {
       </div>
     </div>
   `,
-  props: ['hit'],
   data: function () {
     return { btnEnabled: true }
   },
@@ -509,7 +508,7 @@ var Game = new Vue ({
     active: null,         // Space object
     target: null,         // Space object
     attack: null,         // attack hit chance
-    counter: null         // counterattack hit chance
+    counter: null         // counter hit chance
   },
   computed: {
     faction: function () {
@@ -520,6 +519,14 @@ var Game = new Vue ({
     },
     units: function () {
       return shuffle(this.getUnits(this.faction));
+    },
+    activeCombat: function () {
+      if (this.target) {
+        return {
+          attack: this.calculateAttack(this.active),
+          defense: this.calculateDefense(this.active, this.target)
+        }
+      }
     }
   },
   methods: {
@@ -605,9 +612,7 @@ var Game = new Vue ({
       var f, y, x, s, distance, angle, width, shadows = [], inLineOfSight,
           posY = this.active.unit.posY,
           posX = this.active.unit.posX,
-          range = this.active.unit.items.weapons.filter( weapon => weapon.equipped === true )[0].range,
-          rangeFrom = range[0],
-          rangeTo = range[1],
+          range = this.active.unit.range,
           findShadows = function (y, x) {
             if (!Game.map[y][x].terrain.seeThru) {
               distance = Math.abs(posY - y) + Math.abs(posX - x);
@@ -618,7 +623,7 @@ var Game = new Vue ({
           },
           findAttackRange = function (y, x) {
             distance = Math.abs(posY - y) + Math.abs(posX - x);
-            if (distance >= rangeFrom && distance <= rangeTo && Game.map[y][x].terrain.seeThru) {
+            if (distance >= range[0] && distance <= range[1] && Game.map[y][x].terrain.seeThru) {
               inLineOfSight = true;
               angle = Math.atan2(y - posY, x - posX);
               for (s = 0; s < shadows.length; s++) {
@@ -632,8 +637,8 @@ var Game = new Vue ({
           },
           functions = [findShadows, findAttackRange];
       for (f = 0; f < 2; f++) {
-        for (y = Math.max(posY - rangeTo, 0); y <= Math.min(posY + rangeTo, 15); y++) {
-          for (x = Math.max(posX - rangeTo, 0); x <= Math.min(posX + rangeTo, 15); x++) {
+        for (y = Math.max(posY - range[1], 0); y <= Math.min(posY + range[1], 15); y++) {
+          for (x = Math.max(posX - range[1], 0); x <= Math.min(posX + range[1], 15); x++) {
             functions[f](y, x);
           }
         }
@@ -650,30 +655,61 @@ var Game = new Vue ({
       var y, x, distance, targetDistance,
           posY = this.active.unit.posY,
           posX = this.active.unit.posX,
-          range = this.active.unit.items.weapons.filter( weapon => weapon.equipped === true )[0].range[1];
+          range = this.active.unit.range;
       if (targetY && targetX) { targetDistance = this.map[targetY][targetX].distance }
-      for (y = Math.max(posY - range, 0); y <= Math.min(posY + range, 15); y++) {
-        for (x = Math.max(posX - range, 0); x <= Math.min(posX + range, 15); x++) {
+      for (y = Math.max(posY - range[1], 0); y <= Math.min(posY + range[1], 15); y++) {
+        for (x = Math.max(posX - range[1], 0); x <= Math.min(posX + range[1], 15); x++) {
           this.map[y][x].distance = null;
         }
       }
       if (targetY && targetX) { this.map[targetY][targetX].distance = targetDistance }
     },
+    calculateAttack: function (attackerSpace) {
+      // attack = strength + skill + power - distance
+      var attacker = attackerSpace.unit,
+          attackType = attacker.equipped.type,
+          attack = 0;
+      if (attackType === 'melee' || attackType === 'throwing') { attack += attacker.strength }
+      attack += attacker[attackType] + attacker.equipped.power - (this.target.distance - 1);
+      return attack;
+    },
+    calculateDefense: function (defenderSpace, attackerSpace) {
+      // defense = agility + toughness + armor + cover + elevation
+      var defender = defenderSpace.unit,
+          attacker = attackerSpace.unit,
+          attackType = attacker.equipped.type,
+          cover = defenderSpace.terrain.cover,
+          facing = defenderSpace.terrain.facing,
+          defense = 0;
+      if (attackType === 'melee' || attackType === 'throwing') { defense += defender.agility }
+      defense += defender.toughness + defender.items.clothing.reduce( (a, b) => a + b.armor , 0);
+      if (!facing) { defense += cover }
+      else {
+        switch (facing) {
+          case 'East':  if (attacker.posX > defender.posX) { defense += cover } break;
+          case 'South': if (attacker.posY > defender.posY) { defense += cover } break;
+          case 'West':  if (attacker.posX < defender.posX) { defense += cover } break;
+          case 'North': if (attacker.posY < defender.posY) { defense += cover } break;
+        }
+      }
+      defense += defenderSpace.terrain.elevation - attackerSpace.terrain.elevation;
+      return defense;
+    },
     targetUnit: function (y, x) {
       this.target = this.map[y][x];
-      var attacker = this.active.unit,
-          defender = this.target.unit,
-          attackTotal, attack, counterTotal, counter;
-      attackTotal = attacker.offense + defender.defense + this.defenseBonus(this.target, this.active);
-      attack = attacker.offense / attackTotal;
-      this.attack = Math.round(attack * 100);
-      if (defender.range >= this.target.distance) {
-        counterTotal = defender.offense + attacker.defense + this.defenseBonus(this.active, this.target);
-        counter = defender.offense / counterTotal;
-        this.counter = Math.round(counter * 100);
-      } else {
-        this.counter = 0;
-      }
+      // var attacker = this.active.unit,
+      //     defender = this.target.unit,
+      //     attackTotal, attack, counterTotal, counter;
+      // attackTotal = attacker.offense + defender.defense + this.defenseBonus(this.target, this.active);
+      // attack = attacker.offense / attackTotal;
+      // this.attack = Math.round(attack * 100);
+      // if (defender.range >= this.target.distance) {
+      //   counterTotal = defender.offense + attacker.defense + this.defenseBonus(this.active, this.target);
+      //   counter = defender.offense / counterTotal;
+      //   this.counter = Math.round(counter * 100);
+      // } else {
+      //   this.counter = 0;
+      // }
     },
     attackUnit: function (counter) {
       var attacker, defender, hitChance, spacesY, spacesX, pixelsY, pixelsX, evadeSprite, attack, hit, miss;
@@ -728,13 +764,8 @@ var Game = new Vue ({
       }, 500);
     },
     dealDamage: function (y, x) {
-      var unit = this.map[y][x].unit;
-      switch (unit.condition) {
-        case 'Healthy': unit.condition = 'Injured'; break;
-        case 'Injured': unit.condition = 'Critical'; break;
-        case 'Critical': unit.condition = 'Defeated'; break;
-      }
-      if (unit.condition === 'Defeated') {
+      this.map[y][x].unit.hp -= 1;
+      if (this.map[y][x].unit.hp === 0) {
         window.setTimeout(function(){ Game.map[y][x].unit = null }, 500)
       }
     },

@@ -103,7 +103,7 @@ class Accessory extends Item {
 
 var claws = new Weapon('claws', 'Claws', 'Built for digging but useful in a fight.', 'melee', 1, 1, true, null, [0]),
     stones1 = new Weapon('stones1', 'Stones', 'The original projectile weapon.', 'throwing', 1, 3, false, null, [1]),
-    stones2 = new Weapon('stones2', 'Stones', 'The original projectile weapon.', 'throwing', 1, 3, false, null, [0]),
+    stones2 = new Weapon('stones2', 'Stones', 'The original projectile weapon.', 'throwing', 1, 3, true, null, [0]),
     stick = new Weapon('stick', 'Heavy Stick', 'An unusually heavy stick.', 'melee', 2, 1, false, null, [0, 2]),
     tunic = new Clothing('tunic', 'Tunic', 'Comfy and easy to wear.', 1, null, [0]),
     boots = new Clothing('boots', 'Boots', "Made for walkin'.", 0, { movement: 1 }, [1]),
@@ -123,14 +123,14 @@ class Unit {
     this.ranged = ranged;
     this.agility = agility;
     this.toughness = toughness;
-    this.movement = movement;
-    this.moves = this.movement;
     this.items = {
       weapons: weapons,
       clothing: clothing,
       accessories: accessories
     };
     // hidden properties
+    this.movement = movement;
+    this.moves = this.movement;
     this.posY = posY;
     this.posX = posX;
     this.moving = null;
@@ -155,7 +155,7 @@ class Unit {
   get range() { return this.equipped.range }
 }
 
-var player0 = new Unit('player0', 'Player', 'player.png', 'Player Unit', 1, 1, 1, 1, 1, 2, 5, [claws, stones1], [tunic, boots], [salve1, salve2], 9, 4, true, 'player'),
+var player0 = new Unit('player0', 'Player', 'player.png', 'Player Unit', 1, 1, 1, 1, 1, 2, 12, [claws, stones1], [tunic, boots], [salve1, salve2], 9, 4, true, 'player'),
     enemy0  = new Unit('enemy0', 'Enemy', 'enemy.png', 'Enemy Unit', 2, 1, 1, 1, 1, 1, 5, [stones2], [], [], 6, 11, false, 'ai', 'sentry');
 
 var unitPlan = [
