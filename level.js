@@ -153,6 +153,7 @@ class Unit {
   get equipped() { return this.items.weapons.filter( weapon => weapon.equipped === true )[0] }
   get skill() { return this[this.equipped.type] }
   get range() { return this.equipped.range }
+  get armor() { return this.items.clothing.reduce( (a, b) => a + b.armor , 0) }
 }
 
 var player0 = new Unit('player0', 'Player', 'player.png', 'Player Unit', 1, 1, 1, 1, 1, 2, 12, [claws, stones1], [tunic, boots], [salve1, salve2], 9, 4, true, 'player'),

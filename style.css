@@ -114,17 +114,26 @@ div + span  {
   margin-right: 5px;
 }
 
+.flex {
+  display: flex;
+}
+
+.columns {
+  width: 50%;
+}
+
+.big {
+  font-size: 50px;
+  line-height: 40px;
+  margin-left: 10px;
+}
+
 .bold {
   font-weight: bold;
 }
 
 .buff {
   color: #0080ff;
-}
-
-.small {
-  font-size: 0.8em;
-  margin-left: 5px;
 }
 
 #action-buttons {

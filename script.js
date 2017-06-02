@@ -302,25 +302,43 @@ var TargetActions = {
   }
 };
 
-var UnitCombat = {
+var CombatInfo = {
   template: `
     <div class='ui'>
       <p class='heading'><img class='icon' src='sprites/combat-icon.png'>Combat</p>
-      <p>{{ type }} hit chance: <b :style='gradient'>{{ hit }}%</b></p>
+      <div class='flex'>
+        <div class='columns'>
+          <template v-if="type === 'active'">
+            <p>Attack: <b>{{ combat.activeAtk }}</b></p>
+            <p>Defense: <b>{{ combat.activeDef }}</b></p>
+          </template>
+          <template v-else-if="type === 'target'">
+            <p>Attack: <b>{{ combat.targetAtk }}</b></p>
+            <p>Defense: <b>{{ combat.targetDef }}</b></p>
+          </template>
+        </div>
+        <div class='columns flex'>
+          <template v-if="type === 'active'"><p>Hit:</p><p class='bold' :style='gradient'><span class='big'>{{ combat.activeHit }}</span>%</p></template>
+          <template v-else-if="type === 'target'"><p>Hit:</p><p class='bold':style='gradient'><span class='big'>{{ combat.targetHit }}</span>%</p></template>
+        </div>
+      </div>
     </div>
   `,
-  props: ['type', 'hit'],
+  props: ['type', 'combat'],
   computed: {
     gradient: function () {
-      if (this.hit < 10) { return { color: '#bf0000' } }
-      else if (this.hit < 20) { return { color: '#d01b00' } }
-      else if (this.hit < 30) { return { color: '#e13600' } }
-      else if (this.hit < 40) { return { color: '#f25100' } }
-      else if (this.hit < 50) { return { color: '#ea6a00' } }
-      else if (this.hit < 60) { return { color: '#e28300' } }
-      else if (this.hit < 70) { return { color: '#da9c00' } }
-      else if (this.hit < 80) { return { color: '#97a406' } }
-      else if (this.hit < 90) { return { color: '#55ab0c' } }
+      var hit;
+      if      (this.type === 'active') { hit = this.combat.activeHit }
+      else if (this.type === 'target') { hit = this.combat.targetHit }
+      if (hit < 10) { return { color: '#bf0000' } }
+      else if (hit < 20) { return { color: '#d01b00' } }
+      else if (hit < 30) { return { color: '#e13600' } }
+      else if (hit < 40) { return { color: '#f25100' } }
+      else if (hit < 50) { return { color: '#ea6a00' } }
+      else if (hit < 60) { return { color: '#e28300' } }
+      else if (hit < 70) { return { color: '#da9c00' } }
+      else if (hit < 80) { return { color: '#97a406' } }
+      else if (hit < 90) { return { color: '#55ab0c' } }
       else { return { color: '#12b312' } }
     }
   }
@@ -404,18 +422,18 @@ var SidePanel = {
           <unit-info :unit='space.unit' :terrain='space.terrain'></unit-info>
           <template v-if="side === 'left'">
             <unit-actions v-if="control === 'player' && space.unit.control === 'player'" :action='action' :unit='space.unit'></unit-actions>
-            <unit-combat v-if='attack' type='Attack' :hit='attack'></unit-combat>
+            <combat-info v-if='combat' type='active' :combat='combat'></combat-info>
           </template>
           <template v-else-if="side === 'right'">
             <target-actions v-if="control === 'player' && (counter || counter === 0)" :hit='counter'></target-actions>
-            <unit-combat v-if='counter' type='Counter' :hit='counter'></unit-combat>
+            <combat-info v-if='combat' type='target' :combat='combat'></combat-info>
           </template>
           <unit-items v-if="action === 'equipping'" :items='space.unit.items'></unit-items>
         </div>
       </transition>
     </div>
   `,
-  props: ['side', 'space', 'action', 'attack', 'counter', 'control'],
+  props: ['side', 'space', 'action', 'attack', 'counter', 'combat', 'control'],
   computed: {
     dynamicTransition: function () {
       if (this.space && this.space.unit && this.space.unit.condition === 'Defeated') { return 'sayGoodbye' }
@@ -425,7 +443,7 @@ var SidePanel = {
   components: {
     'terrain-info': TerrainInfo,
     'unit-info': UnitInfo,
-    'unit-combat': UnitCombat,
+    'combat-info': CombatInfo,
     'unit-actions': UnitActions,
     'target-actions': TargetActions,
     'unit-items': UnitItems
@@ -520,11 +538,17 @@ var Game = new Vue ({
     units: function () {
       return shuffle(this.getUnits(this.faction));
     },
-    activeCombat: function () {
+    combat: function () {
       if (this.target) {
         return {
-          attack: this.calculateAttack(this.active),
-          defense: this.calculateDefense(this.active, this.target)
+          activeAtk: this.calculateAttack(this.active),
+          activeDef: this.calculateDefense(this.active, this.target),
+          targetAtk: this.calculateAttack(this.target),
+          targetDef: this.calculateDefense(this.target, this.active),
+          get activeHit() { return Math.round(this.activeAtk / (this.activeAtk + this.targetDef) * 100) },
+          get targetHit() { return Math.round(this.targetAtk / (this.targetAtk + this.activeDef) * 100) },
+          get activeCrt() { return Game.active.unit.skill },
+          get targetCrt() { return Game.target.unit.skill }
         }
       }
     }
@@ -664,25 +688,25 @@ var Game = new Vue ({
       }
       if (targetY && targetX) { this.map[targetY][targetX].distance = targetDistance }
     },
-    calculateAttack: function (attackerSpace) {
+    calculateAttack: function (atkSpace) {
       // attack = strength + skill + power - distance
-      var attacker = attackerSpace.unit,
+      var attacker = atkSpace.unit,
           attackType = attacker.equipped.type,
           attack = 0;
       if (attackType === 'melee' || attackType === 'throwing') { attack += attacker.strength }
       attack += attacker[attackType] + attacker.equipped.power - (this.target.distance - 1);
       return attack;
     },
-    calculateDefense: function (defenderSpace, attackerSpace) {
+    calculateDefense: function (defSpace, atkSpace) {
       // defense = agility + toughness + armor + cover + elevation
-      var defender = defenderSpace.unit,
-          attacker = attackerSpace.unit,
+      var defender = defSpace.unit,
+          attacker = atkSpace.unit,
           attackType = attacker.equipped.type,
-          cover = defenderSpace.terrain.cover,
-          facing = defenderSpace.terrain.facing,
+          cover = defSpace.terrain.cover,
+          facing = defSpace.terrain.facing,
           defense = 0;
       if (attackType === 'melee' || attackType === 'throwing') { defense += defender.agility }
-      defense += defender.toughness + defender.items.clothing.reduce( (a, b) => a + b.armor , 0);
+      defense += defender.toughness + defender.armor;
       if (!facing) { defense += cover }
       else {
         switch (facing) {
@@ -692,7 +716,7 @@ var Game = new Vue ({
           case 'North': if (attacker.posY < defender.posY) { defense += cover } break;
         }
       }
-      defense += defenderSpace.terrain.elevation - attackerSpace.terrain.elevation;
+      defense += defSpace.terrain.elevation - atkSpace.terrain.elevation;
       return defense;
     },
     targetUnit: function (y, x) {
