@@ -310,16 +310,16 @@ var CombatInfo = {
         <div class='columns'>
           <template v-if="type === 'active'">
             <p>Attack: <b>{{ combat.activeAtk }}</b></p>
-            <p>Defense: <b>{{ combat.activeDef }}</b></p>
+            <p v-if='combat.canCounter'>Defense: <b>{{ combat.activeDef }}</b></p>
           </template>
           <template v-else-if="type === 'target'">
-            <p>Attack: <b>{{ combat.targetAtk }}</b></p>
+            <p v-if='combat.canCounter'>Attack: <b>{{ combat.targetAtk }}</b></p>
             <p>Defense: <b>{{ combat.targetDef }}</b></p>
           </template>
         </div>
         <div class='columns flex'>
           <template v-if="type === 'active'"><p>Hit:</p><p class='bold' :style='gradient'><span class='big'>{{ combat.activeHit }}</span>%</p></template>
-          <template v-else-if="type === 'target'"><p>Hit:</p><p class='bold':style='gradient'><span class='big'>{{ combat.targetHit }}</span>%</p></template>
+          <template v-else-if="type === 'target' && combat.canCounter"><p>Hit:</p><p class='bold':style='gradient'><span class='big'>{{ combat.targetHit }}</span>%</p></template>
         </div>
       </div>
     </div>
@@ -425,7 +425,7 @@ var SidePanel = {
             <combat-info v-if='combat' type='active' :combat='combat'></combat-info>
           </template>
           <template v-else-if="side === 'right'">
-            <target-actions v-if="control === 'player' && (counter || counter === 0)" :hit='counter'></target-actions>
+            <target-actions v-if="control === 'player' && space"></target-actions>
             <combat-info v-if='combat' type='target' :combat='combat'></combat-info>
           </template>
           <unit-items v-if="action === 'equipping'" :items='space.unit.items'></unit-items>
@@ -548,7 +548,9 @@ var Game = new Vue ({
           get activeHit() { return Math.round(this.activeAtk / (this.activeAtk + this.targetDef) * 100) },
           get targetHit() { return Math.round(this.targetAtk / (this.targetAtk + this.activeDef) * 100) },
           get activeCrt() { return Game.active.unit.skill },
-          get targetCrt() { return Game.target.unit.skill }
+          get targetCrt() { return Game.target.unit.skill },
+          // canCounter: this.target.unit.items.weapons.some( weapon => Game.checkRange(this.target.distance, weapon.range))
+          canCounter: this.checkRange(this.target.distance, this.target.unit.range)
         }
       }
     }
@@ -688,6 +690,19 @@ var Game = new Vue ({
       }
       if (targetY && targetX) { this.map[targetY][targetX].distance = targetDistance }
     },
+    targetUnit: function (y, x) {
+      var target = this.map[y][x];
+      if (!this.checkRange(target.distance, target.unit.range)) {
+        var w, weapons = target.unit.items.weapons;
+        for (w = 0; w < weapons.length; w++) {
+          if (Game.checkRange(target.distance, weapons[w].range)) {
+            Game.equipWeapon(y, x, w);
+            break;
+          }
+        }
+      }
+      this.target = target;
+    },
     calculateAttack: function (atkSpace) {
       // attack = strength + skill + power - distance
       var attacker = atkSpace.unit,
@@ -719,21 +734,15 @@ var Game = new Vue ({
       defense += defSpace.terrain.elevation - atkSpace.terrain.elevation;
       return defense;
     },
-    targetUnit: function (y, x) {
-      this.target = this.map[y][x];
-      // var attacker = this.active.unit,
-      //     defender = this.target.unit,
-      //     attackTotal, attack, counterTotal, counter;
-      // attackTotal = attacker.offense + defender.defense + this.defenseBonus(this.target, this.active);
-      // attack = attacker.offense / attackTotal;
-      // this.attack = Math.round(attack * 100);
-      // if (defender.range >= this.target.distance) {
-      //   counterTotal = defender.offense + attacker.defense + this.defenseBonus(this.active, this.target);
-      //   counter = defender.offense / counterTotal;
-      //   this.counter = Math.round(counter * 100);
-      // } else {
-      //   this.counter = 0;
-      // }
+    checkRange: function (distance, range) {
+      if (distance >= range[0] && distance <= range[1]) { return true }
+    },
+    equipWeapon: function (y, x, weaponIndex) {
+      var weapons = this.map[y][x].unit.items.weapons,
+          unequipId = this.map[y][x].unit.equipped.id,
+          unequipIndex = weapons.indexOf(weapons.filter( i => i.id === unequipId )[0]);
+      this.map[y][x].unit.items.weapons[unequipIndex].equipped = false;
+      this.map[y][x].unit.items.weapons[weaponIndex].equipped = true;
     },
     attackUnit: function (counter) {
       var attacker, defender, hitChance, spacesY, spacesX, pixelsY, pixelsX, evadeSprite, attack, hit, miss;
