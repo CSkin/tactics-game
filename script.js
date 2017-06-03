@@ -206,11 +206,15 @@ var Row = {
 
 var TerrainInfo = {
   template: `
-    <div class='ui'>
-      <div class='heading'><div class='icon' :class='terrain.type'></div>{{ terrain.name }}</div>
-      <p v-if='terrain.cost < 99'>Move cost: <b>{{ terrain.cost }}</b></p><p v-else>Impassable</p>
-      <p v-if='terrain.cover > 0'>Cover: <b>{{ terrain.cover }}</b></p>
-      <p v-if='terrain.facing'>Facing: <b>{{ terrain.facing }}</b></p>
+    <div class='ui flex'>
+      <div class='columns'>
+        <div class='heading'><div class='icon' :class='terrain.type'></div>{{ terrain.name }}</div>
+        <p v-if='terrain.cost < 99'>Move cost: <b>{{ terrain.cost }}</b></p><p v-else>Impassable</p>
+      </div>
+      <div class='columns' style='padding-top: 3px'>
+        <p v-if='terrain.cover > 0'>Cover: <b>{{ terrain.cover }}</b></p>
+        <p v-if='terrain.facing'>Facing: <b>{{ terrain.facing }}</b></p>
+      </div>
       <p v-if='terrain.elevation > 0'>Elevation: <b>{{ terrain.elevation }}</b></p>
     </div>
   `,
@@ -422,9 +426,9 @@ var SidePanel = {
           <unit-info :unit='space.unit' :terrain='space.terrain'></unit-info>
           <template v-if="side === 'left'">
             <unit-actions v-if="control === 'player' && space.unit.control === 'player'" :action='action' :unit='space.unit'></unit-actions>
-            <combat-info v-if='combat' type='active' :combat='combat'></combat-info>
+            <combat-info v-if="combat && action === 'attacking'" type='active' :combat='combat'></combat-info>
           </template>
-          <template v-else-if="side === 'right'">
+          <template v-else-if="side === 'right' && action === 'attacking'">
             <target-actions v-if="control === 'player' && space"></target-actions>
             <combat-info v-if='combat' type='target' :combat='combat'></combat-info>
           </template>
@@ -512,6 +516,8 @@ var TurnBanner = {
   }
 };
 
+// BLUE STUFF BLUE STUFF BLUE STUFF BLUE STUFF BLUE STUFF BLUE STUFF BLUE STUFF BLUE STUFF BLUE STUFF BLUE STUFF
+
 var Game = new Vue ({
   el:'#game',
   data: {
@@ -521,12 +527,10 @@ var Game = new Vue ({
     turn: 1,
     factionIndex: 0,
     unitIndex: 0,
-    banner: false,        // controls turn animation
-    action: 'beginning',  // 'beginning' / 'moving' / 'attacking' / 'equipping'
-    active: null,         // Space object
-    target: null,         // Space object
-    attack: null,         // attack hit chance
-    counter: null         // counter hit chance
+    banner: false,
+    action: 'beginning',
+    active: null,
+    target: null
   },
   computed: {
     faction: function () {
@@ -538,8 +542,13 @@ var Game = new Vue ({
     units: function () {
       return shuffle(this.getUnits(this.faction));
     },
-    combat: function () {
+    distance: function () {
       if (this.target) {
+        return Math.abs(this.active.posY - this.target.posY) + Math.abs(this.active.posX - this.target.posX);
+      }
+    },
+    combat: function () {
+      if (this.active && this.target && this.active.unit && this.target.unit) {
         return {
           activeAtk: this.calculateAttack(this.active),
           activeDef: this.calculateDefense(this.active, this.target),
@@ -549,8 +558,7 @@ var Game = new Vue ({
           get targetHit() { return Math.round(this.targetAtk / (this.targetAtk + this.activeDef) * 100) },
           get activeCrt() { return Game.active.unit.skill },
           get targetCrt() { return Game.target.unit.skill },
-          // canCounter: this.target.unit.items.weapons.some( weapon => Game.checkRange(this.target.distance, weapon.range))
-          canCounter: this.checkRange(this.target.distance, this.target.unit.range)
+          canCounter: this.checkRange(this.distance, this.target.unit.range)
         }
       }
     }
@@ -674,8 +682,6 @@ var Game = new Vue ({
       this.hideAttackRange();
       this.action = null;
       this.target = null;
-      this.attack = null;
-      this.counter = null;
     },
     hideAttackRange: function (targetY, targetX) {
       var y, x, distance, targetDistance,
@@ -709,7 +715,7 @@ var Game = new Vue ({
           attackType = attacker.equipped.type,
           attack = 0;
       if (attackType === 'melee' || attackType === 'throwing') { attack += attacker.strength }
-      attack += attacker[attackType] + attacker.equipped.power - (this.target.distance - 1);
+      attack += attacker[attackType] + attacker.equipped.power - (this.distance - 1);
       return attack;
     },
     calculateDefense: function (defSpace, atkSpace) {
@@ -745,17 +751,38 @@ var Game = new Vue ({
       this.map[y][x].unit.items.weapons[weaponIndex].equipped = true;
     },
     attackUnit: function (counter) {
-      var attacker, defender, hitChance, spacesY, spacesX, pixelsY, pixelsX, evadeSprite, attack, hit, miss;
+      var attacker, defender, hitChance, crtChance, damage = 0;
       if (!counter) {
         this.map[this.target.posY][this.target.posX].distance = null;
         attacker = this.active.unit;
         defender = this.target.unit;
-        hitChance = this.attack;
+        hitChance = this.combat.activeHit;
+        crtChance = this.combat.activeCrt;
       } else {
         attacker = this.target.unit;
         defender = this.active.unit;
-        hitChance = this.counter;
+        hitChance = this.combat.targetHit;
+        crtChance = this.combat.targetCrt;
       }
+      if (Math.random()*100 <= hitChance) {
+        damage += 1;
+        if (Math.random()*100 <= crtChance) {
+          damage += 1;
+          console.log('Critical hit!');
+        }
+      }
+      this.animateCombat(attacker, defender, damage);
+      window.setTimeout(function(){ Game.dealDamage(defender.posY, defender.posX, damage) }, 250);
+      window.setTimeout(function(){
+        if (!counter && Game.combat.canCounter && defender.condition !== 'Defeated') {
+          Game.attackUnit('counter');
+        } else {
+          Game.endAttack();
+        }
+      }, 500);
+    },
+    animateCombat: function (attacker, defender, damage) {
+      var spacesY, spacesX, pixelsY, pixelsX, evadeSprite, attack, hit, miss;
       spacesY = defender.posY - attacker.posY;
       spacesX = defender.posX - attacker.posX;
       pixelsY = Math.round(16 * Math.sin(Math.atan2(spacesY, spacesX)));
@@ -782,23 +809,15 @@ var Game = new Vue ({
         easing: 'ease-in-out'
       };
       document.getElementById(attacker.id).animate(attack, 500);
-      if (Math.random()*100 <= hitChance) {
+      if (damage >= 1) {
         window.setTimeout(function(){ document.getElementById(defender.id).animate(hit, 250) }, 250);
-        window.setTimeout(function(){ Game.dealDamage(defender.posY, defender.posX) }, 250);
       } else {
         window.setTimeout(function(){ document.getElementById(defender.id).animate(miss, 350) }, 150);
       }
-      window.setTimeout(function(){
-        if (!counter && Game.counter > 0 && defender.condition !== 'Defeated') {
-          Game.attackUnit('counter');
-        } else {
-          Game.endAttack();
-        }
-      }, 500);
     },
-    dealDamage: function (y, x) {
-      this.map[y][x].unit.hp -= 1;
-      if (this.map[y][x].unit.hp === 0) {
+    dealDamage: function (y, x, damage) {
+      this.map[y][x].unit.hp -= damage;
+      if (this.map[y][x].unit.hp <= 0) {
         window.setTimeout(function(){ Game.map[y][x].unit = null }, 500)
       }
     },
@@ -806,8 +825,6 @@ var Game = new Vue ({
       var unit = this.active.unit;
       if (unit) { this.map[unit.posY][unit.posX].unit.attacks -= 1 }
       this.action = null;
-      this.attack = null;
-      this.counter = null;
     },
     makeItemsDraggable: function (selector) {
       $( selector ).toArray().forEach( function (item) {
@@ -974,12 +991,12 @@ var Game = new Vue ({
           posY = this.active.unit.posY,
           posX = this.active.unit.posX,
           range = this.active.unit.range;
-      for (y = Math.max(posY - range, 0); y <= Math.min(posY + range, 15); y++) {
-        for (x = Math.max(posX - range, 0); x <= Math.min(posX + range, 15); x++) {
+      for (y = Math.max(posY - range[1], 0); y <= Math.min(posY + range[1], 15); y++) {
+        for (x = Math.max(posX - range[1], 0); x <= Math.min(posX + range[1], 15); x++) {
           space = this.map[y][x];
           if (space.distance && space.unit && space.unit.friendly !== this.active.unit.friendly) {
             this.targetUnit(y, x);
-            targets.push({ posY: y, posX: x, attack: this.attack });
+            targets.push({ posY: y, posX: x, attack: this.combat.activeAtk });
           }
         }
       }
@@ -1018,7 +1035,7 @@ var Game = new Vue ({
 });
 
 function keyHandler () {
-  console.log('keyCode: ' + event.keyCode); // Developer mode
+  // console.log('keyCode: ' + event.keyCode); // Developer mode
   if (Game.control === 'player' && Game.active && Game.active.unit && Game.active.unit.control === 'player') {
     switch (event.keyCode) {
       case 65: // a
