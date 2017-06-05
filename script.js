@@ -354,8 +354,8 @@ var CombatInfo = {
 
 var ItemSlot = {
   template: `
-    <div :id='type + n' class='item-slot' :style='slotBackground'>
-      <img v-if='item' :id="item.id + '-' + n" class='item' :class='item.id' :src='imgSrc' :title='item.name' @click='showInfo'>
+    <div :id='type + n' class='item-slot' :style='slotBackground' @click='showInfo($event)'>
+      <img v-if='item' :id="item.id + '-' + n" class='item' :class='item.id' :src='imgSrc' :title='item.name'>
       <div v-if="item && iteminfo === type + n" id='item-info'>
         <p>
           <b>{{ item.name }}</b>
@@ -402,8 +402,14 @@ var ItemSlot = {
     capitalize: function (string) {
       return string.charAt(0).toUpperCase() + string.slice(1);
     },
-    showInfo: function () {
-      Game.iteminfo = this.type + this.n;
+    showInfo: function (event) {
+      if (event.target.tagName !== 'DIV') {
+        if (!this.iteminfo) {
+          Game.iteminfo = this.type + this.n;
+        } else {
+          Game.iteminfo = null;
+        }
+      }
     }
   }
 }
@@ -883,7 +889,9 @@ var Game = new Vue ({
           cursorAt: cursorOffset,
           helper: function(){ return $( '<img>', { src: helperSrc } ) },
           revert: 'invalid',
+          zIndex: 98,
           start: function (event, ui) {
+            Game.iteminfo = null;
             $( itemClass ).hide();
             var slotId = event.target.parentNode.id;
             Game.findDroppableSlots(slotId.slice(0, -1), Number(slotId.slice(-1)), event.target.id.slice(0, -2));
@@ -909,6 +917,7 @@ var Game = new Vue ({
     },
     cancelEquip: function () {
       this.action = null;
+      this.iteminfo = null;
     },
     findDroppableSlots: function (itemType, slotNum, itemId) {
       var itemList = this.active.unit.items[this.convertItemType(itemType)],
@@ -1092,26 +1101,26 @@ function keyHandler () {
         $( '#btn-cancel' ).trigger( 'click' );
         break;
       case 65: // a
-        if (Game.action !== 'attacking') {
-          $( '#btn-attack' ).trigger( 'click' );
-        } else {
-          $( '#btn-confatk' ).trigger( 'click' );
+        if (Game.action !== 'attacking') { $( '#btn-attack' ).trigger( 'click' ); }
+        else {
+          if (Game.target) { $( '#btn-confatk' ).trigger( 'click' ); }
+          else { $( '#btn-cancel' ).trigger( 'click' ); }
         }
         break;
       case 67: // c
         $( '#btn-cancel' ).trigger( 'click' );
         break;
       case 69: // e
-        $( '#btn-equip' ).trigger( 'click' );
+        if (Game.action !== 'equipping') { $( '#btn-equip' ).trigger( 'click' ); }
+        else { $( '#btn-cancel' ).trigger( 'click' ); }
         break;
       case 77: // m
-        $( '#btn-move' ).trigger( 'click' );
+        if (Game.action !== 'moving') { $( '#btn-move' ).trigger( 'click' ); }
+        else { $( '#btn-cancel' ).trigger( 'click' ); }
         break;
     }
   }
 }
-
-// $( document ).click(function(){ if (Game.iteminfo) { Game.iteminfo = null } });
 
 $( document ).keyup( keyHandler );
 

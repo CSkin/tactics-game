@@ -196,13 +196,14 @@ p {
 }
 
 .item {
+  position: relative;
   cursor: pointer;
   cursor: -webkit-grab;
 }
 
 #item-info {
   position: relative;
-  z-index: 98;
+  z-index: 97;
   top: -37px;
   left: 37px;
   width: fit-content;
