@@ -162,8 +162,12 @@ var Space = {
             break;
           case 'attacking':
             if (this.space.distance && unit && !unit.friendly) {
-              Game.hideAttackRange(y, x);
-              Game.targetUnit(y, x);
+              if (!Game.target || unit !== Game.target.unit) {
+                Game.hideAttackRange(y, x);
+                Game.targetUnit(y, x);
+              } else {
+                $( '#btn-confatk' ).trigger( 'click' );
+              }
             }
             else {
               $( '#btn-cancel' ).trigger( 'click' );
@@ -351,14 +355,55 @@ var CombatInfo = {
 var ItemSlot = {
   template: `
     <div :id='type + n' class='item-slot' :style='slotBackground'>
-      <img v-if='item' :id="item.id + '-' + n" class='item' :class='item.id' :src='item.sprite' :title='item.name'>
+      <img v-if='item' :id="item.id + '-' + n" class='item' :class='item.id' :src='imgSrc' :title='item.name' @click='showInfo'>
+      <div v-if="item && iteminfo === type + n" id='item-info'>
+        <p>
+          <b>{{ item.name }}</b>
+          <template v-if="type === 'weapon'">
+            <span>{{ capitalize(item.type) }}</span>
+            <span>Power: <b>{{ item.power }}</b></span>
+            <span v-if="item.type !== 'melee'">Range: <b>{{ item.range[1] }}</b></span>
+          </template>
+          <template v-if="type === 'clothing'">
+            <span v-if='item.armor > 0'>Armor: <b>{{ item.armor }}</b></span>
+          </template>
+          <span v-for='effect in effectsArray'>{{ effect }}</span>
+        </p>
+        <p>{{ item.descrip }}</p>
+      </div>
     </div>
   `,
-  props: ['type', 'n', 'item'],
+  props: ['type', 'n', 'item', 'iteminfo'],
   computed: {
     slotBackground: function () {
       var imgUrl = "url('sprites/" + this.type + "-slot.png')";
       return { backgroundImage: imgUrl }
+    },
+    imgSrc: function () {
+      if (this.item) {
+        return this.item.sprites[this.item.slots.indexOf(this.n)];
+      }
+    },
+    effectsArray: function () {
+      if (this.item && this.item.effects) {
+        var sign, effects = [];
+        for (var [attribute, effect] of Object.entries(this.item.effects)) {
+          if (attribute === 'hp') { effects.push('Restore HP'); }
+          else {
+            if (effect > 0) { sign = '+' } else { sign = '-' }
+            effects.push(this.capitalize(attribute) + ' ' + sign + effect);
+          }
+        }
+        return effects;
+      }
+    }
+  },
+  methods: {
+    capitalize: function (string) {
+      return string.charAt(0).toUpperCase() + string.slice(1);
+    },
+    showInfo: function () {
+      Game.iteminfo = this.type + this.n;
     }
   }
 }
@@ -368,11 +413,11 @@ var ItemHolder = {
     <div class='item-holder'>
       <img :src="'sprites/' + type + '-card.png'">
       <div class='slot-container' :style='borderColor'>
-        <item-slot v-for='n in 6' :type='type' :n='n - 1' :item='itemData[n - 1]' :key='n - 1'></item-slot>
+        <item-slot v-for='n in 6' :type='type' :n='n - 1' :item='itemData[n - 1]' :iteminfo='iteminfo' :key='n - 1'></item-slot>
       </div>
     </div>
   `,
-  props: ['type', 'items'],
+  props: ['type', 'items', 'iteminfo'],
   computed: {
     borderColor: function () {
       switch (this.type) {
@@ -384,8 +429,8 @@ var ItemHolder = {
     itemData: function () {
       var itemData = [null, null, null, null, null, null];
       this.items.forEach( function (item) {
-        item.slots.forEach( function (slot, index) {
-          itemData[slot] = { id: item.id, name: item.name, sprite: item.sprites[index] };
+        item.slots.forEach( function (slot) {
+          itemData[slot] = item;
         });
       });
       return itemData;
@@ -401,13 +446,13 @@ var UnitItems = {
     <div class='ui'>
       <p class='heading'><img class='icon' src='sprites/equipment-icon.png'>Equipment</p>
       <div class='equipment'>
-        <item-holder type='weapon' :items='items.weapons'></item-holder>
-        <item-holder type='clothing' :items='items.clothing'></item-holder>
-        <item-holder type='accessory' :items='items.accessories'></item-holder>
+        <item-holder type='weapon' :items='items.weapons' :iteminfo='iteminfo'></item-holder>
+        <item-holder type='clothing' :items='items.clothing' :iteminfo='iteminfo'></item-holder>
+        <item-holder type='accessory' :items='items.accessories' :iteminfo='iteminfo'></item-holder>
       </div>
     </div>
   `,
-  props: ['items'],
+  props: ['items', 'iteminfo'],
   components: {
     'item-holder': ItemHolder
   }
@@ -432,12 +477,12 @@ var SidePanel = {
             <target-actions v-if="control === 'player' && space"></target-actions>
             <combat-info v-if='combat' type='target' :combat='combat'></combat-info>
           </template>
-          <unit-items v-if="action === 'equipping'" :items='space.unit.items'></unit-items>
+          <unit-items v-if="side === 'left' && action === 'equipping'" :items='space.unit.items' :iteminfo='iteminfo'></unit-items>
         </div>
       </transition>
     </div>
   `,
-  props: ['side', 'space', 'action', 'attack', 'counter', 'combat', 'control'],
+  props: ['side', 'space', 'action', 'combat', 'iteminfo', 'control'],
   computed: {
     dynamicTransition: function () {
       if (this.space && this.space.unit && this.space.unit.condition === 'Defeated') { return 'sayGoodbye' }
@@ -530,7 +575,8 @@ var Game = new Vue ({
     banner: false,
     action: 'beginning',
     active: null,
-    target: null
+    target: null,
+    iteminfo: null
   },
   computed: {
     faction: function () {
@@ -967,6 +1013,7 @@ var Game = new Vue ({
       this.active = this.map[unit.posY][unit.posX];
       unit = this.active.unit;
       window.setTimeout(function(){
+        Game.action = 'attacking';
         Game.showAttackRange();
         Game.aiChooseTarget();
       }, 500);
@@ -974,7 +1021,7 @@ var Game = new Vue ({
         if (Game.target) {
           Game.attackUnit();
           window.setTimeout(function(){
-            if (Game.active.unit.condition !== 'Defeated' && Game.target.unit.condition !== 'Defeated') {
+            if (Game.active.unit && Game.target.unit && Game.active.unit.hp !== 0 && Game.target.unit.hp !== 0) {
               window.setTimeout(function(){ Game.aiPassControl() }, 500);
             }
             else {
@@ -1038,6 +1085,12 @@ function keyHandler () {
   // console.log('keyCode: ' + event.keyCode); // Developer mode
   if (Game.control === 'player' && Game.active && Game.active.unit && Game.active.unit.control === 'player') {
     switch (event.keyCode) {
+      case 13: // enter
+        $( '#btn-confatk' ).trigger( 'click' );
+        break;
+      case 27: //escape
+        $( '#btn-cancel' ).trigger( 'click' );
+        break;
       case 65: // a
         if (Game.action !== 'attacking') {
           $( '#btn-attack' ).trigger( 'click' );
@@ -1057,6 +1110,8 @@ function keyHandler () {
     }
   }
 }
+
+// $( document ).click(function(){ if (Game.iteminfo) { Game.iteminfo = null } });
 
 $( document ).keyup( keyHandler );
 
