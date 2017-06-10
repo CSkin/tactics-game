@@ -227,7 +227,7 @@ var TerrainInfo = {
 
 var UnitInfo = {
   template: `
-    <div class='ui'>
+    <div class='ui' id='unit-info'>
       <div class='heading'><div class='icon' :class='unit.faction'></div>{{ unit.name }}</div>
       <p>Condition: <b :class='unit.condition'>{{ unit.condition }}</b></p>
       <p>Strength: <b>{{ unit.strength }}</b></p>
@@ -237,7 +237,7 @@ var UnitInfo = {
       <p>Equipped: <b>{{ unit.equipped.name }}</b></p>
     </div>
   `,
-  props: ['unit', 'terrain']
+  props: ['unit']
 };
 
 var UnitActions = {
@@ -355,7 +355,7 @@ var CombatInfo = {
 var ItemSlot = {
   template: `
     <div :id='type + n' class='item-slot' :style='slotBackground' @click='showInfo($event)'>
-      <img v-if='item' :id="item.id + '-' + n" class='item' :class='item.id' :src='imgSrc' :title='item.name'>
+      <img v-if='item' :id="item.id + '-' + n" class='item' :class='[type, item.id]' :src='imgSrc' :title='item.name'>
       <div v-if="item && iteminfo === type + n" id='item-info'>
         <p>
           <b>{{ item.name }}</b>
@@ -474,7 +474,7 @@ var SidePanel = {
       </transition>
       <transition :name='dynamicTransition'>
         <div v-if='space && space.unit'>
-          <unit-info :unit='space.unit' :terrain='space.terrain'></unit-info>
+          <unit-info :unit='space.unit'></unit-info>
           <template v-if="side === 'left'">
             <unit-actions v-if="control === 'player' && space.unit.control === 'player'" :action='action' :unit='space.unit'></unit-actions>
             <combat-info v-if="combat && action === 'attacking'" type='active' :combat='combat'></combat-info>
@@ -883,7 +883,7 @@ var Game = new Vue ({
         var itemSrc = item.src.match(/sprites\/.*\.png/)[0],
             cursorOffset = Game.findCursorOffset(itemSrc),
             helperSrc = itemSrc.replace(/\d/, ''),
-            itemClass = '.' + item.classList[1];
+            itemClass = '.' + item.classList[2];
         $( '#' + item.id ).draggable({
           cursor: '-webkit-grabbing',
           cursorAt: cursorOffset,
@@ -895,6 +895,7 @@ var Game = new Vue ({
             $( itemClass ).hide();
             var slotId = event.target.parentNode.id;
             Game.findDroppableSlots(slotId.slice(0, -1), Number(slotId.slice(-1)), event.target.id.slice(0, -2));
+            Game.makePanelsDroppable();
           },
           stop: function (event, ui) {
             $( itemClass ).show();
@@ -914,6 +915,18 @@ var Game = new Vue ({
           case 5: return { top: 80, left: 48 }
         }
       } else { return { top: 16, left: 16 } }
+    },
+    makePanelsDroppable: function () {
+      $( '#unit-info' ).droppable({
+        accept: '.weapon',
+        tolerance: 'pointer',
+        drop: function (event, ui) {
+          var weaponList = Game.active.unit.items.weapons,
+              weaponId = ui.draggable[0].id.slice(0, -2),
+              weaponIndex = weaponList.indexOf(weaponList.filter( w => w.id === weaponId )[0]);
+          Game.equipWeapon(Game.active.unit.posY, Game.active.unit.posX, weaponIndex);
+        }
+      });
     },
     cancelEquip: function () {
       this.action = null;
