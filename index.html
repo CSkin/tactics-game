@@ -28,6 +28,7 @@
         
         <div id='top-center' class='panel' :style='mapImage'>
           <row v-for='row in map' :key='row' :row='row'></row>
+          <map-items v-if="action === 'equipping'"></map-items>
         </div>
         
         <div id='top-right' class='panel'>

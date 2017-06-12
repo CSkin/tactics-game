@@ -33,20 +33,25 @@ function directionalCover (mapData) {
   return mapData;
 }
 
+function loadItems (mapData, itemPlan) {
+  for (var space of itemPlan) {
+    mapData[space.posY][space.posX].items = space.items;
+  }
+  return mapData;
+}
+
 function loadUnits (mapData, unitPlan) {
-  var f, u, y, x, unit;
-  for (f = 0; f < unitPlan.length; f++) {
-    for (u = 0; u < unitPlan[f].units.length; u++) {
-      y = unitPlan[f].units[u].posY;
-      x = unitPlan[f].units[u].posX;
-      mapData[y][x].unit = unitPlan[f].units[u];
+  var faction, unit;
+  for (faction of unitPlan) {
+    for (unit of faction.units) {
+      mapData[unit.posY][unit.posX].unit = unit;
     }
   }
   return mapData;
 }
 
 function loadLevel () {
-  return loadUnits(directionalCover(loadMap(mapPlan)), unitPlan);
+  return loadUnits(loadItems(directionalCover(loadMap(mapPlan)), itemPlan), unitPlan);
 }
 
 function loadFactions () {
@@ -206,6 +211,14 @@ var Row = {
   components: {
     'space': Space
   }
+};
+
+var MapItems = {
+  template: `
+    <div id='map-items'></div>
+  `,
+  props: [],
+  components: {}
 };
 
 var TerrainInfo = {
@@ -989,7 +1002,7 @@ var Game = new Vue ({
     },
     beginTurn: function () {
       var u, unit, units = this.units;
-      if (units.length > 0) {
+      if (units.length) {
         for (u = 0; u < units.length; u++) {
           unit = this.map[units[u].posY][units[u].posX].unit;
           unit.moves = unit.movement;
@@ -1069,7 +1082,7 @@ var Game = new Vue ({
           }
         }
       }
-      if (targets.length > 0) {
+      if (targets.length) {
         targets.forEach( function (target) { if (target.attack > bestAttack) { bestAttack = target.attack } });
         target = shuffle(targets.filter(target => target.attack === bestAttack))[0];
         this.hideAttackRange(target.posY, target.posX);
@@ -1099,7 +1112,8 @@ var Game = new Vue ({
     'row': Row,
     'side-panel': SidePanel,
     'status-panel': StatusPanel,
-    'turn-banner': TurnBanner
+    'turn-banner': TurnBanner,
+    'map-items': MapItems
   }
 });
 

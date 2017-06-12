@@ -48,6 +48,7 @@ class Space {
     this.moves = null;
     this.path = null;
     this.distance = null;
+    this.items = null;
   }
 }
 
@@ -72,7 +73,7 @@ class Item {
 }
 
 class Weapon extends Item {
-  constructor(id, name, descrip, type, power, range, equipped, effects, slots) {
+  constructor(id, name, descrip, type, power, range, effects, slots) {
     super(id, name, descrip, effects, slots);
     this.itemType = 'weapon';
     this.type = type;
@@ -82,7 +83,7 @@ class Weapon extends Item {
       case 'throwing': this.range = [1, range]; break;
       case 'ranged': this.range = [2, range]; break;
     }
-    this.equipped = equipped;
+    this.equipped = false;
   }
 }
 
@@ -101,15 +102,23 @@ class Accessory extends Item {
   }
 }
 
-var claws = new Weapon('claws', 'Claws', 'Built for digging but useful in a fight.', 'melee', 1, 1, false, null, [0]),
-    stones1 = new Weapon('stones1', 'Stones', 'The original projectile weapon.', 'throwing', 1, 3, false, null, [1]),
-    stones2 = new Weapon('stones2', 'Stones', 'The original projectile weapon.', 'throwing', 1, 3, true, null, [0]),
-    stick1 = new Weapon('stick1', 'Heavy Stick', 'An unusually heavy stick.', 'melee', 2, 1, true, null, [0, 2]),
-    stick2 = new Weapon('stick2', 'Heavy Stick', 'An unusually heavy stick.', 'melee', 2, 1, false, null, [0, 2]),
+var claws = new Weapon('claws', 'Claws', 'Built for digging but useful in a fight.', 'melee', 1, 1, null, [0]),
+    stones1 = new Weapon('stones1', 'Stones', 'The original projectile weapon.', 'throwing', 1, 3, null, [1]),
+    stones2 = new Weapon('stones2', 'Stones', 'The original projectile weapon.', 'throwing', 1, 3, null, [0]),
+    stick1 = new Weapon('stick1', 'Heavy Stick', 'An unusually heavy stick.', 'melee', 2, 1, null, [0, 2]),
+    stick2 = new Weapon('stick2', 'Heavy Stick', 'An unusually heavy stick.', 'melee', 2, 1, null, [0, 2]),
     tunic = new Clothing('tunic', 'Tunic', 'Comfy and easy to wear.', 1, null, [0]),
     boots = new Clothing('boots', 'Boots', "Made for walkin'.", 0, { movement: 1 }, [1]),
     salve1 = new Accessory('salve1', 'Salve', 'Heals most any wound.', { hp: 2 }, [0]),
     salve2 = new Accessory('salve2', 'Salve', 'Heals most any wound.', { hp: 2 }, [1]);
+
+var itemPlan = [
+  {
+    posY: 8,
+    posX: 6,
+    items: [stick1]
+  }
+];
 
 class Unit {
   constructor(id, faction, sprite, name, strength, melee, throwing, ranged, agility, toughness, movement, weapons, clothing, accessories, posY, posX, friendly, control, behavior) {
@@ -129,6 +138,9 @@ class Unit {
       clothing: clothing,
       accessories: accessories
     };
+    if (this.items.weapons.length) {
+      this.items.weapons[0].equipped = true;
+    }
     // hidden properties
     this.movement = movement;
     this.moves = this.movement;
@@ -157,7 +169,7 @@ class Unit {
   get armor() { return this.items.clothing.reduce( (a, b) => a + b.armor , 0) }
 }
 
-var player0 = new Unit('player0', 'Player', 'player.png', 'Player Unit', 1, 1, 1, 1, 1, 2, 5, [stick1, stones1], [tunic, boots], [salve1, salve2], 9, 4, true, 'player'),
+var player0 = new Unit('player0', 'Player', 'player.png', 'Player Unit', 1, 1, 1, 1, 1, 2, 5, [stones1], [tunic, boots], [salve1, salve2], 9, 4, true, 'player'),
     enemy0  = new Unit('enemy0', 'Enemy', 'enemy.png', 'Enemy Unit', 2, 1, 1, 1, 1, 1, 5, [stones2], [], [], 6, 11, false, 'ai', 'sentry');
 
 var unitPlan = [
