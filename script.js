@@ -116,7 +116,7 @@ var itemPlan = [
   {
     posY: 8,
     posX: 6,
-    items: [stick1]
+    items: [stones1, stick1, tunic, boots, salve1]
   }
 ];
 
@@ -169,7 +169,7 @@ class Unit {
   get armor() { return this.items.clothing.reduce( (a, b) => a + b.armor , 0) }
 }
 
-var player0 = new Unit('player0', 'Player', 'player.png', 'Player Unit', 1, 1, 1, 1, 1, 2, 5, [stones1], [tunic, boots], [salve1, salve2], 9, 4, true, 'player'),
+var player0 = new Unit('player0', 'Player', 'player.png', 'Player Unit', 1, 1, 1, 1, 1, 2, 5, [claws], [], [], 9, 4, true, 'player'),
     enemy0  = new Unit('enemy0', 'Enemy', 'enemy.png', 'Enemy Unit', 2, 1, 1, 1, 1, 1, 5, [stones2], [], [], 6, 11, false, 'ai', 'sentry');
 
 var unitPlan = [
@@ -399,12 +399,70 @@ var Row = {
   }
 };
 
-var MapItems = {
+var ItemInfo = {
   template: `
-    <div id='map-items'></div>
+    <div class='item-info'>
+      <p>
+        <b>{{ item.name }}</b>
+        <template v-if="type === 'weapon'">
+          <span>{{ capitalize(item.type) }}</span>
+          <span>Power: <b>{{ item.power }}</b></span>
+          <span v-if="item.type !== 'melee'">Range: <b>{{ item.range[1] }}</b></span>
+        </template>
+        <template v-if="type === 'clothing'">
+          <span v-if='item.armor > 0'>Armor: <b>{{ item.armor }}</b></span>
+        </template>
+        <span v-for='effect in effects'>{{ effect }}</span>
+      </p>
+      <p>{{ item.descrip }}</p>
+    </div>
   `,
-  props: [],
-  components: {}
+  props: ['type', 'item'],
+  computed: {
+    effects: function () {
+      if (this.item && this.item.effects) {
+        var sign, effects = [];
+        for (var [attribute, effect] of Object.entries(this.item.effects)) {
+          if (attribute === 'hp') { effects.push('Restore HP'); }
+          else {
+            if (effect > 0) { sign = '+' } else { sign = '-' }
+            effects.push(this.capitalize(attribute) + ' ' + sign + effect);
+          }
+        }
+        return effects;
+      }
+    }
+  },
+  methods: {
+    capitalize: function (string) {
+      return string.charAt(0).toUpperCase() + string.slice(1);
+    }
+  }
+};
+
+var GroundItem = {
+  template: `
+    <div class='ground-item'>
+      <img :id="item.id" class='item' :class='[item.itemType, item.id]' :src='item.sprite' :title='item.name'>
+      <item-info :type='item.itemType' :item='item'></item-info>
+    </div>
+  `,
+  props: ['item'],
+  components: {
+    'item-info': ItemInfo
+  }
+};
+
+var GroundPanel = {
+  template: `
+    <div id='ground-panel'>
+      <ground-item v-for='item in items' :item='item' :key='item.id'></ground-item>
+    </div>
+  `,
+  props: ['items'],
+  components: {
+    'ground-item': GroundItem
+  }
 };
 
 var TerrainInfo = {
@@ -555,24 +613,12 @@ var ItemSlot = {
   template: `
     <div :id='type + n' class='item-slot' :style='slotBackground' @click='showInfo($event)'>
       <img v-if='item' :id="item.id + '-' + n" class='item' :class='[type, item.id]' :src='imgSrc' :title='item.name'>
-      <div v-if="item && iteminfo === type + n" id='item-info'>
-        <p>
-          <b>{{ item.name }}</b>
-          <template v-if="type === 'weapon'">
-            <span>{{ capitalize(item.type) }}</span>
-            <span>Power: <b>{{ item.power }}</b></span>
-            <span v-if="item.type !== 'melee'">Range: <b>{{ item.range[1] }}</b></span>
-          </template>
-          <template v-if="type === 'clothing'">
-            <span v-if='item.armor > 0'>Armor: <b>{{ item.armor }}</b></span>
-          </template>
-          <span v-for='effect in effectsArray'>{{ effect }}</span>
-        </p>
-        <p>{{ item.descrip }}</p>
+      <div v-if="item && itemtip === type + n" id='item-tip'>
+        <item-info :type='type' :item='item'></item-info>
       </div>
     </div>
   `,
-  props: ['type', 'n', 'item', 'iteminfo'],
+  props: ['type', 'n', 'item', 'itemtip'],
   computed: {
     slotBackground: function () {
       var imgUrl = "url('sprites/" + this.type + "-slot.png')";
@@ -582,47 +628,34 @@ var ItemSlot = {
       if (this.item) {
         return this.item.sprites[this.item.slots.indexOf(this.n)];
       }
-    },
-    effectsArray: function () {
-      if (this.item && this.item.effects) {
-        var sign, effects = [];
-        for (var [attribute, effect] of Object.entries(this.item.effects)) {
-          if (attribute === 'hp') { effects.push('Restore HP'); }
-          else {
-            if (effect > 0) { sign = '+' } else { sign = '-' }
-            effects.push(this.capitalize(attribute) + ' ' + sign + effect);
-          }
-        }
-        return effects;
-      }
     }
   },
   methods: {
-    capitalize: function (string) {
-      return string.charAt(0).toUpperCase() + string.slice(1);
-    },
     showInfo: function (event) {
       if (event.target.tagName !== 'DIV') {
-        if (!this.iteminfo) {
-          Game.iteminfo = this.type + this.n;
+        if (!this.itemtip) {
+          Game.itemtip = this.type + this.n;
         } else {
-          Game.iteminfo = null;
+          Game.itemtip = null;
         }
       }
     }
+  },
+  components: {
+    'item-info': ItemInfo
   }
-}
+};
 
 var ItemHolder = {
   template: `
     <div class='item-holder'>
       <img :src="'sprites/' + type + '-card.png'">
       <div class='slot-container' :style='borderColor'>
-        <item-slot v-for='n in 6' :type='type' :n='n - 1' :item='itemData[n - 1]' :iteminfo='iteminfo' :key='n - 1'></item-slot>
+        <item-slot v-for='n in 6' :type='type' :n='n - 1' :item='itemData[n - 1]' :itemtip='itemtip' :key='n - 1'></item-slot>
       </div>
     </div>
   `,
-  props: ['type', 'items', 'iteminfo'],
+  props: ['type', 'items', 'itemtip'],
   computed: {
     borderColor: function () {
       switch (this.type) {
@@ -644,24 +677,24 @@ var ItemHolder = {
   components: {
     'item-slot': ItemSlot
   }
-}
+};
 
 var UnitItems = {
   template: `
     <div class='ui'>
       <p class='heading'><img class='icon' src='sprites/equipment-icon.png'>Equipment</p>
       <div class='equipment'>
-        <item-holder type='weapon' :items='items.weapons' :iteminfo='iteminfo'></item-holder>
-        <item-holder type='clothing' :items='items.clothing' :iteminfo='iteminfo'></item-holder>
-        <item-holder type='accessory' :items='items.accessories' :iteminfo='iteminfo'></item-holder>
+        <item-holder type='weapon' :items='items.weapons' :itemtip='itemtip'></item-holder>
+        <item-holder type='clothing' :items='items.clothing' :itemtip='itemtip'></item-holder>
+        <item-holder type='accessory' :items='items.accessories' :itemtip='itemtip'></item-holder>
       </div>
     </div>
   `,
-  props: ['items', 'iteminfo'],
+  props: ['items', 'itemtip'],
   components: {
     'item-holder': ItemHolder
   }
-}
+};
 
 var SidePanel = {
   template: `
@@ -682,12 +715,12 @@ var SidePanel = {
             <target-actions v-if="control === 'player' && space"></target-actions>
             <combat-info v-if='combat' type='target' :combat='combat'></combat-info>
           </template>
-          <unit-items v-if="side === 'left' && action === 'equipping'" :items='space.unit.items' :iteminfo='iteminfo'></unit-items>
+          <unit-items v-if="side === 'left' && action === 'equipping'" :items='space.unit.items' :itemtip='itemtip'></unit-items>
         </div>
       </transition>
     </div>
   `,
-  props: ['side', 'space', 'action', 'combat', 'iteminfo', 'control'],
+  props: ['side', 'space', 'action', 'combat', 'itemtip', 'control'],
   computed: {
     dynamicTransition: function () {
       if (this.space && this.space.unit && this.space.unit.condition === 'Defeated') { return 'sayGoodbye' }
@@ -721,7 +754,7 @@ var StatusPanel = {
       Game.endTurn();
     }
   }
-}
+};
 
 var TurnBanner = {
   template: `
@@ -781,7 +814,7 @@ var Game = new Vue ({
     action: 'beginning',
     active: null,
     target: null,
-    iteminfo: null
+    itemtip: null
   },
   computed: {
     faction: function () {
@@ -1090,7 +1123,7 @@ var Game = new Vue ({
           revert: 'invalid',
           zIndex: 98,
           start: function (event, ui) {
-            Game.iteminfo = null;
+            Game.itemtip = null;
             $( itemClass ).hide();
             var slotId = event.target.parentNode.id;
             Game.findDroppableSlots(slotId.slice(0, -1), Number(slotId.slice(-1)), event.target.id.slice(0, -2));
@@ -1129,7 +1162,7 @@ var Game = new Vue ({
     },
     cancelEquip: function () {
       this.action = null;
-      this.iteminfo = null;
+      this.itemtip = null;
     },
     findDroppableSlots: function (itemType, slotNum, itemId) {
       var itemList = this.active.unit.items[this.convertItemType(itemType)],
@@ -1299,7 +1332,7 @@ var Game = new Vue ({
     'side-panel': SidePanel,
     'status-panel': StatusPanel,
     'turn-banner': TurnBanner,
-    'map-items': MapItems
+    'ground-panel': GroundPanel
   }
 });
 

@@ -93,14 +93,45 @@ p {
   cursor: pointer;
 }
 
-#map-items {
+#ground-panel {
   position: absolute;
   z-index: 80;
-  width: 200px;
-  height: 200px;
   background: tan;
   border: 3px solid #6b491c;
   border-radius: 10px;
+  padding: 15px;
+}
+
+.ground-item {
+  display: flex;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.ground-item:last-of-type {
+  margin-bottom: 0;
+}
+
+.ground-item img {
+  margin-right: 10px;
+}
+
+.ground-item .item-info {
+  background: #e8dac6;
+  border-radius: 5px;
+  padding: 8px;
+}
+
+.ground-item p:first-of-type {
+  margin-bottom: 4px;
+}
+
+.item-info p {
+  margin: 0;
+}
+
+.item-info span {
+  margin-left: 10px;
 }
 
 .ui {
@@ -215,7 +246,7 @@ p {
   cursor: -webkit-grab;
 }
 
-#item-info {
+#item-tip {
   position: absolute;
   z-index: 90;
   top: -1px;
@@ -227,7 +258,7 @@ p {
   padding: 3px 5px;
 }
 
-#item-info:before {
+#item-tip:before {
   content:"";
   position: absolute;
   right: 100%;
@@ -239,7 +270,7 @@ p {
   border-bottom: 10px solid transparent;
 }
 
-#item-info:after {
+#item-tip:after {
   content:"";
   position: absolute;
   right: 100%;
@@ -249,14 +280,6 @@ p {
   border-top: 7px solid transparent;
   border-right: 12px solid #e8dac6;
   border-bottom: 7px solid transparent;
-}
-
-#item-info p {
-  margin: 0;
-}
-
-#item-info span {
-  margin-left: 10px;
 }
 
 .banner {
