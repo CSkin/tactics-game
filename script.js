@@ -166,8 +166,8 @@ class Unit {
     }
   }
   get equipped() { return this.items.weapons.filter( weapon => weapon.equipped === true )[0] }
-  get skill() { return this[this.equipped.type] }
-  get range() { return this.equipped.range }
+  get skill() { if (this.equipped) { return this[this.equipped.type] } else { return this.melee } }
+  get range() { if (this.equipped) { return this.equipped.range } else { return [1, 1] } }
   get armor() { return this.items.clothing.reduce( (a, b) => a + b.armor , 0) }
 }
 
@@ -493,7 +493,8 @@ var UnitInfo = {
       <p>Skill: <b>{{ unit.skill }}</b></p>
       <p>Agility: <b>{{ unit.agility }}</b></p>
       <p>Toughness: <b>{{ unit.toughness }}</b></p>
-      <p>Equipped: <b>{{ unit.equipped.name }}</b></p>
+      <p v-if='unit.equipped'>Equipped: <b>{{ unit.equipped.name }}</b></p>
+      <p v-else>Equipped: --</p>
     </div>
   `,
   props: ['unit']
@@ -1164,6 +1165,21 @@ var Game = new Vue ({
           Game.equipWeapon(Game.active.unit.posY, Game.active.unit.posX, weaponIndex);
         }
       });
+      $( '#top-center' ).droppable({
+        tolerance: 'pointer',
+        drop: function (event, ui) {
+          var y = Game.active.unit.posY, x = Game.active.unit.posX,
+              itemType = Game.convertItemType(ui.draggable[0].classList[2]),
+              itemList = Game.map[y][x].unit.items[itemType],
+              itemId = ui.draggable[0].id.slice(0, -2),
+              itemIndex = itemList.indexOf(itemList.filter( i => i.id === itemId )[0]),
+              item = Game.map[y][x].unit.items[itemType].splice(itemIndex, 1)[0];
+          item.slots = null;
+          if (Game.map[y][x].items) { Game.map[y][x].items.push(item) }
+          else { Game.map[y][x].items = [item] }
+          Vue.nextTick(function(){ Game.makeGroundItemsDraggable('#' + itemId) });
+        }
+      });
     },
     makeGroundItemsDraggable: function (draggables) {
       $( draggables ).toArray().forEach( function (item) {
@@ -1234,7 +1250,7 @@ var Game = new Vue ({
           tolerance: 'pointer',
           drop: function (event, ui) {
             var y = Game.active.unit.posY, x = Game.active.unit.posX,
-                itemType = Game.convertItemType(event.target.id.slice(0, -1)),
+                itemType = Game.convertItemType(ui.draggable[0].classList[2]),
                 itemList = Game.map[y][x].unit.items[itemType],
                 itemId = ui.draggable[0].id.slice(0, -2),
                 itemIndex = itemList.indexOf(itemList.filter( i => i.id === itemId )[0]),
