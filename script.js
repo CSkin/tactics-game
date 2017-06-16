@@ -53,28 +53,30 @@ class Space {
 }
 
 class Item {
-  constructor(id, name, descrip, effects, slots) {
+  constructor(id, name, descrip, effects, footprint, slot) {
     this.id = id;
     this.sprite = 'sprites/' + id.replace(/\d/, '') + '.png';
     this.name = name;
     this.descrip = descrip;
     this.effects = effects;
-    this.slots = slots;
-    if (slots.length === 1) {
+    this.footprint = footprint;
+    if (footprint.length === 1) {
       this.sprites = [this.sprite];
     } else {
       var n, sprites = [];
-      for (n = 0; n < slots.length; n++) {
-        sprites.push('sprites/' + id.replace(/\d/, '') + slots[n] + '.png');
+      for (n = 0; n < footprint.length; n++) {
+        sprites.push('sprites/' + id.replace(/\d/, '') + footprint[n] + '.png');
       }
       this.sprites = sprites;
     }
+    if (!slot) { slot = 0 }
+    this.slots = footprint.map( toe => toe + slot );
   }
 }
 
 class Weapon extends Item {
-  constructor(id, name, descrip, type, power, range, effects, slots) {
-    super(id, name, descrip, effects, slots);
+  constructor(id, name, descrip, type, power, range, effects, footprint, slot) {
+    super(id, name, descrip, effects, footprint, slot);
     this.itemType = 'weapon';
     this.type = type;
     this.power = power;
@@ -88,16 +90,16 @@ class Weapon extends Item {
 }
 
 class Clothing extends Item {
-  constructor(id, name, descrip, armor, effects, slots) {
-    super(id, name, descrip, effects, slots);
+  constructor(id, name, descrip, armor, effects, footprint, slot) {
+    super(id, name, descrip, effects, footprint, slot);
     this.itemType = 'clothing';
     this.armor = armor;
   }
 }
 
 class Accessory extends Item {
-  constructor(id, name, descrip, effects, slots) {
-    super(id, name, descrip, effects, slots);
+  constructor(id, name, descrip, effects, footprint, slot) {
+    super(id, name, descrip, effects, footprint, slot);
     this.itemType = 'accessory';
   }
 }
@@ -108,9 +110,9 @@ var claws = new Weapon('claws', 'Claws', 'Built for digging but useful in a figh
     stick1 = new Weapon('stick1', 'Heavy Stick', 'An unusually heavy stick.', 'melee', 2, 1, null, [0, 2]),
     stick2 = new Weapon('stick2', 'Heavy Stick', 'An unusually heavy stick.', 'melee', 2, 1, null, [0, 2]),
     tunic = new Clothing('tunic', 'Tunic', 'Comfy and easy to wear.', 1, null, [0]),
-    boots = new Clothing('boots', 'Boots', "Made for walkin'.", 0, { movement: 1 }, [1]),
+    boots = new Clothing('boots', 'Boots', "Made for walkin'.", 0, { movement: 1 }, [0]),
     salve1 = new Accessory('salve1', 'Salve', 'Heals most any wound.', { hp: 2 }, [0]),
-    salve2 = new Accessory('salve2', 'Salve', 'Heals most any wound.', { hp: 2 }, [1]);
+    salve2 = new Accessory('salve2', 'Salve', 'Heals most any wound.', { hp: 2 }, [0]);
 
 var itemPlan = [
   {
@@ -443,7 +445,7 @@ var ItemInfo = {
 var GroundItem = {
   template: `
     <div class='ground-item'>
-      <img :id="item.id" class='item' :class='[item.itemType, item.id]' :src='item.sprite' :title='item.name'>
+      <img :id="item.id" class='item ground' :class='[item.itemType, item.id]' :src='item.sprite' :title='item.name'>
       <item-info :type='item.itemType' :item='item'></item-info>
     </div>
   `,
@@ -455,7 +457,7 @@ var GroundItem = {
 
 var GroundPanel = {
   template: `
-    <div id='ground-panel'>
+    <div v-if='items && items.length > 0' id='ground-panel'>
       <ground-item v-for='item in items' :item='item' :key='item.id'></ground-item>
     </div>
   `,
@@ -535,7 +537,10 @@ var UnitActions = {
     beginEquip: function () {
       if (this.action) { this.cancelAction() }
       Game.action = 'equipping';
-      Vue.nextTick(function(){ Game.makeItemsDraggable('.item') });
+      Vue.nextTick(function(){
+        Game.makeEquipItemsDraggable('.equip');
+        Game.makeGroundItemsDraggable('.ground');
+      });
     },
     cancelAction: function () {
       switch (this.action) {
@@ -612,7 +617,7 @@ var CombatInfo = {
 var ItemSlot = {
   template: `
     <div :id='type + n' class='item-slot' :style='slotBackground' @click='showInfo($event)'>
-      <img v-if='item' :id="item.id + '-' + n" class='item' :class='[type, item.id]' :src='imgSrc' :title='item.name'>
+      <img v-if='item' :id="item.id + '-' + n" class='item equip' :class='[type, item.id]' :src='imgSrc' :title='item.name'>
       <div v-if="item && itemtip === type + n" id='item-tip'>
         <item-info :type='type' :item='item'></item-info>
       </div>
@@ -1073,7 +1078,7 @@ var Game = new Vue ({
       pixelsX = Math.round(16 * Math.cos(Math.atan2(spacesY, spacesX)));
       evadeSprite = "url('" + defender.sprite.slice(0, -4) + "-evade.png')";
       attack = {
-        zIndex: [ 99, 99 ],
+        zIndex: [ 70, 70 ],
         top: [0, (pixelsY + 'px'), 0 ],
         left: [0, (pixelsX + 'px'), 0 ],
         easing: 'ease-in-out'
@@ -1110,23 +1115,23 @@ var Game = new Vue ({
       if (unit) { this.map[unit.posY][unit.posX].unit.attacks -= 1 }
       this.action = null;
     },
-    makeItemsDraggable: function (selector) {
-      $( selector ).toArray().forEach( function (item) {
+    makeEquipItemsDraggable: function (draggables) {
+      $( draggables ).toArray().forEach( function (item) {
         var itemSrc = item.src.match(/sprites\/.*\.png/)[0],
             cursorOffset = Game.findCursorOffset(itemSrc),
             helperSrc = itemSrc.replace(/\d/, ''),
-            itemClass = '.' + item.classList[2];
+            itemClass = '.' + item.classList[3];
         $( '#' + item.id ).draggable({
           cursor: '-webkit-grabbing',
           cursorAt: cursorOffset,
           helper: function(){ return $( '<img>', { src: helperSrc } ) },
           revert: 'invalid',
-          zIndex: 98,
+          zIndex: 95,
           start: function (event, ui) {
             Game.itemtip = null;
             $( itemClass ).hide();
             var slotId = event.target.parentNode.id;
-            Game.findDroppableSlots(slotId.slice(0, -1), Number(slotId.slice(-1)), event.target.id.slice(0, -2));
+            Game.findDroppableSlots(item.classList[1], slotId.slice(0, -1), event.target.id.slice(0, -2), Number(slotId.slice(-1)));
             Game.makePanelsDroppable();
           },
           stop: function (event, ui) {
@@ -1160,37 +1165,61 @@ var Game = new Vue ({
         }
       });
     },
+    makeGroundItemsDraggable: function (draggables) {
+      $( draggables ).toArray().forEach( function (item) {
+        $( '#' + item.id ).draggable({
+          cursor: '-webkit-grabbing',
+          cursorAt: { top: 16, left: 16 },
+          revert: 'invalid',
+          zIndex: 95,
+          start: function (event, ui) {
+            Game.itemtip = null;
+            Game.findDroppableSlots(item.classList[1], item.classList[2], item.id);
+          },
+          stop: function (event, ui) {
+            $( '.ui-droppable' ).droppable( 'destroy' );
+          }
+        });
+      });
+    },
     cancelEquip: function () {
       this.action = null;
       this.itemtip = null;
     },
-    findDroppableSlots: function (itemType, slotNum, itemId) {
+    findDroppableSlots: function (itemStatus, itemType, itemId, slotNum) {
       var itemList = this.active.unit.items[this.convertItemType(itemType)],
           itemMap = [null, null, null, null, null, null],
-          itemFootprint = [],
-          slots = [0, 1, 2, 3, 4, 5].filter(s => s !== slotNum),
-          droppable = [],
-          cinderella; // does the foot (item) fit the shoe (slot)?
+          itemFootprint, itemIndex,
+          slots = [0, 1, 2, 3, 4, 5],
+          cinderella, // does the foot (item) fit the shoe (slot)?
+          droppables = [];
       itemList.forEach( function (item) {
         item.slots.forEach( function (slot) {
           itemMap[slot] = item.id;
         });
       });
-      itemMap.forEach( function (slot, index) {
-        if (slot === itemId) {
-          itemFootprint.push(index - slotNum);
-          itemMap[index] = null;
-        }
-      });
+      if (itemStatus === 'equip') {
+        itemFootprint = [];
+        slots.filter(s => s !== slotNum);
+        itemMap.forEach( function (slot, index) {
+          if (slot === itemId) {
+            itemFootprint.push(index - slotNum);
+            itemMap[index] = null;
+          }
+        });
+      } else if (itemStatus === 'ground') {
+        itemIndex = this.active.items.indexOf(this.active.items.filter( i => i.id === itemId )[0]);
+        itemFootprint = this.active.items[itemIndex].footprint;
+      }
       slots.forEach( function (slot) {
         cinderella = true;
         itemFootprint.forEach( function (toe) {
           if (itemMap[slot + toe] !== null) { cinderella = false; }
         });
-        if (cinderella) { droppable.push(itemType + slot) }
+        if (cinderella) { droppables.push(itemType + slot) }
       });
-      droppable = droppable.map( s => '#' + s ).join(',');
-      this.makeSlotsDroppable(droppable);
+      droppables = droppables.map( s => '#' + s ).join(',');
+      this.makeSlotsDroppable(itemStatus, droppables);
     },
     convertItemType: function (itemType) {
       switch (itemType) {
@@ -1199,25 +1228,44 @@ var Game = new Vue ({
         case 'accessory': return 'accessories';
       }
     },
-    makeSlotsDroppable: function (selector) {
-      $( selector ).droppable({
-        tolerance: 'pointer',
-        drop: function (event, ui) {
-          var y = Game.active.unit.posY, x = Game.active.unit.posX,
-              itemType = Game.convertItemType(event.target.id.slice(0, -1)),
-              itemList = Game.map[y][x].unit.items[itemType],
-              itemId = ui.draggable[0].id.slice(0, -2),
-              itemIndex = itemList.indexOf(itemList.filter( i => i.id === itemId )[0]),
-              itemSlots = itemList[itemIndex].slots,
-              translation = Number(event.target.id.slice(-1)) - Number(ui.draggable[0].id.slice(-1)),
-              itemString = itemSlots.map( s => '#' + itemId + '-' + (s + translation) ).join(',');
-          Game.map[y][x].unit.items[itemType][itemIndex].slots = [];
-          Vue.nextTick(function(){
-            Game.map[y][x].unit.items[itemType][itemIndex].slots = itemSlots.map( s => s + translation );
-            Vue.nextTick(function(){ Game.makeItemsDraggable(itemString) });
-          });
-        }
-      });
+    makeSlotsDroppable: function (draggable, droppables) {
+      if (draggable === 'equip') {
+        $( droppables ).droppable({
+          tolerance: 'pointer',
+          drop: function (event, ui) {
+            var y = Game.active.unit.posY, x = Game.active.unit.posX,
+                itemType = Game.convertItemType(event.target.id.slice(0, -1)),
+                itemList = Game.map[y][x].unit.items[itemType],
+                itemId = ui.draggable[0].id.slice(0, -2),
+                itemIndex = itemList.indexOf(itemList.filter( i => i.id === itemId )[0]),
+                itemSlots = itemList[itemIndex].slots,
+                translation = Number(event.target.id.slice(-1)) - Number(ui.draggable[0].id.slice(-1)),
+                itemString = itemSlots.map( s => '#' + itemId + '-' + (s + translation) ).join(',');
+            Game.map[y][x].unit.items[itemType][itemIndex].slots = [];
+            Vue.nextTick(function(){
+              Game.map[y][x].unit.items[itemType][itemIndex].slots = itemSlots.map( s => s + translation );
+              Vue.nextTick(function(){ Game.makeEquipItemsDraggable(itemString) });
+            });
+          }
+        });
+      } else if (draggable === 'ground') {
+        $( droppables ).droppable({
+          tolerance: 'pointer',
+          drop: function (event, ui) {
+            var y = Game.active.unit.posY, x = Game.active.unit.posX,
+                itemType = Game.convertItemType(ui.draggable[0].classList[2]),
+                itemList = Game.active.items,
+                itemId = ui.draggable[0].id,
+                itemIndex = itemList.indexOf(itemList.filter( i => i.id === itemId )[0]),
+                item = Game.map[y][x].items.splice(itemIndex, 1)[0],
+                itemString;
+            item.slots = item.footprint.map( toe => toe + Number(event.target.id.slice(-1)));
+            itemString = item.slots.map( s => '#' + itemId + '-' + s ).join(',');
+            Game.map[y][x].unit.items[itemType].push(item);
+            Vue.nextTick(function(){ Game.makeEquipItemsDraggable(itemString) });
+          }
+        });
+      }
     },
     beginTurn: function () {
       var u, unit, units = this.units;

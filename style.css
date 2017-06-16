@@ -119,7 +119,7 @@ p {
 .ground-item .item-info {
   background: #e8dac6;
   border-radius: 5px;
-  padding: 8px;
+  padding: 6px 8px;
 }
 
 .ground-item p:first-of-type {
