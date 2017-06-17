@@ -48,12 +48,13 @@ class Space {
     this.moves = null;
     this.path = null;
     this.distance = null;
-    this.items = null;
+    this.items = [];
   }
 }
 
 class Item {
-  constructor(id, name, descrip, effects, footprint, slot) {
+  constructor(index, id, name, descrip, effects, footprint, slot) {
+    this.index = index;
     this.id = id;
     this.sprite = 'sprites/' + id.replace(/\d/, '') + '.png';
     this.name = name;
@@ -75,8 +76,8 @@ class Item {
 }
 
 class Weapon extends Item {
-  constructor(id, name, descrip, type, power, range, effects, footprint, slot) {
-    super(id, name, descrip, effects, footprint, slot);
+  constructor(index, id, name, descrip, type, power, range, effects, footprint, slot) {
+    super(index, id, name, descrip, effects, footprint, slot);
     this.itemType = 'weapon';
     this.type = type;
     this.power = power;
@@ -90,29 +91,29 @@ class Weapon extends Item {
 }
 
 class Clothing extends Item {
-  constructor(id, name, descrip, armor, effects, footprint, slot) {
-    super(id, name, descrip, effects, footprint, slot);
+  constructor(index, id, name, descrip, armor, effects, footprint, slot) {
+    super(index, id, name, descrip, effects, footprint, slot);
     this.itemType = 'clothing';
     this.armor = armor;
   }
 }
 
 class Accessory extends Item {
-  constructor(id, name, descrip, effects, footprint, slot) {
-    super(id, name, descrip, effects, footprint, slot);
+  constructor(index, id, name, descrip, effects, footprint, slot) {
+    super(index, id, name, descrip, effects, footprint, slot);
     this.itemType = 'accessory';
   }
 }
 
-var claws = new Weapon('claws', 'Claws', 'Built for digging but useful in a fight.', 'melee', 1, 1, null, [0]),
-    stones1 = new Weapon('stones1', 'Stones', 'The original projectile weapon.', 'throwing', 1, 3, null, [0]),
-    stones2 = new Weapon('stones2', 'Stones', 'The original projectile weapon.', 'throwing', 1, 3, null, [0]),
-    stick1 = new Weapon('stick1', 'Heavy Stick', 'An unusually heavy stick.', 'melee', 2, 1, null, [0, 2]),
-    stick2 = new Weapon('stick2', 'Heavy Stick', 'An unusually heavy stick.', 'melee', 2, 1, null, [0, 2]),
-    tunic = new Clothing('tunic', 'Tunic', 'Comfy and easy to wear.', 1, null, [0]),
-    boots = new Clothing('boots', 'Boots', "Made for walkin'.", 0, { movement: 1 }, [0]),
-    salve1 = new Accessory('salve1', 'Salve', 'Heals most any wound.', { hp: 2 }, [0]),
-    salve2 = new Accessory('salve2', 'Salve', 'Heals most any wound.', { hp: 2 }, [0]);
+var claws = new Weapon(1, 'claws', 'Claws', 'Built for digging but useful in a fight.', 'melee', 1, 1, null, [0]),
+    stones1 = new Weapon(3, 'stones1', 'Stones', 'The original projectile weapon.', 'throwing', 1, 3, null, [0]),
+    stones2 = new Weapon(3, 'stones2', 'Stones', 'The original projectile weapon.', 'throwing', 1, 3, null, [0]),
+    stick1 = new Weapon(2, 'stick1', 'Heavy Stick', 'An unusually heavy stick.', 'melee', 2, 1, null, [0, 2]),
+    stick2 = new Weapon(2, 'stick2', 'Heavy Stick', 'An unusually heavy stick.', 'melee', 2, 1, null, [0, 2]),
+    tunic = new Clothing(4, 'tunic', 'Tunic', 'Comfy and easy to wear.', 1, null, [0]),
+    boots = new Clothing(5, 'boots', 'Boots', "Made for walkin'.", 0, { movement: 1 }, [0]),
+    salve1 = new Accessory(6, 'salve1', 'Salve', 'Heals most any wound.', { hp: 2 }, [0]),
+    salve2 = new Accessory(6, 'salve2', 'Salve', 'Heals most any wound.', { hp: 2 }, [0]);
 
 var itemPlan = [
   {
@@ -457,7 +458,7 @@ var GroundItem = {
 
 var GroundPanel = {
   template: `
-    <div v-if='items && items.length > 0' id='ground-panel'>
+    <div v-if='items.length > 0' id='ground-panel'>
       <ground-item v-for='item in items' :item='item' :key='item.id'></ground-item>
     </div>
   `,
@@ -1175,11 +1176,20 @@ var Game = new Vue ({
               itemIndex = itemList.indexOf(itemList.filter( i => i.id === itemId )[0]),
               item = Game.map[y][x].unit.items[itemType].splice(itemIndex, 1)[0];
           item.slots = null;
-          if (Game.map[y][x].items) { Game.map[y][x].items.push(item) }
-          else { Game.map[y][x].items = [item] }
+          Game.map[y][x].items.push(item);
+          Game.map[y][x].items.sort(Game.compareItems);
           Vue.nextTick(function(){ Game.makeGroundItemsDraggable('#' + itemId) });
         }
       });
+    },
+    compareItems: function (a, b) {
+      if (a.index < b.index) { return -1 }
+      if (a.index > b.index) { return 1 }
+      if (a.index === b.index) {
+        if (a.id < b.id) { return -1 }
+        if (a.id > b.id) { return 1 }
+      }
+      return 0;
     },
     makeGroundItemsDraggable: function (draggables) {
       $( draggables ).toArray().forEach( function (item) {
@@ -1209,11 +1219,11 @@ var Game = new Vue ({
           slots = [0, 1, 2, 3, 4, 5],
           cinderella, // does the foot (item) fit the shoe (slot)?
           droppables = [];
-      itemList.forEach( function (item) {
-        item.slots.forEach( function (slot) {
+      for (item of itemList) {
+        for (slot of item.slots) {
           itemMap[slot] = item.id;
-        });
-      });
+        }
+      }
       if (itemStatus === 'equip') {
         itemFootprint = [];
         slots.filter(s => s !== slotNum);
@@ -1227,13 +1237,13 @@ var Game = new Vue ({
         itemIndex = this.active.items.indexOf(this.active.items.filter( i => i.id === itemId )[0]);
         itemFootprint = this.active.items[itemIndex].footprint;
       }
-      slots.forEach( function (slot) {
+      for (slot of slots) {
         cinderella = true;
-        itemFootprint.forEach( function (toe) {
+        for (toe of itemFootprint) {
           if (itemMap[slot + toe] !== null) { cinderella = false; }
-        });
+        }
         if (cinderella) { droppables.push(itemType + slot) }
-      });
+      }
       droppables = droppables.map( s => '#' + s ).join(',');
       this.makeSlotsDroppable(itemStatus, droppables);
     },
@@ -1278,6 +1288,7 @@ var Game = new Vue ({
             item.slots = item.footprint.map( toe => toe + Number(event.target.id.slice(-1)));
             itemString = item.slots.map( s => '#' + itemId + '-' + s ).join(',');
             Game.map[y][x].unit.items[itemType].push(item);
+            Game.map[y][x].unit.items[itemType].sort(Game.compareItems);
             Vue.nextTick(function(){ Game.makeEquipItemsDraggable(itemString) });
           }
         });
