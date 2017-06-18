@@ -161,7 +161,7 @@ class Unit {
   get condition() {
     switch (this.hp) {
       case 3: return 'Healthy';
-      case 2: return 'Injured';
+      case 2: return 'Wounded';
       case 1: return 'Critical';
       case 0: return 'Defeated';
     }
@@ -186,6 +186,52 @@ var unitPlan = [
     units: [ enemy0 ]
   }
 ];
+
+class DialogEvent {
+  constructor(unit, message) {
+    this.eventType = 'dialog';
+    this.portrait = 'sprites/' + unit.id.replace(/\d/, '') + '-portrait.png';
+    this.message = message;
+  }
+}
+
+class CombatEvent {
+  constructor(unit, target, damage) {
+    this.eventType = 'combat';
+    this.subject = unit.name;
+    this.subjectIcon = 'sprites/' + unit.id.replace(/\d/, '') + '-icon.png';
+    this.verb = 'attacked';
+    this.verbIcon = 'sprites/' + unit.equipped.type + '.png';
+    this.object = target.name;
+    this.objectIcon = 'sprites/' + target.id.replace(/\d/, '') + '-icon.png';
+    switch (damage) {
+      case 0: this.result = 'Attack missed.'; break;
+      case 1: this.result = 'Attack hit.'; break;
+      case 2: this.result = 'Critical hit!'; break;
+    }
+  }
+}
+
+class ConditionEvent {
+  constructor(unit) {
+    this.eventType = 'condition';
+    this.subject = unit.name;
+    this.subjectIcon = 'sprites/' + unit.id.replace(/\d/, '') + '-icon.png';
+    if (unit.hp > 0) { this.verb = 'is' } else { this.verb = 'was' }
+    this.object = unit.condition.toLowerCase();
+  }
+}
+
+class ItemEvent {
+  constructor(unit, verb, item) {
+    this.eventType = 'item';
+    this.subject = unit.name;
+    this.subjectIcon = 'sprites/' + unit.id.replace(/\d/, '') + '-icon.png';
+    this.verb = verb;
+    this.object = item.name;
+    this.objectIcon = 'sprites/' + item.id.replace(/\d/, '') + '-icon.png';
+  }
+}
 
 function loadMap (mapPlan) {
   var y, x, row, string, mapData = [];
@@ -744,6 +790,27 @@ var SidePanel = {
   }
 };
 
+var Event = {
+  template: `
+    <div class='event'>
+      <p>{{ event }}</p>
+    </div>
+  `,
+  props: ['event']
+};
+
+var EventLog = {
+  template:`
+    <div class='ui' id='event-log'>
+      <event v-for='event in events' :event='event' :key='event'></event>
+    </div>
+  `,
+  props: ['events'],
+  components: {
+    'event': Event
+  }
+};
+
 var StatusPanel = {
   template: `
     <div class='ui'>
@@ -821,7 +888,8 @@ var Game = new Vue ({
     action: 'beginning',
     active: null,
     target: null,
-    itemtip: null
+    itemtip: null,
+    events: ['Dialog', 'Event']
   },
   computed: {
     faction: function () {
@@ -1035,10 +1103,14 @@ var Game = new Vue ({
       if (distance >= range[0] && distance <= range[1]) { return true }
     },
     equipWeapon: function (y, x, weaponIndex) {
-      var weapons = this.map[y][x].unit.items.weapons,
-          unequipId = this.map[y][x].unit.equipped.id,
-          unequipIndex = weapons.indexOf(weapons.filter( i => i.id === unequipId )[0]);
-      this.map[y][x].unit.items.weapons[unequipIndex].equipped = false;
+      var unit = this.map[y][x].unit,
+          weapons = unit.items.weapons,
+          unequipId, unequipIndex;
+      if (unit.equipped) {
+        unequipId = unit.equipped.id,
+        unequipIndex = weapons.indexOf(weapons.filter( i => i.id === unequipId )[0]);
+        this.map[y][x].unit.items.weapons[unequipIndex].equipped = false;
+      }
       this.map[y][x].unit.items.weapons[weaponIndex].equipped = true;
     },
     attackUnit: function (counter) {
@@ -1405,9 +1477,10 @@ var Game = new Vue ({
   components: {
     'row': Row,
     'side-panel': SidePanel,
+    'ground-panel': GroundPanel,
+    'event-log': EventLog,
     'status-panel': StatusPanel,
-    'turn-banner': TurnBanner,
-    'ground-panel': GroundPanel
+    'turn-banner': TurnBanner
   }
 });
 
