@@ -190,6 +190,7 @@ var unitPlan = [
 class DialogEvent {
   constructor(unit, message) {
     this.eventType = 'dialog';
+    this.subject = unit.name;
     this.portrait = 'sprites/' + unit.id.replace(/\d/, '') + '-portrait.png';
     this.message = message;
   }
@@ -232,6 +233,13 @@ class ItemEvent {
     this.objectIcon = 'sprites/' + item.id.replace(/\d/, '') + '-icon.png';
   }
 }
+
+var dialog1 = new DialogEvent(player0, 'Hello, world!'),
+    combat1 = new CombatEvent(player0, enemy0, 1),
+    condition1 = new ConditionEvent(player0),
+    item1 = new ItemEvent(player0, 'picked up', stones1);
+    
+var eventTest = [dialog1, combat1, condition1, item1];
 
 function loadMap (mapPlan) {
   var y, x, row, string, mapData = [];
@@ -790,24 +798,59 @@ var SidePanel = {
   }
 };
 
-var Event = {
+var DialogEvent = {
   template: `
     <div class='event'>
-      <p>{{ event }}</p>
+      <img class='portrait' :src='event.portrait' :title='event.subject'>
+      <div class='message'>{{ event.message }}</div>
     </div>
   `,
-  props: ['event']
+  props: ['event'],
+  computed: {}
+}
+
+var ActionEvent = {
+  template: `
+    <div class='event'>
+      <img class='icon' src='event.subjectIcon'>
+      <span class='bold space-after'>{{ event.subject }}</span>
+      <img v-if='event.verbIcon' class='icon' src='event.verbIcon'>
+      <span class='space-after'>{{ event.verb }}</span>
+      <img v-if='event.objectIcon' class='icon' src='event.objectIcon'>
+      <span class='bold'>{{ event.object }}</span><span class='space-after'>.</span>
+      <span v-if='event.result'>{{ event.result }}</span>
+    </div>
+  `,
+  props: ['event'],
+  computed: {}
+}
+
+var EventSwitcher = {
+  template: `
+    <component :is='eventType' :event='event'></component>
+  `,
+  props: ['event'],
+  computed: {
+    eventType: function () {
+      if (this.event.eventType === 'dialog') { return 'dialog-event' }
+      else { return 'action-event' }
+    }
+  },
+  components: {
+    'dialog-event': DialogEvent,
+    'action-event': ActionEvent
+  }
 };
 
 var EventLog = {
   template:`
     <div class='ui' id='event-log'>
-      <event v-for='event in events' :event='event' :key='event'></event>
+      <event-switcher v-for='event in events' :event='event' :key='event'></event-switcher>
     </div>
   `,
   props: ['events'],
   components: {
-    'event': Event
+    'event-switcher': EventSwitcher
   }
 };
 
@@ -889,7 +932,7 @@ var Game = new Vue ({
     active: null,
     target: null,
     itemtip: null,
-    events: ['Dialog', 'Event']
+    events: eventTest
   },
   computed: {
     faction: function () {

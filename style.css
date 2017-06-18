@@ -282,6 +282,22 @@ p {
   border-bottom: 7px solid transparent;
 }
 
+.event {
+  display: flex;
+  margin: 10px 0;
+}
+
+.portrait {
+  width: 100px;
+  height: 100px;
+  margin-right: 15px;
+}
+
+.space-after:after {
+  content: ' ';
+  white-space: pre;
+}
+
 .banner {
   width: 300px;
 }
