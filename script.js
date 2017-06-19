@@ -124,10 +124,10 @@ var itemPlan = [
 ];
 
 class Unit {
-  constructor(id, faction, sprite, name, strength, melee, throwing, ranged, agility, toughness, movement, weapons, clothing, accessories, posY, posX, friendly, control, behavior) {
+  constructor(id, faction, name, strength, melee, throwing, ranged, agility, toughness, movement, weapons, clothing, accessories, posY, posX, friendly, control, behavior) {
     this.id = id;
     this.faction = faction;
-    this.sprite = 'sprites/' + sprite;
+    this.sprite = 'sprites/' + id.replace(/\d/, '') + '.png';
     this.name = name;
     this.hp = 3;
     this.strength = strength;
@@ -172,8 +172,8 @@ class Unit {
   get armor() { return this.items.clothing.reduce( (a, b) => a + b.armor , 0) }
 }
 
-var player0 = new Unit('player0', 'Player', 'player.png', 'Player Unit', 1, 1, 1, 1, 1, 2, 5, [claws], [], [], 9, 4, true, 'player'),
-    enemy0  = new Unit('enemy0', 'Enemy', 'enemy.png', 'Enemy Unit', 2, 1, 1, 1, 1, 1, 5, [stones2], [], [], 6, 11, false, 'ai', 'sentry');
+var player0 = new Unit('player0', 'Player', 'Player Unit', 1, 1, 1, 1, 1, 2, 5, [claws], [], [], 9, 4, true, 'player'),
+    enemy0  = new Unit('enemy0', 'Enemy', 'Enemy Unit', 2, 1, 1, 1, 1, 1, 5, [stones2], [], [], 6, 11, false, 'ai', 'sentry');
 
 var unitPlan = [
   {
@@ -222,6 +222,9 @@ class ConditionEvent {
     this.object = unit.condition.toLowerCase();
   }
 }
+
+var dialog1 = new DialogEvent(player0, 'Prepare to die, enemy scum!'),
+    dialog2 = new DialogEvent(enemy0, 'Bring it on, cocksucker!');
 
 class ItemEvent {
   constructor(unit, verb, item) {
@@ -536,7 +539,7 @@ var UnitInfo = {
   template: `
     <div class='ui' id='unit-info'>
       <div class='heading'><div class='icon' :class='unit.faction'></div>{{ unit.name }}</div>
-      <p>Condition: <b :class='unit.condition'>{{ unit.condition }}</b></p>
+      <p>Condition: <b :class='unit.condition.toLowerCase()'>{{ unit.condition }}</b></p>
       <p>Strength: <b>{{ unit.strength }}</b></p>
       <p>Skill: <b>{{ unit.skill }}</b></p>
       <p>Agility: <b>{{ unit.agility }}</b></p>
@@ -793,9 +796,10 @@ var SidePanel = {
 
 var DialogEvent = {
   template: `
-    <div class='event'>
-      <img class='portrait' :src='event.portrait' :title='event.subject'>
+    <div class='event' :class="{ 'align-right': event.subject[0] === 'E'}">
+      <img v-if="event.subject[0] === 'P'" class='portrait' :src='event.portrait' :title='event.subject'>
       <div class='message'>{{ event.message }}</div>
+      <img v-if="event.subject[0] === 'E'"class='portrait' :src='event.portrait' :title='event.subject'>
     </div>
   `,
   props: ['event'],
@@ -805,19 +809,26 @@ var DialogEvent = {
 var ActionEvent = {
   template: `
     <div class='event'>
-      <img class='icon' src='event.subjectIcon'>
-      <span class='bold space-after'>{{ event.subject }}</span>
-      <img v-if='event.verbIcon' class='icon' src='event.verbIcon'>
-      <span class='space-after'>{{ event.verb }}</span>
-      <img v-if='event.objectIcon' class='icon' src='event.objectIcon'>
-      <span class='bold' :class='modifyObject'>{{ event.object }}</span><span class='space-after'>.</span>
+      <img class='icon sa' :src='event.subjectIcon'>
+      <span class='bold sa'>{{ event.subject }}</span>
+      <img v-if='event.verbIcon' class='icon sa' :src='event.verbIcon'>
+      <span class='sa'>{{ event.verb }}</span>
+      <img v-if='event.objectIcon' class='icon sa' :src='event.objectIcon'>
+      <span class='bold' :class='objectClasses'>{{ event.object }}</span><span class='sa'>.</span>
       <span v-if='event.result'>{{ event.result }}</span>
     </div>
   `,
   props: ['event'],
   computed: {
-    modifyObject: function () {
-      return { 'modify-object': this.event.object === 'critical' }
+    objectClasses: function () {
+      var type = this.event.eventType,
+          cond = this.event.object;
+      return {
+        healthy: type === 'condition' && cond === 'healthy',
+        wounded: type === 'condition' && cond === 'wounded',
+        critical: type === 'condition' && cond === 'critical',
+        defeated: type === 'condition' && cond === 'defeated',
+      }
     }
   }
 }
@@ -929,7 +940,7 @@ var Game = new Vue ({
     active: null,
     target: null,
     itemtip: null,
-    events: []
+    events: [dialog1, dialog2]
   },
   computed: {
     faction: function () {
