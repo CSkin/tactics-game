@@ -285,6 +285,7 @@ p {
 .event {
   display: flex;
   margin: 10px 0;
+  white-space: pre;
 }
 
 .portrait {
@@ -295,7 +296,16 @@ p {
 
 .space-after:after {
   content: ' ';
-  white-space: pre;
+}
+
+.modify-object:before {
+  content: 'in ';
+  font-weight: normal;
+}
+
+.modify-object:after {
+  content: ' condition';
+  font-weight: normal;
 }
 
 .banner {

@@ -234,13 +234,6 @@ class ItemEvent {
   }
 }
 
-var dialog1 = new DialogEvent(player0, 'Hello, world!'),
-    combat1 = new CombatEvent(player0, enemy0, 1),
-    condition1 = new ConditionEvent(player0),
-    item1 = new ItemEvent(player0, 'picked up', stones1);
-    
-var eventTest = [dialog1, combat1, condition1, item1];
-
 function loadMap (mapPlan) {
   var y, x, row, string, mapData = [];
   for (y = 0; y < mapPlan.length; y++) {
@@ -817,12 +810,16 @@ var ActionEvent = {
       <img v-if='event.verbIcon' class='icon' src='event.verbIcon'>
       <span class='space-after'>{{ event.verb }}</span>
       <img v-if='event.objectIcon' class='icon' src='event.objectIcon'>
-      <span class='bold'>{{ event.object }}</span><span class='space-after'>.</span>
+      <span class='bold' :class='modifyObject'>{{ event.object }}</span><span class='space-after'>.</span>
       <span v-if='event.result'>{{ event.result }}</span>
     </div>
   `,
   props: ['event'],
-  computed: {}
+  computed: {
+    modifyObject: function () {
+      return { 'modify-object': this.event.object === 'critical' }
+    }
+  }
 }
 
 var EventSwitcher = {
@@ -932,7 +929,7 @@ var Game = new Vue ({
     active: null,
     target: null,
     itemtip: null,
-    events: eventTest
+    events: []
   },
   computed: {
     faction: function () {
@@ -1174,11 +1171,16 @@ var Game = new Vue ({
         damage += 1;
         if (Math.random()*100 <= crtChance) {
           damage += 1;
-          console.log('Critical hit!');
         }
       }
       this.animateCombat(attacker, defender, damage);
-      window.setTimeout(function(){ Game.dealDamage(defender.posY, defender.posX, damage) }, 250);
+      window.setTimeout(function(){
+        Game.events.push(new CombatEvent(attacker, defender, damage));
+        if (damage > 0) {
+          Game.dealDamage(defender.posY, defender.posX, damage);
+          Game.events.push(new ConditionEvent(defender));
+        }
+      }, 250);
       window.setTimeout(function(){
         if (!counter && Game.combat.canCounter && defender.condition !== 'Defeated') {
           Game.attackUnit('counter');
@@ -1293,6 +1295,7 @@ var Game = new Vue ({
           item.slots = null;
           Game.map[y][x].items.push(item);
           Game.map[y][x].items.sort(Game.compareItems);
+          Game.events.push(new ItemEvent(Game.active.unit, 'dropped', item));
           Vue.nextTick(function(){ Game.makeGroundItemsDraggable('#' + itemId) });
         }
       });
@@ -1404,6 +1407,7 @@ var Game = new Vue ({
             itemString = item.slots.map( s => '#' + itemId + '-' + s ).join(',');
             Game.map[y][x].unit.items[itemType].push(item);
             Game.map[y][x].unit.items[itemType].sort(Game.compareItems);
+            Game.events.push(new ItemEvent(Game.active.unit, 'picked up', item));
             Vue.nextTick(function(){ Game.makeEquipItemsDraggable(itemString) });
           }
         });
