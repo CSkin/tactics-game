@@ -285,12 +285,15 @@ p {
 .event {
   display: flex;
   margin: 10px 0;
-  white-space: pre;
 }
 
 .event .icon {
   top: -1px;
   margin 0;
+}
+
+.align-left {
+  justify-content: flex-start;
 }
 
 .align-right {
@@ -303,24 +306,28 @@ p {
 }
 
 .message {
+  max-width: 362px;
   margin: 0 15px;
 }
 
 /* space after*/
 .sa:after {
   content: ' ';
+  white-space: pre;
 }
 
 .event .critical:before {
   content: 'in ';
   font-weight: normal;
   color: black;
+  white-space: pre;
 }
 
 .event .critical:after {
   content: ' condition';
   font-weight: normal;
   color: black;
+  white-space: pre;
 }
 
 .banner {

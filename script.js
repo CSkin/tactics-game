@@ -188,11 +188,12 @@ var unitPlan = [
 ];
 
 class DialogEvent {
-  constructor(unit, message) {
+  constructor(unit, message, alignLeft) {
     this.eventType = 'dialog';
     this.subject = unit.name;
     this.portrait = 'sprites/' + unit.id.replace(/\d/, '') + '-portrait.png';
     this.message = message;
+    this.alignLeft = alignLeft;
   }
 }
 
@@ -223,9 +224,6 @@ class ConditionEvent {
   }
 }
 
-var dialog1 = new DialogEvent(player0, 'Prepare to die, enemy scum!'),
-    dialog2 = new DialogEvent(enemy0, 'Bring it on, cocksucker!');
-
 class ItemEvent {
   constructor(unit, verb, item) {
     this.eventType = 'item';
@@ -236,6 +234,18 @@ class ItemEvent {
     this.objectIcon = 'sprites/' + item.id.replace(/\d/, '') + '-icon.png';
   }
 }
+
+var openingDialog = [
+  { unit: player0, message: "Monsieur LaPadite, while I'm very familiar with you and your family, I have no way of knowing if you are familiar with who I am. Are you aware of my existence?" },
+  { unit: enemy0, message: "Yes." },
+  { unit: player0, message: "This is good. Are you aware of the job I've been ordered to carry out in France?" },
+  { unit: enemy0, message: "Yes." },
+  { unit: player0, message: "Please tell me what you've heard?" },
+  { unit: enemy0, message: "I've heard the Führer has put you in charge of rounding up the Jews left in France who are either hiding or passing for gentile." },
+  { unit: player0, message: "The Führer couldn't have said it better himself." },
+  { unit: enemy0, message: "But the meaning of your visit, pleasant though it is, is mysterious to me. The Germans looked through my house nine months ago for hiding Jews and found nothing." },
+  { unit: player0, message: "I'm aware of that. I read the report on this area. But like any enterprise, when under new management, there's always a slight duplication of efforts. Most of it being a complete waste of time, but it needs to be done nevertheless. I just have a few questions, Monsieur LaPadite. If you can assist me with answers, my department can close the file on your family." }
+];
 
 function loadMap (mapPlan) {
   var y, x, row, string, mapData = [];
@@ -395,7 +405,7 @@ var Space = {
           path = this.space.path;
       if (Game.control === 'player') {
         switch (Game.action) {
-          case 'beginning':
+          case 'waiting':
             break;
           case 'moving':
             if (path) { Game.moveUnit(Game.active.posY, Game.active.posX, path) }
@@ -723,11 +733,11 @@ var ItemHolder = {
     },
     itemData: function () {
       var itemData = [null, null, null, null, null, null];
-      this.items.forEach( function (item) {
-        item.slots.forEach( function (slot) {
+      for (item of this.items) {
+        for (slot of item.slots) {
           itemData[slot] = item;
-        });
-      });
+        }
+      }
       return itemData;
     }
   },
@@ -794,19 +804,23 @@ var SidePanel = {
   }
 };
 
-var DialogEvent = {
+var EventDialog = {
   template: `
-    <div class='event' :class="{ 'align-right': event.subject[0] === 'E'}">
-      <img v-if="event.subject[0] === 'P'" class='portrait' :src='event.portrait' :title='event.subject'>
+    <div class='event' :class='alignment'>
+      <img v-if='event.alignLeft' class='portrait' :src='event.portrait' :title='event.subject'>
       <div class='message'>{{ event.message }}</div>
-      <img v-if="event.subject[0] === 'E'"class='portrait' :src='event.portrait' :title='event.subject'>
+      <img v-if='!event.alignLeft' class='portrait' :src='event.portrait' :title='event.subject'>
     </div>
   `,
   props: ['event'],
-  computed: {}
+  computed: {
+    alignment: function () {
+      if (this.event.alignLeft) { return 'align-left' } else { return 'align-right' }
+    }
+  }
 }
 
-var ActionEvent = {
+var EventAction = {
   template: `
     <div class='event'>
       <img class='icon sa' :src='event.subjectIcon'>
@@ -845,8 +859,8 @@ var EventSwitcher = {
     }
   },
   components: {
-    'dialog-event': DialogEvent,
-    'action-event': ActionEvent
+    'dialog-event': EventDialog,
+    'action-event': EventAction
   }
 };
 
@@ -936,11 +950,12 @@ var Game = new Vue ({
     factionIndex: 0,
     unitIndex: 0,
     banner: false,
-    action: 'beginning',
+    action: 'waiting',
     active: null,
     target: null,
     itemtip: null,
-    events: [dialog1, dialog2]
+    events: [],
+    dialog: openingDialog
   },
   computed: {
     faction: function () {
@@ -1433,7 +1448,7 @@ var Game = new Vue ({
           unit.attacks = unit.attacksperturn;
         }
         this.banner = true;
-        this.action = 'beginning';
+        this.action = 'waiting';
         if (this.control === 'ai') {
           window.setTimeout(function(){ Game.aiFaction() }, 2000);
         }
@@ -1530,6 +1545,17 @@ var Game = new Vue ({
       this.active = null;
       this.target = null;
       this.beginTurn();
+    },
+    cueDialog: function () {
+      var lastLine, nextLine, alignLeft;
+      if (this.events.length > 0) {
+        lastLine = this.events[this.events.length - 1];
+        alignLeft = !lastLine.alignLeft;
+      } else {
+        alignLeft = true;
+      }
+      nextLine = this.dialog.splice(0, 1)[0];
+      this.events.push(new DialogEvent(nextLine.unit, nextLine.message, alignLeft));
     }
   },
   components: {
@@ -1576,6 +1602,6 @@ function keyHandler () {
 
 $( document ).keyup( keyHandler );
 
-window.setTimeout(function(){ Game.beginTurn() }, 500);
+window.setTimeout(function(){ Game.cueDialog() }, 500);
 
 });
