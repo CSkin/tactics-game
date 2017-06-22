@@ -37,7 +37,7 @@ var barren = new Terrain('barren', 'Barren', 99, 0, 0, true),
     grass = new Terrain('grass', 'Grass', 1, 0, 0, true),
     brush = new Terrain('brush', 'Brush', 2, 1, 0, true),
     boulder = new Terrain('boulder', 'Boulder', 99, 0, 0, false),
-    log = new Terrain('log', 'Log', 1, 2, 0, true);
+    log = new Terrain('log', 'Log', 1, 3, 0, true);
 
 class Space {
   constructor(posY, posX, terrain) {
@@ -192,6 +192,7 @@ class DialogEvent {
     this.eventType = 'dialog';
     this.subject = unit.name;
     this.portrait = 'sprites/' + unit.id.replace(/\d/, '') + '-portrait.png';
+    this.faction = unit.faction;
     this.message = message;
     this.alignLeft = alignLeft;
   }
@@ -286,7 +287,7 @@ function loadMap (mapPlan) {
         case 'a': row.push(new Space(y, x, grass)); break;
         case 'b': row.push(new Space(y, x, brush)); break;
         case 'B': row.push(new Space(y, x, boulder)); break;
-        case 'l': row.push(new Space(y, x, new Terrain('log', 'Log', 1, 2, 0, true))); break;
+        case 'l': row.push(new Space(y, x, new Terrain('log', 'Log', 1, 3, 0, true))); break;
       }
     }
     mapData.push(row);
@@ -838,7 +839,7 @@ var EventDialog = {
         <div class='spacer'></div>
         <div class='content' :class='alignment'>
           <img v-if='event.alignLeft' class='portrait' :src='event.portrait' :title='event.subject'>
-          <div class='message'>{{ event.message }}</div>
+          <div class='message' :style='messageColor'>{{ event.message }}</div>
           <img v-if='!event.alignLeft' class='portrait' :src='event.portrait' :title='event.subject'>
         </div>
       </div>
@@ -848,6 +849,12 @@ var EventDialog = {
   computed: {
     alignment: function () {
       if (this.event.alignLeft) { return 'align-left' } else { return 'align-right' }
+    },
+    messageColor: function () {
+      switch (this.event.faction) {
+        case 'Player': return { background: '#f2d791' };
+        case 'Enemy': return { background: '#7acca4' };
+      }
     }
   }
 }

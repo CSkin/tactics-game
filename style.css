@@ -302,6 +302,7 @@ p {
 
 .content {
   display: flex;
+  align-items: center;
 }
 
 .event .icon {
@@ -323,8 +324,55 @@ p {
 }
 
 .message {
+  position: relative;
   max-width: 344px;
   margin: 0 20px;
+  padding: 8px 10px;
+}
+
+.message:before {
+  content:"";
+  position: absolute;
+  bottom: 0px;
+  width: 14px;
+  height: 14px;
+  background: inherit;
+}
+
+.message:after {
+  content:"";
+  position: absolute;
+  bottom: 5px;
+  width: 17px;
+  height: 17px;
+  background: #dfefff;
+  border-radius: 50%;
+}
+
+.align-left .message {
+  border-radius: 8px 8px 8px 0;
+}
+
+.align-left .message:before {
+  right: 100%;
+  border-bottom-left-radius: 100% 70%;
+}
+
+.align-left .message:after {
+  right: 100%;
+}
+
+.align-right .message {
+  border-radius: 8px 8px 0 8px;
+}
+
+.align-right .message:before {
+  left: 100%;
+  border-bottom-right-radius: 100% 70%;
+}
+
+.align-right .message:after {
+  left: 100%;
 }
 
 /* space after*/
