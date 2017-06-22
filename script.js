@@ -236,15 +236,42 @@ class ItemEvent {
 }
 
 var openingDialog = [
-  { unit: player0, message: "Monsieur LaPadite, while I'm very familiar with you and your family, I have no way of knowing if you are familiar with who I am. Are you aware of my existence?" },
-  { unit: enemy0, message: "Yes." },
-  { unit: player0, message: "This is good. Are you aware of the job I've been ordered to carry out in France?" },
-  { unit: enemy0, message: "Yes." },
-  { unit: player0, message: "Please tell me what you've heard?" },
-  { unit: enemy0, message: "I've heard the Führer has put you in charge of rounding up the Jews left in France who are either hiding or passing for gentile." },
-  { unit: player0, message: "The Führer couldn't have said it better himself." },
-  { unit: enemy0, message: "But the meaning of your visit, pleasant though it is, is mysterious to me. The Germans looked through my house nine months ago for hiding Jews and found nothing." },
-  { unit: player0, message: "I'm aware of that. I read the report on this area. But like any enterprise, when under new management, there's always a slight duplication of efforts. Most of it being a complete waste of time, but it needs to be done nevertheless. I just have a few questions, Monsieur LaPadite. If you can assist me with answers, my department can close the file on your family." }
+  {
+    unit: player0,
+    message: "Monsieur LaPadite, while I'm very familiar with you and your family, I have no way of knowing if you are familiar with who I am. Are you aware of my existence?"
+  },
+  {
+    unit: enemy0,
+    message: "Yes."
+  },
+  {
+    unit: player0,
+    message: "This is good. Are you aware of the job I've been ordered to carry out in France?"
+  },
+  {
+    unit: enemy0,
+    message: "Yes."
+  },
+  {
+    unit: player0,
+    message: "Please tell me what you've heard?"
+  },
+  {
+    unit: enemy0,
+    message: "I've heard the Führer has put you in charge of rounding up the Jews left in France who are either hiding or passing for gentile."
+  },
+  {
+    unit: player0,
+    message: "The Führer couldn't have said it better himself."
+  },
+  {
+    unit: enemy0,
+    message: "But the meaning of your visit, pleasant though it is, is mysterious to me. The Germans looked through my house nine months ago for hiding Jews and found nothing."
+  },
+  {
+    unit: player0,
+    message: "I'm aware of that. I read the report on this area. I just have a few questions, Monsieur LaPadite. If you can assist me with answers, my department can close the file on your family."
+  }
 ];
 
 function loadMap (mapPlan) {
@@ -806,11 +833,16 @@ var SidePanel = {
 
 var EventDialog = {
   template: `
-    <div class='event' :class='alignment'>
-      <img v-if='event.alignLeft' class='portrait' :src='event.portrait' :title='event.subject'>
-      <div class='message'>{{ event.message }}</div>
-      <img v-if='!event.alignLeft' class='portrait' :src='event.portrait' :title='event.subject'>
-    </div>
+    <transition name='fade-long'>
+      <div class='event dialog'>
+        <div class='spacer'></div>
+        <div class='content' :class='alignment'>
+          <img v-if='event.alignLeft' class='portrait' :src='event.portrait' :title='event.subject'>
+          <div class='message'>{{ event.message }}</div>
+          <img v-if='!event.alignLeft' class='portrait' :src='event.portrait' :title='event.subject'>
+        </div>
+      </div>
+    </transition>
   `,
   props: ['event'],
   computed: {
@@ -822,15 +854,20 @@ var EventDialog = {
 
 var EventAction = {
   template: `
-    <div class='event'>
-      <img class='icon sa' :src='event.subjectIcon'>
-      <span class='bold sa'>{{ event.subject }}</span>
-      <img v-if='event.verbIcon' class='icon sa' :src='event.verbIcon'>
-      <span class='sa'>{{ event.verb }}</span>
-      <img v-if='event.objectIcon' class='icon sa' :src='event.objectIcon'>
-      <span class='bold' :class='objectClasses'>{{ event.object }}</span><span class='sa'>.</span>
-      <span v-if='event.result'>{{ event.result }}</span>
-    </div>
+    <transition name='fade-long'>
+      <div class='event action'>
+        <div class='spacer'></div>
+        <div class='content'>
+          <img class='icon sa' :src='event.subjectIcon'>
+          <span class='bold sa'>{{ event.subject }}</span>
+          <img v-if='event.verbIcon' class='icon sa' :src='event.verbIcon'>
+          <span class='sa'>{{ event.verb }}</span>
+          <img v-if='event.objectIcon' class='icon sa' :src='event.objectIcon'>
+          <span class='bold' :class='objectClasses'>{{ event.object }}</span><span class='sa'>.</span>
+          <span v-if='event.result'>{{ event.result }}</span>
+        </div>
+      </div>
+    </transition>
   `,
   props: ['event'],
   computed: {
@@ -866,7 +903,7 @@ var EventSwitcher = {
 
 var EventLog = {
   template:`
-    <div class='ui' id='event-log'>
+    <div id='event-log'>
       <event-switcher v-for='event in events' :event='event' :key='event'></event-switcher>
     </div>
   `,
@@ -986,6 +1023,11 @@ var Game = new Vue ({
           canCounter: this.checkRange(this.distance, this.target.unit.range)
         }
       }
+    }
+  },
+  watch: {
+    events: function () {
+      Vue.nextTick(function(){ Game.scrollEventLog() });
     }
   },
   methods: {
@@ -1546,16 +1588,36 @@ var Game = new Vue ({
       this.target = null;
       this.beginTurn();
     },
-    cueDialog: function () {
-      var lastLine, nextLine, alignLeft;
-      if (this.events.length > 0) {
-        lastLine = this.events[this.events.length - 1];
-        alignLeft = !lastLine.alignLeft;
-      } else {
-        alignLeft = true;
+    advanceDialog: function () {
+      var next, alignLeft;
+      if (this.dialog) {
+        if (this.dialog.length > 0) {
+          next = this.dialog.splice(0, 1)[0];
+          if (this.events.length > 0) {
+            alignLeft = !this.events[this.events.length - 1].alignLeft;
+          } else {
+            alignLeft = true;
+          }
+          this.events.push(new DialogEvent(next.unit, next.message, alignLeft));
+        } else {
+          this.dialog = null;
+          this.beginTurn();
+        }
       }
-      nextLine = this.dialog.splice(0, 1)[0];
-      this.events.push(new DialogEvent(nextLine.unit, nextLine.message, alignLeft));
+    },
+    scrollEventLog: function () {
+      var events = this.events, index;
+      if (events[events.length - 1].eventType === 'dialog') {
+        if (events.length === 1) { index = 0 }
+        else { index = events.length - 2 }
+      } else {
+        var i = 1;
+        while (events[events.length - (i + 1)].eventType !== 'dialog' && i < 8) {
+          i++;
+        }
+        index = events.length - i;
+      }
+      document.getElementsByClassName('event')[index].scrollIntoView();
     }
   },
   components: {
@@ -1602,6 +1664,6 @@ function keyHandler () {
 
 $( document ).keyup( keyHandler );
 
-window.setTimeout(function(){ Game.cueDialog() }, 500);
+window.setTimeout(function(){ Game.advanceDialog() }, 1000);
 
 });
