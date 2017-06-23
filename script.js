@@ -106,20 +106,21 @@ class Accessory extends Item {
 }
 
 var claws = new Weapon(1, 'claws', 'Claws', 'Built for digging but useful in a fight.', 'melee', 1, 1, null, [0]),
-    stones1 = new Weapon(3, 'stones1', 'Stones', 'The original projectile weapon.', 'throwing', 1, 3, null, [0]),
-    stones2 = new Weapon(3, 'stones2', 'Stones', 'The original projectile weapon.', 'throwing', 1, 3, null, [0]),
     stick1 = new Weapon(2, 'stick1', 'Heavy Stick', 'An unusually heavy stick.', 'melee', 2, 1, null, [0, 2]),
     stick2 = new Weapon(2, 'stick2', 'Heavy Stick', 'An unusually heavy stick.', 'melee', 2, 1, null, [0, 2]),
-    tunic = new Clothing(4, 'tunic', 'Tunic', 'Comfy and easy to wear.', 1, null, [0]),
-    boots = new Clothing(5, 'boots', 'Boots', "Made for walkin'.", 0, { movement: 1 }, [0]),
-    salve1 = new Accessory(6, 'salve1', 'Salve', 'Heals most any wound.', { hp: 2 }, [0]),
-    salve2 = new Accessory(6, 'salve2', 'Salve', 'Heals most any wound.', { hp: 2 }, [0]);
+    stones1 = new Weapon(3, 'stones1', 'Stones', 'The original projectile weapon.', 'throwing', 1, 3, null, [0]),
+    stones2 = new Weapon(3, 'stones2', 'Stones', 'The original projectile weapon.', 'throwing', 1, 3, null, [0]),
+    bow = new Weapon(4, 'bow', 'Bow', 'Basic bow and arrows. Simple, yet effective.', 'ranged', 2, 5, null, [0, 2]),
+    tunic = new Clothing(5, 'tunic', 'Tunic', 'Comfy and easy to wear.', 1, null, [0]),
+    boots = new Clothing(6, 'boots', 'Boots', "Made for walkin'.", 0, { movement: 1 }, [0]),
+    salve1 = new Accessory(7, 'salve1', 'Salve', 'Heals most any wound.', { hp: 2 }, [0]),
+    salve2 = new Accessory(7, 'salve2', 'Salve', 'Heals most any wound.', { hp: 2 }, [0]);
 
 var itemPlan = [
   {
     posY: 8,
     posX: 6,
-    items: [stones1, stick1, tunic, boots, salve1]
+    items: [stick1, stones1, bow]
   }
 ];
 
@@ -172,7 +173,7 @@ class Unit {
   get armor() { return this.items.clothing.reduce( (a, b) => a + b.armor , 0) }
 }
 
-var player0 = new Unit('player0', 'Player', 'Player Unit', 1, 1, 1, 1, 1, 2, 5, [claws], [], [], 9, 4, true, 'player'),
+var player0 = new Unit('player0', 'Player', 'Player Unit', 1, 1, 1, 1, 1, 2, 5, [], [], [], 9, 4, true, 'player'),
     enemy0  = new Unit('enemy0', 'Enemy', 'Enemy Unit', 2, 1, 1, 1, 1, 1, 5, [stones2], [], [], 6, 11, false, 'ai', 'sentry');
 
 var unitPlan = [
