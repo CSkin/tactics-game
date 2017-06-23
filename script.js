@@ -80,6 +80,7 @@ class Weapon extends Item {
     super(index, id, name, descrip, effects, footprint, slot);
     this.itemType = 'weapon';
     this.type = type;
+    this.icon = 'sprites/' + type + '.png';
     this.power = power;
     switch (type) {
       case 'melee': this.range = [1, 1]; break;
@@ -205,7 +206,7 @@ class CombatEvent {
     this.subject = unit.name;
     this.subjectIcon = 'sprites/' + unit.id.replace(/\d/, '') + '-icon.png';
     this.verb = 'attacked';
-    this.verbIcon = 'sprites/' + unit.equipped.type + '.png';
+    this.verbIcon = unit.equipped.icon;
     this.object = target.name;
     this.objectIcon = 'sprites/' + target.id.replace(/\d/, '') + '-icon.png';
     switch (damage) {
@@ -233,7 +234,7 @@ class ItemEvent {
     this.subjectIcon = 'sprites/' + unit.id.replace(/\d/, '') + '-icon.png';
     this.verb = verb;
     this.object = item.name;
-    this.objectIcon = 'sprites/' + item.id.replace(/\d/, '') + '-icon.png';
+    this.objectIcon = item.icon;
   }
 }
 
