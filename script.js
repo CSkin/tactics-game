@@ -61,7 +61,6 @@ class Item {
     this.name = name;
     this.descrip = descrip;
     this.effects = effects;
-    this.applyEffectsOnPickup = false;
     this.footprint = footprint;
     if (footprint.length === 1) {
       this.sprites = [this.sprite];
@@ -133,8 +132,7 @@ class Tunic extends Clothing {
 
 class Boots extends Clothing {
   constructor(id, slot) {
-    super(6, id, 'footwear', 'Boots', "Made for walkin'.", 0, { moves: 1 }, [0], slot);
-    this.applyEffectsOnPickup = true;
+    super(6, id, 'footwear', 'Boots', "Made for walkin'.", 0, { movement: 1 }, [0], slot);
   }
 }
 
@@ -161,7 +159,7 @@ var itemPlan = [
 ];
 
 class Unit {
-  constructor(id, faction, name, strength, melee, throwing, ranged, agility, toughness, movement, weapons, clothing, accessories, posY, posX, friendly, control, behavior) {
+  constructor(id, faction, name, strength, melee, throwing, ranged, agility, toughness, movement, items, posY, posX, friendly, control, behavior) {
     this.id = id;
     this.faction = faction;
     this.sprite = 'sprites/' + id.replace(/\d/, '') + '.png';
@@ -173,32 +171,24 @@ class Unit {
     this.ranged = ranged;
     this.agility = agility;
     this.toughness = toughness;
-    this.items = {
-      weapons: weapons,
-      clothing: clothing,
-      accessories: accessories
-    };
-    if (this.items.weapons.length) {
-      this.items.weapons[0].equipped = true;
-    }
+    this.items = items;
+    if (items.length && items[0].itemType === 'weapon') { this.items[0].equipped = true; }
     // hidden properties
     this.movement = movement;
-    this.moves = this.totalMov;
+    this.movesUsed = 0;
+    this.attacksPerTurn = 1;
+    this.attacksUsed = 0;
     this.posY = posY;
     this.posX = posX;
     this.moving = null;
     this.path = null;
-    this.attacksperturn = 1;
-    this.attacks = this.attacksperturn;
     this.friendly = friendly;
     this.control = control;
     if (behavior) { this.behavior = behavior }
     // methods
-    this.applyEffects = function (item) {
-      for (var effect in item.effects) { this[effect] += item.effects[effect] }
-    };
-    this.removeEffects = function (item) {
-      for (var effect in item.effects) { this[effect] -= item.effects[effect] }
+    this.resetActionPoints = function () {
+      this.movesUsed = 0;
+      this.attacksUsed = 0;
     };
   }
   // getters
@@ -210,19 +200,23 @@ class Unit {
       case 0: return 'Defeated';
     }
   }
-  get equipped() { return this.items.weapons.filter( weapon => weapon.equipped === true )[0] }
+  get weapons() { return this.items.filter( i => i.itemType === 'weapon' ) }
+  get clothing() { return this.items.filter( i => i.itemType === 'clothing' ) }
+  get accessories() { return this.items.filter( i => i.itemType === 'accessory' ) }
+  get equipped() { return this.weapons.filter( w => w.equipped === true )[0] }
   get skill() { if (this.equipped) { return this[this.equipped.type] } else { return this.melee } }
   get range() { if (this.equipped) { return this.equipped.range } else { return [1, 1] } }
-  get armor() { return this.items.clothing.reduce( (a, b) => a + b.armor , 0) }
-  get totalMov() {
-    return this.items.weapons.concat(this.items.clothing).concat(this.items.accessories)
-      .filter( item => item.effects && item.effects.hasOwnProperty('moves') )
-      .reduce( (a, b) => a + b.effects.moves , this.movement);
+  get armor() { return this.clothing.reduce( (a, b) => a + b.armor , 0) }
+  get moveBonus() {
+    return this.items.filter( i => i.effects && i.effects.hasOwnProperty('movement') )
+      .reduce( (a, b) => a + b.effects.movement , 0);
   }
+  get movesLeft() { return this.movement + this.moveBonus - this.movesUsed }
+  get attacksLeft() { return this.attacksPerTurn - this.attacksUsed }
 }
 
-var player0 = new Unit('player0', 'Player', 'Player Unit', 1, 1, 1, 1, 1, 2, 5, [], [], [], 9, 4, true, 'player'),
-    enemy0  = new Unit('enemy0', 'Enemy', 'Enemy Unit', 2, 1, 1, 1, 1, 1, 5, [stones2], [], [], 6, 11, false, 'ai', 'sentry');
+var player0 = new Unit('player0', 'Player', 'Player Unit', 2, 2, 2, 2, 2, 3, 5, [], 9, 4, true, 'player'),
+    enemy0  = new Unit('enemy0', 'Enemy', 'Enemy Unit', 3, 2, 2, 2, 2, 2, 5, [stones2], 6, 11, false, 'ai', 'sentry');
 
 var unitPlan = [
   {
@@ -367,9 +361,8 @@ function loadItems (mapData, itemPlan) {
 }
 
 function loadUnits (mapData, unitPlan) {
-  var faction, unit;
-  for (faction of unitPlan) {
-    for (unit of faction.units) {
+  for (var faction of unitPlan) {
+    for (var unit of faction.units) {
       mapData[unit.posY][unit.posX].unit = unit;
     }
   }
@@ -644,10 +637,10 @@ var UnitActions = {
       <p class='heading'><img class='icon' src='sprites/actions-icon.png'>Actions</p>
       <div id='action-buttons'>
         <div id='move-holder' class='btn-holder'>
-          <img v-if="action !== 'moving' && unit.moves > 0" id='btn-move' class='button' src='sprites/btn-move.png' title='Move (M)' @click='beginMove'>
+          <img v-if="action !== 'moving' && unit.movesLeft > 0" id='btn-move' class='button' src='sprites/btn-move.png' title='Move (M)' @click='beginMove'>
         </div>
         <div id='attack-holder' class='btn-holder'>
-          <img v-if="action !== 'attacking' && unit.attacks > 0" id='btn-attack' class='button' src='sprites/btn-attack.png' title='Attack (A)' @click='beginAttack'>
+          <img v-if="action !== 'attacking' && unit.attacksLeft > 0" id='btn-attack' class='button' src='sprites/btn-attack.png' title='Attack (A)' @click='beginAttack'>
         </div>
         <div id='equip-holder' class='btn-holder'>
           <img v-if="action !== 'equipping'" id='btn-equip' class='button' src='sprites/btn-equip.png' title='Equip (E)' @click='beginEquip'>
@@ -665,7 +658,7 @@ var UnitActions = {
       var unit = Game.active.unit;
       Game.target = null;
       Game.action = 'moving';
-      Game.showMoveRange(unit.posY, unit.posX, unit.moves, '');
+      Game.showMoveRange(unit.posY, unit.posX, unit.movesLeft, '');
     },
     beginAttack: function () {
       if (this.action) { this.cancelAction() }
@@ -828,13 +821,13 @@ var UnitItems = {
     <div class='ui'>
       <p class='heading'><img class='icon' src='sprites/equipment-icon.png'>Equipment</p>
       <div class='equipment'>
-        <item-holder type='weapon' :items='items.weapons' :itemtip='itemtip'></item-holder>
-        <item-holder type='clothing' :items='items.clothing' :itemtip='itemtip'></item-holder>
-        <item-holder type='accessory' :items='items.accessories' :itemtip='itemtip'></item-holder>
+        <item-holder type='weapon' :items='unit.weapons' :itemtip='itemtip'></item-holder>
+        <item-holder type='clothing' :items='unit.clothing' :itemtip='itemtip'></item-holder>
+        <item-holder type='accessory' :items='unit.accessories' :itemtip='itemtip'></item-holder>
       </div>
     </div>
   `,
-  props: ['items', 'itemtip'],
+  props: ['unit', 'itemtip'],
   components: {
     'item-holder': ItemHolder
   }
@@ -859,7 +852,7 @@ var SidePanel = {
             <target-actions v-if="control === 'player' && space"></target-actions>
             <combat-info v-if='combat' type='target' :combat='combat'></combat-info>
           </template>
-          <unit-items v-if="side === 'left' && action === 'equipping'" :items='space.unit.items' :itemtip='itemtip'></unit-items>
+          <unit-items v-if="side === 'left' && action === 'equipping'" :unit='space.unit' :itemtip='itemtip'></unit-items>
         </div>
       </transition>
     </div>
@@ -1118,7 +1111,7 @@ var Game = new Vue ({
       var y, x,
           posY = this.active.unit.posY,
           posX = this.active.unit.posX,
-          moves = this.active.unit.moves;
+          moves = this.active.unit.movesLeft;
       for (y = Math.max(posY - moves, 0); y <= Math.min(posY + moves, 15); y++) {
         for (x = Math.max(posX - moves, 0); x <= Math.min(posX + moves, 15); x++) {
           this.map[y][x].moves = null;
@@ -1159,7 +1152,7 @@ var Game = new Vue ({
       spaceTo = this.map[moveObj.y][moveObj.x],
       unitData = spaceFrom.unit;
       spaceFrom.unit = null;
-      unitData.moves -= spaceTo.terrain.cost;
+      unitData.movesUsed += spaceTo.terrain.cost;
       unitData.moving = moveObj.moving;
       unitData.path = unitData.path.substr(1);
       moveObj.changePos();
@@ -1223,7 +1216,7 @@ var Game = new Vue ({
     targetUnit: function (y, x) {
       var target = this.map[y][x];
       if (!this.checkRange(target.distance, target.unit.range)) {
-        var w, weapons = target.unit.items.weapons;
+        var w, weapons = target.unit.weapons;
         for (w = 0; w < weapons.length; w++) {
           if (Game.checkRange(target.distance, weapons[w].range)) {
             Game.equipWeapon(y, x, w);
@@ -1267,16 +1260,16 @@ var Game = new Vue ({
     checkRange: function (distance, range) {
       if (distance >= range[0] && distance <= range[1]) { return true }
     },
-    equipWeapon: function (y, x, weaponIndex) {
+    equipWeapon: function (y, x, itemIndex) {
       var unit = this.map[y][x].unit,
-          weapons = unit.items.weapons,
+          items = unit.items,
           unequipId, unequipIndex;
       if (unit.equipped) {
         unequipId = unit.equipped.id,
-        unequipIndex = weapons.indexOf(weapons.filter( i => i.id === unequipId )[0]);
-        this.map[y][x].unit.items.weapons[unequipIndex].equipped = false;
+        unequipIndex = items.indexOf(items.filter( i => i.id === unequipId )[0]);
+        this.map[y][x].unit.items[unequipIndex].equipped = false;
       }
-      this.map[y][x].unit.items.weapons[weaponIndex].equipped = true;
+      this.map[y][x].unit.items[itemIndex].equipped = true;
     },
     attackUnit: function (counter) {
       var attacker, defender, hitChance, crtChance, damage = 0;
@@ -1356,7 +1349,7 @@ var Game = new Vue ({
     },
     endAttack: function () {
       var unit = this.active.unit;
-      if (unit) { this.map[unit.posY][unit.posX].unit.attacks -= 1 }
+      if (unit) { this.map[unit.posY][unit.posX].unit.attacksUsed += 1 }
       this.action = null;
     },
     makeEquipItemsDraggable: function (draggables) {
@@ -1402,26 +1395,24 @@ var Game = new Vue ({
         accept: '.weapon',
         tolerance: 'pointer',
         drop: function (event, ui) {
-          var weaponList = Game.active.unit.items.weapons,
-              weaponId = ui.draggable[0].id.slice(0, -2),
-              weaponIndex = weaponList.indexOf(weaponList.filter( w => w.id === weaponId )[0]);
-          Game.equipWeapon(Game.active.unit.posY, Game.active.unit.posX, weaponIndex);
+          var itemList = Game.active.unit.items,
+              itemId = ui.draggable[0].id.slice(0, -2),
+              itemIndex = itemList.indexOf(itemList.filter( i => i.id === itemId )[0]);
+          Game.equipWeapon(Game.active.unit.posY, Game.active.unit.posX, itemIndex);
         }
       });
       $( '#top-center' ).droppable({
         tolerance: 'pointer',
         drop: function (event, ui) {
           var y = Game.active.unit.posY, x = Game.active.unit.posX,
-              itemType = Game.convertItemType(ui.draggable[0].classList[2]),
-              itemList = Game.map[y][x].unit.items[itemType],
+              itemList = Game.map[y][x].unit.items,
               itemId = ui.draggable[0].id.slice(0, -2),
               itemIndex = itemList.indexOf(itemList.filter( i => i.id === itemId )[0]),
-              item = Game.map[y][x].unit.items[itemType].splice(itemIndex, 1)[0];
+              item = Game.map[y][x].unit.items.splice(itemIndex, 1)[0];
           item.slots = null;
           Game.map[y][x].items.push(item);
           Game.map[y][x].items.sort(Game.compareItems);
           Game.events.push(new ItemEvent(Game.active.unit, 'dropped', item));
-          if (item.applyEffectsOnPickup) { Game.map[y][x].unit.removeEffects(item) }
           Vue.nextTick(function(){ Game.makeGroundItemsDraggable('#' + itemId) });
         }
       });
@@ -1457,7 +1448,7 @@ var Game = new Vue ({
       this.itemtip = null;
     },
     findDroppableSlots: function (itemStatus, itemType, itemId, slotNum) {
-      var itemList = this.active.unit.items[this.convertItemType(itemType)],
+      var itemList = this.active.unit[this.convertItemType(itemType)],
           itemMap = [null, null, null, null, null, null],
           itemFootprint, itemIndex,
           slots = [0, 1, 2, 3, 4, 5],
@@ -1504,16 +1495,15 @@ var Game = new Vue ({
           tolerance: 'pointer',
           drop: function (event, ui) {
             var y = Game.active.unit.posY, x = Game.active.unit.posX,
-                itemType = Game.convertItemType(ui.draggable[0].classList[2]),
-                itemList = Game.map[y][x].unit.items[itemType],
+                itemList = Game.map[y][x].unit.items,
                 itemId = ui.draggable[0].id.slice(0, -2),
                 itemIndex = itemList.indexOf(itemList.filter( i => i.id === itemId )[0]),
                 itemSlots = itemList[itemIndex].slots,
                 translation = Number(event.target.id.slice(-1)) - Number(ui.draggable[0].id.slice(-1)),
                 itemString = itemSlots.map( s => '#' + itemId + '-' + (s + translation) ).join(',');
-            Game.map[y][x].unit.items[itemType][itemIndex].slots = [];
+            Game.map[y][x].unit.items[itemIndex].slots = [];
             Vue.nextTick(function(){
-              Game.map[y][x].unit.items[itemType][itemIndex].slots = itemSlots.map( s => s + translation );
+              Game.map[y][x].unit.items[itemIndex].slots = itemSlots.map( s => s + translation );
               Vue.nextTick(function(){ Game.makeEquipItemsDraggable(itemString) });
             });
           }
@@ -1523,7 +1513,6 @@ var Game = new Vue ({
           tolerance: 'pointer',
           drop: function (event, ui) {
             var y = Game.active.unit.posY, x = Game.active.unit.posX,
-                itemType = Game.convertItemType(ui.draggable[0].classList[2]),
                 itemList = Game.active.items,
                 itemId = ui.draggable[0].id,
                 itemIndex = itemList.indexOf(itemList.filter( i => i.id === itemId )[0]),
@@ -1531,22 +1520,18 @@ var Game = new Vue ({
                 itemString;
             item.slots = item.footprint.map( toe => toe + Number(event.target.id.slice(-1)));
             itemString = item.slots.map( s => '#' + itemId + '-' + s ).join(',');
-            Game.map[y][x].unit.items[itemType].push(item);
-            Game.map[y][x].unit.items[itemType].sort(Game.compareItems);
+            Game.map[y][x].unit.items.push(item);
+            Game.map[y][x].unit.items.sort(Game.compareItems);
             Game.events.push(new ItemEvent(Game.active.unit, 'picked up', item));
-            if (item.applyEffectsOnPickup) { Game.map[y][x].unit.applyEffects(item) }
             Vue.nextTick(function(){ Game.makeEquipItemsDraggable(itemString) });
           }
         });
       }
     },
     beginTurn: function () {
-      var u, unit, units = this.units;
-      if (units.length) {
-        for (u = 0; u < units.length; u++) {
-          unit = this.map[units[u].posY][units[u].posX].unit;
-          unit.moves = unit.totalMov;
-          unit.attacks = unit.attacksperturn;
+      if (this.units.length) {
+        for (u of this.units) {
+          this.map[u.posY][u.posX].unit.resetActionPoints();
         }
         this.banner = true;
         this.action = 'waiting';
