@@ -171,6 +171,11 @@ class Unit {
   get skill() { if (this.equipped) { return this[this.equipped.type] } else { return this.melee } }
   get range() { if (this.equipped) { return this.equipped.range } else { return [1, 1] } }
   get armor() { return this.items.clothing.reduce( (a, b) => a + b.armor , 0) }
+  get totalMov() {
+    return this.items.weapons.concat(this.items.clothing).concat(this.items.accessories)
+      .filter( item => item.effects && item.effects.hasOwnProperty('movement') )
+      .reduce( (a, b) => a + b.effects.movement , this.movement);
+  }
 }
 
 var player0 = new Unit('player0', 'Player', 'Player Unit', 1, 1, 1, 1, 1, 2, 5, [], [], [], 9, 4, true, 'player'),
@@ -1495,7 +1500,7 @@ var Game = new Vue ({
       if (units.length) {
         for (u = 0; u < units.length; u++) {
           unit = this.map[units[u].posY][units[u].posX].unit;
-          unit.moves = unit.movement;
+          unit.moves = unit.totalMov;
           unit.attacks = unit.attacksperturn;
         }
         this.banner = true;
