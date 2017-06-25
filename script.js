@@ -983,7 +983,7 @@ var TurnBanner = {
   }
 };
 
-// BLUE STUFF BLUE STUFF BLUE STUFF BLUE STUFF BLUE STUFF BLUE STUFF BLUE STUFF BLUE STUFF BLUE STUFF BLUE STUFF
+// VUE INSTANCE STARTS HERE VUE INSTANCE STARTS HERE VUE INSTANCE STARTS HERE VUE INSTANCE STARTS HERE
 
 var Game = new Vue ({
   el:'#game',
@@ -1000,7 +1000,8 @@ var Game = new Vue ({
     target: null,
     itemtip: null,
     events: [],
-    dialog: openingDialog
+    dialog: openingDialog,
+    scrolled: false
   },
   computed: {
     faction: function () {
@@ -1626,6 +1627,27 @@ var Game = new Vue ({
         index = events.length - i;
       }
       document.getElementsByClassName('event')[index].scrollIntoView();
+      window.setTimeout(function(){
+        Game.scrolled = false;
+        Game.addFadeClasses(1);
+      }, 1);
+    },
+    addFadeClasses: function (i) {
+      var event = $( '.event:nth-last-child(' + i + ')' );
+      if (i <= 8 && event.hasClass( 'action' )) {
+        this.removeFadeClasses(event);
+        event.addClass( 'fade' + i );
+        this.addFadeClasses(i + 1);
+      }
+    },
+    removeFadeClasses: function ( selector ) {
+      $( selector ).removeClass( 'fade1 fade2 fade3 fade4 fade5 fade6 fade7 fade8' );
+    },
+    scrollHandler: function () {
+      if (!this.scrolled) {
+        this.removeFadeClasses('.event');
+        this.scrolled = true;
+      }
     }
   },
   components: {

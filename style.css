@@ -423,6 +423,14 @@ p {
 
 /* Dynamic Classes */
 
+.Player {
+  background-image: url('sprites/player-icon.png');
+}
+
+.Enemy {
+  background-image: url('sprites/enemy-icon.png');
+}
+
 .movable {
   background-color: rgb(0, 191, 255);
   background-color: rgba(0, 191, 255, 0.7);
@@ -455,6 +463,38 @@ p {
   color: #8b0000;
 }
 
+.fade1 {
+  opacity: 1;
+}
+
+.fade2 {
+  opacity: 0.875;
+}
+
+.fade3 {
+  opacity: 0.75;
+}
+
+.fade4 {
+  opacity: 0.625;
+}
+
+.fade5 {
+  opacity: 0.5;
+}
+
+.fade6 {
+  opacity: 0.375;
+}
+
+.fade7 {
+  opacity: 0.25;
+}
+
+.fade8 {
+  opacity: 0.125;
+}
+
 .barren {
   background-image: url('sprites/barren.png');
 }
@@ -481,14 +521,6 @@ p {
 
 .log {
   background-image: url('sprites/log.png');
-}
-
-.Player {
-  background-image: url('sprites/player-icon.png');
-}
-
-.Enemy {
-  background-image: url('sprites/enemy-icon.png');
 }
 
 /* Transition Classes */
