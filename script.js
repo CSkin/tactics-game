@@ -61,6 +61,7 @@ class Item {
     this.name = name;
     this.descrip = descrip;
     this.effects = effects;
+    this.applyEffectsOnPickup = false;
     this.footprint = footprint;
     if (footprint.length === 1) {
       this.sprites = [this.sprite];
@@ -106,21 +107,56 @@ class Accessory extends Item {
   }
 }
 
-var stick1 = new Weapon(2, 'stick1', 'club', 'Heavy Stick', 'An unusually heavy stick.', 'melee', 2, 1, null, [0, 2]),
-    stick2 = new Weapon(2, 'stick2', 'club', 'Heavy Stick', 'An unusually heavy stick.', 'melee', 2, 1, null, [0, 2]),
-    stones1 = new Weapon(3, 'stones1', 'stones', 'Stones', 'The original projectile weapon.', 'throwing', 1, 3, null, [0]),
-    stones2 = new Weapon(3, 'stones2', 'stones', 'Stones', 'The original projectile weapon.', 'throwing', 1, 3, null, [0]),
-    shortbow = new Weapon(4, 'shortbow', 'bow', 'Short Bow', 'This compact bow is powerful for its size.', 'ranged', 2, 4, null, [0, 2]),
-    tunic = new Clothing(5, 'tunic', 'shirt', 'Tunic', 'Comfy and easy to wear.', 1, null, [0]),
-    boots = new Clothing(6, 'boots', 'footwear', 'Boots', "Made for walkin'.", 0, { movement: 1 }, [0]),
-    salve1 = new Accessory(7, 'salve1', 'salve', 'Salve', 'Heals most any wound.', { hp: 2 }, [0]),
-    salve2 = new Accessory(7, 'salve2', 'salve', 'Salve', 'Heals most any wound.', { hp: 2 }, [0]);
+class Stick extends Weapon {
+  constructor(id, slot) {
+    super(2, id, 'club', 'Heavy Stick', 'An unusually heavy stick.', 'melee', 2, 1, null, [0, 2], slot);
+  }
+}
+
+class Stones extends Weapon {
+  constructor(id, slot) {
+    super(3, id, 'stones', 'Stones', 'The original projectile weapon.', 'throwing', 1, 3, null, [0], slot);
+  }
+}
+
+class ShortBow extends Weapon {
+  constructor(id, slot) {
+    super(4, id, 'bow', 'Short Bow', 'This compact bow is powerful for its size.', 'ranged', 2, 4, null, [0, 2], slot);
+  }
+}
+
+class Tunic extends Clothing {
+  constructor(id, slot) {
+    super(5, id, 'shirt', 'Tunic', 'Comfy and easy to wear.', 1, null, [0], slot);
+  }
+}
+
+class Boots extends Clothing {
+  constructor(id, slot) {
+    super(6, id, 'footwear', 'Boots', "Made for walkin'.", 0, { moves: 1 }, [0], slot);
+    this.applyEffectsOnPickup = true;
+  }
+}
+
+class Salve extends Accessory {
+  constructor(id, slot) {
+    super(7, id, 'salve', 'Salve', 'Heals most any wound.', { hp: 2 }, [0], slot);
+  }
+}
+
+var stick1 = new Stick('stick1'),
+    stones1 = new Stones('stones1'),
+    stones2 = new Stones('stones2'),
+    shortbow1 = new ShortBow('shortbow1'),
+    tunic1 = new Tunic('tunic1'),
+    boots1 = new Boots('boots1'),
+    salve1 = new Salve('salve1');
 
 var itemPlan = [
   {
     posY: 8,
     posX: 6,
-    items: [stick1, stones1, shortbow, tunic, boots, salve1]
+    items: [stick1, stones1, shortbow1, tunic1, boots1, salve1]
   }
 ];
 
@@ -147,7 +183,7 @@ class Unit {
     }
     // hidden properties
     this.movement = movement;
-    this.moves = this.movement;
+    this.moves = this.totalMov;
     this.posY = posY;
     this.posX = posX;
     this.moving = null;
@@ -157,6 +193,13 @@ class Unit {
     this.friendly = friendly;
     this.control = control;
     if (behavior) { this.behavior = behavior }
+    // methods
+    this.applyEffects = function (item) {
+      for (var effect in item.effects) { this[effect] += item.effects[effect] }
+    };
+    this.removeEffects = function (item) {
+      for (var effect in item.effects) { this[effect] -= item.effects[effect] }
+    };
   }
   // getters
   get condition() {
@@ -173,8 +216,8 @@ class Unit {
   get armor() { return this.items.clothing.reduce( (a, b) => a + b.armor , 0) }
   get totalMov() {
     return this.items.weapons.concat(this.items.clothing).concat(this.items.accessories)
-      .filter( item => item.effects && item.effects.hasOwnProperty('movement') )
-      .reduce( (a, b) => a + b.effects.movement , this.movement);
+      .filter( item => item.effects && item.effects.hasOwnProperty('moves') )
+      .reduce( (a, b) => a + b.effects.moves , this.movement);
   }
 }
 
@@ -1378,6 +1421,7 @@ var Game = new Vue ({
           Game.map[y][x].items.push(item);
           Game.map[y][x].items.sort(Game.compareItems);
           Game.events.push(new ItemEvent(Game.active.unit, 'dropped', item));
+          if (item.applyEffectsOnPickup) { Game.map[y][x].unit.removeEffects(item) }
           Vue.nextTick(function(){ Game.makeGroundItemsDraggable('#' + itemId) });
         }
       });
@@ -1490,6 +1534,7 @@ var Game = new Vue ({
             Game.map[y][x].unit.items[itemType].push(item);
             Game.map[y][x].unit.items[itemType].sort(Game.compareItems);
             Game.events.push(new ItemEvent(Game.active.unit, 'picked up', item));
+            if (item.applyEffectsOnPickup) { Game.map[y][x].unit.applyEffects(item) }
             Vue.nextTick(function(){ Game.makeEquipItemsDraggable(itemString) });
           }
         });
