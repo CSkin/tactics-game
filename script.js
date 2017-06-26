@@ -88,6 +88,7 @@ class Weapon extends Item {
       case 'ranged': this.range = [2, range]; break;
     }
     this.equipped = false;
+    this.usable = false;
   }
 }
 
@@ -96,13 +97,15 @@ class Clothing extends Item {
     super(index, id, icon, name, descrip, effects, footprint, slot);
     this.itemType = 'clothing';
     this.armor = armor;
+    this.usable = false;
   }
 }
 
 class Accessory extends Item {
-  constructor(index, id, icon, name, descrip, effects, footprint, slot) {
+  constructor(index, id, icon, name, descrip, usable, effects, footprint, slot) {
     super(index, id, icon, name, descrip, effects, footprint, slot);
     this.itemType = 'accessory';
+    this.usable = usable;
   }
 }
 
@@ -138,7 +141,7 @@ class Boots extends Clothing {
 
 class Salve extends Accessory {
   constructor(id, slot) {
-    super(7, id, 'salve', 'Salve', 'Heals most any wound.', { hp: 2 }, [0], slot);
+    super(7, id, 'salve', 'Salve', 'Heals most any wound.', true, { hp: 2 }, [0], slot);
   }
 }
 
@@ -190,10 +193,25 @@ class Unit {
       this.movesUsed = 0;
       this.attacksUsed = 0;
     };
+    this.findItemIndex = function (id) {
+      return this.items.indexOf(this.items.filter( i => i.id === id )[0]);
+    };
+    this.equipWeapon = function (id) {
+      for (var item of this.items) {
+        if (item.itemType === 'weapon') { item.equipped = false }
+      }
+      this.items[this.findItemIndex(id)].equipped = true;
+    };
+    this.useItem = function (id) {
+      var item = this.items.splice(this.findItemIndex(id), 1)[0];
+      for (var attr in item.effects) { this[attr] += item.effects[attr] }
+    };
   }
   // getters
   get condition() {
     switch (this.hp) {
+      case 5: this.hp = 3; return 'Healthy';
+      case 4: this.hp = 3; return 'Healthy';
       case 3: return 'Healthy';
       case 2: return 'Wounded';
       case 1: return 'Critical';
@@ -749,7 +767,7 @@ var CombatInfo = {
 var ItemSlot = {
   template: `
     <div :id='type + n' class='item-slot' :style='slotBackground' @click='showInfo($event)'>
-      <img v-if='item' :id="item.id + '-' + n" class='item equip' :class='[type, item.id]' :src='imgSrc' :title='item.name'>
+      <img v-if='item' :id="item.id + '-' + n" class='item equip' :class='[type, item.id, { usable: item.usable }]' :src='imgSrc' :title='item.name'>
       <div v-if="item && itemtip === type + n" id='item-tip'>
         <item-info :type='type' :item='item'></item-info>
       </div>
@@ -1216,10 +1234,9 @@ var Game = new Vue ({
     targetUnit: function (y, x) {
       var target = this.map[y][x];
       if (!this.checkRange(target.distance, target.unit.range)) {
-        var w, weapons = target.unit.weapons;
-        for (w = 0; w < weapons.length; w++) {
-          if (Game.checkRange(target.distance, weapons[w].range)) {
-            Game.equipWeapon(y, x, w);
+        for (var weapon of target.unit.weapons) {
+          if (Game.checkRange(target.distance, weapon.range)) {
+            this.map[y][x].unit.equipWeapon(weapon.id);
             break;
           }
         }
@@ -1259,17 +1276,6 @@ var Game = new Vue ({
     },
     checkRange: function (distance, range) {
       if (distance >= range[0] && distance <= range[1]) { return true }
-    },
-    equipWeapon: function (y, x, itemIndex) {
-      var unit = this.map[y][x].unit,
-          items = unit.items,
-          unequipId, unequipIndex;
-      if (unit.equipped) {
-        unequipId = unit.equipped.id,
-        unequipIndex = items.indexOf(items.filter( i => i.id === unequipId )[0]);
-        this.map[y][x].unit.items[unequipIndex].equipped = false;
-      }
-      this.map[y][x].unit.items[itemIndex].equipped = true;
     },
     attackUnit: function (counter) {
       var attacker, defender, hitChance, crtChance, damage = 0;
@@ -1392,13 +1398,24 @@ var Game = new Vue ({
     },
     makePanelsDroppable: function () {
       $( '#unit-info' ).droppable({
-        accept: '.weapon',
+        accept: '.weapon, .usable',
         tolerance: 'pointer',
         drop: function (event, ui) {
-          var itemList = Game.active.unit.items,
-              itemId = ui.draggable[0].id.slice(0, -2),
-              itemIndex = itemList.indexOf(itemList.filter( i => i.id === itemId )[0]);
-          Game.equipWeapon(Game.active.unit.posY, Game.active.unit.posX, itemIndex);
+          var y = Game.active.unit.posY, x = Game.active.unit.posX,
+              itemType = ui.draggable[0].classList[2],
+              itemId = ui.draggable[0].id.slice(0, -2);
+          if (itemType === 'weapon') {
+            Game.map[y][x].unit.equipWeapon(itemId);
+          }
+          else if (itemType === 'accessory') {
+            var unit = Game.active.unit, oldHp = unit.hp,
+                item = unit.items.filter( i => i.id === itemId )[0];
+            Game.map[y][x].unit.useItem(itemId);
+            Game.events.push(new ItemEvent(unit, 'used', item));
+            Vue.nextTick(function(){
+              if (unit.hp !== oldHp) { Game.events.push(new ConditionEvent(unit)) }
+            });
+          }
         }
       });
       $( '#top-center' ).droppable({
