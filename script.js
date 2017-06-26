@@ -109,6 +109,12 @@ class Accessory extends Item {
   }
 }
 
+class Fists extends Weapon {
+  constructor() {
+    super(1, 'fists', 'fists', '--', '--', 'melee', 0, 1, null, [0]);
+  }
+}
+
 class Stick extends Weapon {
   constructor(id, slot) {
     super(2, id, 'club', 'Heavy Stick', 'An unusually heavy stick.', 'melee', 2, 1, null, [0, 2], slot);
@@ -221,7 +227,11 @@ class Unit {
   get weapons() { return this.items.filter( i => i.itemType === 'weapon' ) }
   get clothing() { return this.items.filter( i => i.itemType === 'clothing' ) }
   get accessories() { return this.items.filter( i => i.itemType === 'accessory' ) }
-  get equipped() { return this.weapons.filter( w => w.equipped === true )[0] }
+  get equipped() {
+    var equipped = this.weapons.filter( w => w.equipped === true );
+    if (equipped.length) { return equipped[0] }
+    else { return new Fists() }
+  }
   get skill() { if (this.equipped) { return this[this.equipped.type] } else { return this.melee } }
   get range() { if (this.equipped) { return this.equipped.range } else { return [1, 1] } }
   get armor() { return this.clothing.reduce( (a, b) => a + b.armor , 0) }
@@ -642,8 +652,7 @@ var UnitInfo = {
       <p>Skill: <b>{{ unit.skill }}</b></p>
       <p>Agility: <b>{{ unit.agility }}</b></p>
       <p>Toughness: <b>{{ unit.toughness }}</b></p>
-      <p v-if='unit.equipped'>Equipped: <b>{{ unit.equipped.name }}</b></p>
-      <p v-else>Equipped: --</p>
+      <p>Equipped: <b>{{ unit.equipped.name }}</b></p>
     </div>
   `,
   props: ['unit']
