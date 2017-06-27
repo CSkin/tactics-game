@@ -111,7 +111,7 @@ class Accessory extends Item {
 
 class Fists extends Weapon {
   constructor() {
-    super(1, 'fists', 'fists', '--', '--', 'melee', 0, 1, null, [0]);
+    super(1, 'fists', 'fist', '--', '--', 'melee', 0, 1, null, [0]);
   }
 }
 
@@ -244,7 +244,7 @@ class Unit {
 }
 
 var player0 = new Unit('player0', 'Player', 'Player Unit', 2, 2, 2, 2, 2, 3, 5, [], 9, 4, true, 'player'),
-    enemy0  = new Unit('enemy0', 'Enemy', 'Enemy Unit', 3, 2, 2, 2, 2, 2, 5, [stones2], 6, 11, false, 'ai', 'sentry');
+    enemy0  = new Unit('enemy0', 'Enemy', 'Enemy Unit', 3, 2, 2, 2, 2, 2, 5, [], 6, 11, false, 'ai', 'sentry');
 
 var unitPlan = [
   {
