@@ -261,11 +261,16 @@ class Unit {
   get skill() { return this[this.equipped.type] }
   get range() { return this.equipped.range }
   get armor() { return this.clothing.reduce( (a, b) => a + b.armor , 0) }
-  get moveBonus() {
-    return this.items.filter( i => i.effects && i.effects.hasOwnProperty('movement') )
-      .reduce( (a, b) => a + b.effects.movement , 0);
+  get movMod() {
+    var movFx = this.items
+          .filter( i => i.effects && i.effects.hasOwnProperty('movement') && !i.usable )
+          .reduce( (a, b) => a + b.effects.movement , 0 ),
+        movImp = this.impaired
+          .map(function(i){ if (i === 'movement') { return this.movement / 2 } else { return 0 } }, this)
+          .reduce( (a, b) => a - b , 0 );
+    return movFx + Math.floor(movImp);
   }
-  get movesLeft() { return this.movement + this.moveBonus - this.movesUsed }
+  get movesLeft() { return this.movement + this.movMod - this.movesUsed }
   get attacksLeft() { return this.attacksPerTurn - this.attacksUsed }
 }
 
@@ -618,9 +623,11 @@ var GroundItem = {
 
 var GroundPanel = {
   template: `
-    <div v-if='items.length > 0' id='ground-panel'>
-      <ground-item v-for='item in items' :item='item' :key='item.id'></ground-item>
-    </div>
+    <transition name='fade'>
+      <div v-if='items.length > 0' id='ground-panel'>
+        <ground-item v-for='item in items' :item='item' :key='item.id'></ground-item>
+      </div>
+    </transition>
   `,
   props: ['items'],
   components: {
@@ -650,19 +657,41 @@ var TerrainInfo = {
   }
 };
 
+var Modifier = {
+  template: `
+    <transition name='fade'>
+      <b v-if='mod !== 0' :style='modColor'><span v-if='mod > 0'>+</span>{{ mod }}</b>
+    </transition>
+  `,
+  props: ['mod'],
+  computed: {
+    modColor: function () {
+      if (this.mod > 0) { return { color: '#00aaff' } } else
+      if (this.mod < 0) { return { color: '#aa00ff' } }
+    }
+  }
+};
+
 var UnitInfo = {
   template: `
     <div class='ui' id='unit-info'>
       <p class='heading'><img class='icon' :src='imgSrc'>{{ unit.name }}</p>
       <p>Condition: <b :class='unit.condition.toLowerCase()'>{{ unit.condition }}</b></p>
-      <p>Strength: <b>{{ unit.strength }}</b></p>
-      <p>Skill: <b>{{ unit.skill }}</b></p>
-      <p>Agility: <b>{{ unit.agility }}</b></p>
-      <p>Toughness: <b>{{ unit.toughness }}</b></p>
-      <p>Equipped:
-        <img v-if="unit.equipped.id !== 'unarmed'" class='icon' :src='unit.equipped.icon'>
-        <b>{{ unit.equipped.name }}</b>
-      </p>
+      <div class='flex'>
+        <div class='col60'>
+          <p>Strength: <b>{{ unit.strength }}</b></p>
+          <p>Skill: <b>{{ unit.skill }}</b></p>
+          <p>Agility: <b>{{ unit.agility }}</b></p>
+          <p>Toughness: <b>{{ unit.toughness }}</b></p>
+          <p>Movement: <b>{{ unit.movement }}</b> <modifier :mod='unit.movMod'></modifier></p>
+        </div>
+        <div class='col40'>
+          <p>Equipped:
+            <img v-if="unit.equipped.id !== 'unarmed'" class='icon' :src='unit.equipped.icon'>
+            <b>{{ unit.equipped.name }}</b>
+          </p>
+        </div>
+      </div>
     </div>
   `,
   props: ['unit'],
@@ -670,6 +699,9 @@ var UnitInfo = {
     imgSrc: function () {
       return 'sprites/' + this.unit.faction.toLowerCase() + '-icon.png';
     }
+  },
+  components: {
+    'modifier': Modifier
   }
 };
 
@@ -792,9 +824,11 @@ var ItemSlot = {
   template: `
     <div :id='type + n' class='item-slot' :style='slotBackground' @click='showInfo($event)'>
       <img v-if='item' :id="item.id + '-' + n" class='item equip' :class='[type, item.id, { usable: item.usable }]' :src='imgSrc' :title='item.name'>
-      <div v-if="item && itemtip === type + n" id='item-tip'>
-        <item-info :type='type' :item='item'></item-info>
-      </div>
+      <transition name='fade'>
+        <div v-if="item && itemtip === type + n" id='item-tip'>
+          <item-info :type='type' :item='item'></item-info>
+        </div>
+      </transition>
     </div>
   `,
   props: ['type', 'n', 'item', 'itemtip'],

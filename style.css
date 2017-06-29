@@ -163,6 +163,14 @@ p {
   width: 50%;
 }
 
+.col60 {
+  width: 60%;
+}
+
+.col40 {
+  width: 40%;
+}
+
 .big {
   font-size: 50px;
   line-height: 40px;
