@@ -109,9 +109,9 @@ class Accessory extends Item {
   }
 }
 
-class Fists extends Weapon {
+class Unarmed extends Weapon {
   constructor() {
-    super(1, 'fists', 'fist', '--', '--', 'melee', 0, 1, null, [0]);
+    super(1, 'unarmed', 'fist', '--', '--', 'melee', 0, 1, null, [0]);
   }
 }
 
@@ -147,7 +147,7 @@ class Boots extends Clothing {
 
 class Salve extends Accessory {
   constructor(id, slot) {
-    super(7, id, 'salve', 'Salve', 'Heals most any wound.', true, { hp: 2 }, [0], slot);
+    super(7, id, 'salve', 'Salve', 'Heals most any wound.', true, { restoreHealth: 2 }, [0], slot);
   }
 }
 
@@ -169,10 +169,12 @@ var itemPlan = [
 
 class Unit {
   constructor(id, faction, name, strength, melee, throwing, ranged, agility, toughness, movement, items, posY, posX, friendly, control, behavior) {
+    // basic info
     this.id = id;
     this.faction = faction;
     this.sprite = 'sprites/' + id.replace(/\d/, '') + '.png';
     this.name = name;
+    // core attributes
     this.hp = 3;
     this.strength = strength;
     this.melee = melee;
@@ -180,10 +182,12 @@ class Unit {
     this.ranged = ranged;
     this.agility = agility;
     this.toughness = toughness;
+    this.movement = movement;
+    // items
     this.items = items;
     if (items.length && items[0].itemType === 'weapon') { this.items[0].equipped = true; }
-    // hidden properties
-    this.movement = movement;
+    // non-player-facing
+    this.impaired = [];
     this.movesUsed = 0;
     this.attacksPerTurn = 1;
     this.attacksUsed = 0;
@@ -210,14 +214,36 @@ class Unit {
     };
     this.useItem = function (id) {
       var item = this.items.splice(this.findItemIndex(id), 1)[0];
-      for (var attr in item.effects) { this[attr] += item.effects[attr] }
+      for (var effect in item.effects) {
+        switch (typeof(this[effect])) {
+          case 'number': this[effect] += item.effects[effect]; break;
+          case 'function': this[effect](item.effects[effect]); break;
+        }
+      }
+    };
+    this.sustainDamage = function (damage) {
+      while (damage > 0) {
+        if (this.hp > 0) {
+          this.hp--;
+          var attributes = ['strength', 'skill', 'agility', 'toughness', 'movement'];
+          this.impaired.push(shuffle(attributes).pop());
+        }
+        damage--;
+      }
+    };
+    this.restoreHealth = function (hp) {
+      while (hp > 0) {
+        if (this.hp < 3) {
+          this.hp++;
+          this.impaired.shift();
+        }
+        hp--;
+      }
     };
   }
   // getters
   get condition() {
     switch (this.hp) {
-      case 5: this.hp = 3; return 'Healthy';
-      case 4: this.hp = 3; return 'Healthy';
       case 3: return 'Healthy';
       case 2: return 'Wounded';
       case 1: return 'Critical';
@@ -230,10 +256,10 @@ class Unit {
   get equipped() {
     var equipped = this.weapons.filter( w => w.equipped === true );
     if (equipped.length) { return equipped[0] }
-    else { return new Fists() }
+    else { return new Unarmed() }
   }
-  get skill() { if (this.equipped) { return this[this.equipped.type] } else { return this.melee } }
-  get range() { if (this.equipped) { return this.equipped.range } else { return [1, 1] } }
+  get skill() { return this[this.equipped.type] }
+  get range() { return this.equipped.range }
   get armor() { return this.clothing.reduce( (a, b) => a + b.armor , 0) }
   get moveBonus() {
     return this.items.filter( i => i.effects && i.effects.hasOwnProperty('movement') )
@@ -310,39 +336,15 @@ class ItemEvent {
 var openingDialog = [
   {
     unit: player0,
-    message: "Monsieur LaPadite, while I'm very familiar with you and your family, I have no way of knowing if you are familiar with who I am. Are you aware of my existence?"
+    message: "Ready..."
   },
   {
     unit: enemy0,
-    message: "Yes."
+    message: "Set..."
   },
   {
     unit: player0,
-    message: "This is good. Are you aware of the job I've been ordered to carry out in France?"
-  },
-  {
-    unit: enemy0,
-    message: "Yes."
-  },
-  {
-    unit: player0,
-    message: "Please tell me what you've heard?"
-  },
-  {
-    unit: enemy0,
-    message: "I've heard the Führer has put you in charge of rounding up the Jews left in France who are either hiding or passing for gentile."
-  },
-  {
-    unit: player0,
-    message: "The Führer couldn't have said it better himself."
-  },
-  {
-    unit: enemy0,
-    message: "But the meaning of your visit, pleasant though it is, is mysterious to me. The Germans looked through my house nine months ago for hiding Jews and found nothing."
-  },
-  {
-    unit: player0,
-    message: "I'm aware of that. I read the report on this area. I just have a few questions, Monsieur LaPadite. If you can assist me with answers, my department can close the file on your family."
+    message: "Go!"
   }
 ];
 
@@ -584,7 +586,7 @@ var ItemInfo = {
       if (this.item && this.item.effects) {
         var sign, effects = [];
         for (var [attribute, effect] of Object.entries(this.item.effects)) {
-          if (attribute === 'hp') { effects.push('Restore HP'); }
+          if (attribute === 'restoreHealth') { effects.push('Restore HP'); }
           else {
             if (effect > 0) { sign = '+' } else { sign = '-' }
             effects.push(this.capitalize(attribute) + ' ' + sign + effect);
@@ -630,7 +632,7 @@ var TerrainInfo = {
   template: `
     <div class='ui flex'>
       <div class='columns'>
-        <div class='heading'><div class='icon' :class='terrain.type'></div>{{ terrain.name }}</div>
+        <p class='heading'><img class='icon' :src='imgSrc'>{{ terrain.name }}</p>
         <p v-if='terrain.cost < 99'>Move cost: <b>{{ terrain.cost }}</b></p><p v-else>Impassable</p>
       </div>
       <div class='columns' style='padding-top: 3px'>
@@ -640,22 +642,35 @@ var TerrainInfo = {
       <p v-if='terrain.elevation > 0'>Elevation: <b>{{ terrain.elevation }}</b></p>
     </div>
   `,
-  props: ['terrain']
+  props: ['terrain'],
+  computed: {
+    imgSrc: function () {
+      return 'sprites/' + this.terrain.type + '.png';
+    }
+  }
 };
 
 var UnitInfo = {
   template: `
     <div class='ui' id='unit-info'>
-      <div class='heading'><div class='icon' :class='unit.faction'></div>{{ unit.name }}</div>
+      <p class='heading'><img class='icon' :src='imgSrc'>{{ unit.name }}</p>
       <p>Condition: <b :class='unit.condition.toLowerCase()'>{{ unit.condition }}</b></p>
       <p>Strength: <b>{{ unit.strength }}</b></p>
       <p>Skill: <b>{{ unit.skill }}</b></p>
       <p>Agility: <b>{{ unit.agility }}</b></p>
       <p>Toughness: <b>{{ unit.toughness }}</b></p>
-      <p>Equipped: <b>{{ unit.equipped.name }}</b></p>
+      <p>Equipped:
+        <img v-if="unit.equipped.id !== 'unarmed'" class='icon' :src='unit.equipped.icon'>
+        <b>{{ unit.equipped.name }}</b>
+      </p>
     </div>
   `,
-  props: ['unit']
+  props: ['unit'],
+  computed: {
+    imgSrc: function () {
+      return 'sprites/' + this.unit.faction.toLowerCase() + '-icon.png';
+    }
+  }
 };
 
 var UnitActions = {
@@ -933,15 +948,15 @@ var EventAction = {
     <transition name='fade-long'>
       <div class='event action'>
         <div class='spacer'></div>
-        <div class='content'>
-          <img class='icon sa' :src='event.subjectIcon'>
+        <p class='content'>
+          <img class='icon' :src='event.subjectIcon'>
           <span class='bold sa'>{{ event.subject }}</span>
-          <img v-if='event.verbIcon' class='icon sa' :src='event.verbIcon'>
+          <img v-if='event.verbIcon' class='icon' :src='event.verbIcon'>
           <span class='sa'>{{ event.verb }}</span>
-          <img v-if='event.objectIcon' class='icon sa' :src='event.objectIcon'>
+          <img v-if='event.objectIcon' class='icon' :src='event.objectIcon'>
           <span class='bold' :class='objectClasses'>{{ event.object }}</span><span class='sa'>.</span>
           <span v-if='event.result'>{{ event.result }}</span>
-        </div>
+        </p>
       </div>
     </transition>
   `,
@@ -1350,17 +1365,19 @@ var Game = new Vue ({
         easing: 'ease-in-out'
       };
       document.getElementById(attacker.id).animate(attack, 500);
-      if (damage >= 1) {
+      if (damage > 0) {
         window.setTimeout(function(){ document.getElementById(defender.id).animate(hit, 250) }, 250);
       } else {
         window.setTimeout(function(){ document.getElementById(defender.id).animate(miss, 350) }, 150);
       }
     },
     dealDamage: function (y, x, damage) {
-      this.map[y][x].unit.hp -= damage;
-      if (this.map[y][x].unit.hp <= 0) {
-        window.setTimeout(function(){ Game.map[y][x].unit = null }, 500)
-      }
+      this.map[y][x].unit.sustainDamage(damage);
+      Vue.nextTick(function(){
+        if (Game.map[y][x].unit.hp === 0) {
+          window.setTimeout(function(){ Game.map[y][x].unit = null }, 500)
+        }
+      });
     },
     endAttack: function () {
       var unit = this.active.unit;
@@ -1421,9 +1438,7 @@ var Game = new Vue ({
                 item = unit.items.filter( i => i.id === itemId )[0];
             Game.map[y][x].unit.useItem(itemId);
             Game.events.push(new ItemEvent(unit, 'used', item));
-            Vue.nextTick(function(){
-              if (unit.hp !== oldHp) { Game.events.push(new ConditionEvent(unit)) }
-            });
+            if (unit.hp !== oldHp) { Game.events.push(new ConditionEvent(unit)) }
           }
         }
       });
