@@ -186,7 +186,7 @@ class Unit {
     // items
     this.items = items;
     if (items.length && items[0].itemType === 'weapon') { this.items[0].equipped = true; }
-    // non-player-facing
+    // inner workings
     this.impaired = [];
     this.movesUsed = 0;
     this.attacksPerTurn = 1;
@@ -199,6 +199,18 @@ class Unit {
     this.control = control;
     if (behavior) { this.behavior = behavior }
     // methods
+    this.getFx = function (attr) {
+      return this.items
+        .filter( i => i.effects && i.effects.hasOwnProperty(attr) && !i.usable )
+        .reduce( (a, b) => a + b.effects[attr] , 0 );
+    };
+    this.getImp = function (attr) {
+      var attr1 = attr, attr2 = attr;
+      if (attr === 'melee' || attr === 'throwing' || attr === 'ranged') { attr1 = 'skill' }
+      return Math.floor(this.impaired
+        .map(function(i){ if (i === attr1) { return this[attr2] / 2 } else { return 0 } }, this)
+        .reduce( (a, b) => a - b , 0 ));
+    };
     this.resetActionPoints = function () {
       this.movesUsed = 0;
       this.attacksUsed = 0;
@@ -241,7 +253,7 @@ class Unit {
       }
     };
   }
-  // getters
+  // hp-derived
   get condition() {
     switch (this.hp) {
       case 3: return 'Healthy';
@@ -250,6 +262,28 @@ class Unit {
       case 0: return 'Defeated';
     }
   }
+  // strength-derived
+  get strMod() { return this.getFx('strength') + this.getImp('strength') }
+  get strSum() { return this.strength + this.strMod }
+  // melee-derived
+  get mleMod() { return this.getFx('melee') + this.getImp('melee') }
+  get mleSum() { return this.melee + this.mleMod }
+  // throwing-derived
+  get thrMod() { return this.getFx('throwing') + this.getImp('throwing') }
+  get thrSum() { return this.throwing + this.thrMod }
+  // ranged-derived
+  get rngMod() { return this.getFx('ranged') + this.getImp('ranged') }
+  get rngSum() { return this.ranged + this.rngMod }
+  // agility-derived
+  get agiMod() { return this.getFx('agility') + this.getImp('agility') }
+  get agiSum() { return this.agility + this.agiMod }
+  // toughness-derived
+  get tghMod() { return this.getFx('toughness') + this.getImp('toughness') }
+  get tghSum() { return this.toughness + this.tghMod }
+  // movement-derived
+  get movMod() { return this.getFx('movement') + this.getImp('movement') }
+  get movesLeft() { return this.movement + this.movMod - this.movesUsed }
+  // item-derived
   get weapons() { return this.items.filter( i => i.itemType === 'weapon' ) }
   get clothing() { return this.items.filter( i => i.itemType === 'clothing' ) }
   get accessories() { return this.items.filter( i => i.itemType === 'accessory' ) }
@@ -261,16 +295,10 @@ class Unit {
   get skill() { return this[this.equipped.type] }
   get range() { return this.equipped.range }
   get armor() { return this.clothing.reduce( (a, b) => a + b.armor , 0) }
-  get movMod() {
-    var movFx = this.items
-          .filter( i => i.effects && i.effects.hasOwnProperty('movement') && !i.usable )
-          .reduce( (a, b) => a + b.effects.movement , 0 ),
-        movImp = this.impaired
-          .map(function(i){ if (i === 'movement') { return this.movement / 2 } else { return 0 } }, this)
-          .reduce( (a, b) => a - b , 0 );
-    return movFx + Math.floor(movImp);
-  }
-  get movesLeft() { return this.movement + this.movMod - this.movesUsed }
+  // skill-derived
+  get sklMod() { return this.getFx(this.equipped.type) + this.getImp(this.equipped.type) }
+  get sklSum() { return this.skill + this.sklMod }
+  // attack-derived
   get attacksLeft() { return this.attacksPerTurn - this.attacksUsed }
 }
 
@@ -324,6 +352,9 @@ class ConditionEvent {
     this.subjectIcon = 'sprites/' + unit.id.replace(/\d/, '') + '-icon.png';
     if (unit.hp > 0) { this.verb = 'is' } else { this.verb = 'was' }
     this.object = unit.condition.toLowerCase();
+    if (this.object === 'wounded' || this.object === 'critical') {
+      this.result = capitalize(unit.impaired[unit.impaired.length - 1]) + ' -50%';
+    }
   }
 }
 
@@ -425,6 +456,10 @@ function shuffle (array) {
     array[j] = temp;
   }
   return array;
+}
+
+function capitalize (string) {
+  return string.charAt(0).toUpperCase() + string.slice(1);
 }
 
 $( document ).ready( function () {
@@ -594,7 +629,7 @@ var ItemInfo = {
           if (attribute === 'restoreHealth') { effects.push('Restore HP'); }
           else {
             if (effect > 0) { sign = '+' } else { sign = '-' }
-            effects.push(this.capitalize(attribute) + ' ' + sign + effect);
+            effects.push(capitalize(attribute) + ' ' + sign + effect);
           }
         }
         return effects;
@@ -679,10 +714,10 @@ var UnitInfo = {
       <p>Condition: <b :class='unit.condition.toLowerCase()'>{{ unit.condition }}</b></p>
       <div class='flex'>
         <div class='col60'>
-          <p>Strength: <b>{{ unit.strength }}</b></p>
-          <p>Skill: <b>{{ unit.skill }}</b></p>
-          <p>Agility: <b>{{ unit.agility }}</b></p>
-          <p>Toughness: <b>{{ unit.toughness }}</b></p>
+          <p>Strength: <b>{{ unit.strength }}</b> <modifier :mod='unit.strMod'></modifier></p>
+          <p>Skill: <b>{{ unit.skill }}</b> <modifier :mod='unit.sklMod'></modifier></p>
+          <p>Agility: <b>{{ unit.agility }}</b> <modifier :mod='unit.agiMod'></modifier></p>
+          <p>Toughness: <b>{{ unit.toughness }}</b> <modifier :mod='unit.tghMod'></modifier></p>
           <p>Movement: <b>{{ unit.movement }}</b> <modifier :mod='unit.movMod'></modifier></p>
         </div>
         <div class='col40'>
@@ -988,15 +1023,15 @@ var EventAction = {
           <img v-if='event.verbIcon' class='icon' :src='event.verbIcon'>
           <span class='sa'>{{ event.verb }}</span>
           <img v-if='event.objectIcon' class='icon' :src='event.objectIcon'>
-          <span class='bold' :class='objectClasses'>{{ event.object }}</span><span class='sa'>.</span>
-          <span v-if='event.result'>{{ event.result }}</span>
+          <span class='bold' :class='objectClass'>{{ event.object }}</span><span class='sa'>.</span>
+          <span v-if='event.result' :class='resultClass'>{{ event.result }}</span>
         </p>
       </div>
     </transition>
   `,
   props: ['event'],
   computed: {
-    objectClasses: function () {
+    objectClass: function () {
       var type = this.event.eventType,
           cond = this.event.object;
       return {
@@ -1005,6 +1040,9 @@ var EventAction = {
         critical: type === 'condition' && cond === 'critical',
         defeated: type === 'condition' && cond === 'defeated',
       }
+    },
+    resultClass: function () {
+      return { debuff: this.event.eventType === 'condition' }
     }
   }
 }
@@ -1144,8 +1182,8 @@ var Game = new Vue ({
           targetDef: this.calculateDefense(this.target, this.active),
           get activeHit() { return Math.round(this.activeAtk / (this.activeAtk + this.targetDef) * 100) },
           get targetHit() { return Math.round(this.targetAtk / (this.targetAtk + this.activeDef) * 100) },
-          get activeCrt() { return Game.active.unit.skill },
-          get targetCrt() { return Game.target.unit.skill },
+          get activeCrt() { return Game.active.unit.sklSum },
+          get targetCrt() { return Game.target.unit.sklSum },
           canCounter: this.checkRange(this.distance, this.target.unit.range)
         }
       }
@@ -1306,8 +1344,8 @@ var Game = new Vue ({
       var attacker = atkSpace.unit,
           attackType = attacker.equipped.type,
           attack = 0;
-      if (attackType === 'melee' || attackType === 'throwing') { attack += attacker.strength }
-      attack += attacker[attackType] + attacker.equipped.power - (this.distance - 1);
+      if (attackType === 'melee' || attackType === 'throwing') { attack += attacker.strSum }
+      attack += attacker.sklSum + attacker.equipped.power - (this.distance - 1);
       return attack;
     },
     calculateDefense: function (defSpace, atkSpace) {
@@ -1318,8 +1356,8 @@ var Game = new Vue ({
           cover = defSpace.terrain.cover,
           facing = defSpace.terrain.facing,
           defense = 0;
-      if (attackType === 'melee' || attackType === 'throwing') { defense += defender.agility }
-      defense += defender.toughness + defender.armor;
+      if (attackType === 'melee' || attackType === 'throwing') { defense += defender.agiSum }
+      defense += defender.tghSum + defender.armor;
       if (!facing) { defense += cover }
       else {
         switch (facing) {

@@ -171,6 +171,10 @@ p {
   width: 40%;
 }
 
+.col40 .icon {
+  margin-right: 0;
+}
+
 .big {
   font-size: 50px;
   line-height: 40px;
@@ -182,7 +186,11 @@ p {
 }
 
 .buff {
-  color: #0080ff;
+  color: #00aaff;
+}
+
+.debuff {
+  color: #aa00ff;
 }
 
 #action-buttons {
