@@ -77,18 +77,38 @@ class Item {
 }
 
 class Weapon extends Item {
-  constructor(index, id, icon, name, descrip, type, power, range, effects, footprint, slot) {
+  constructor(index, id, icon, name, descrip, effects, footprint, slot) {
     super(index, id, icon, name, descrip, effects, footprint, slot);
     this.itemType = 'weapon';
-    this.type = type;
-    this.power = power;
-    switch (type) {
-      case 'melee': this.range = [1, 1]; break;
-      case 'throwing': this.range = [1, range]; break;
-      case 'ranged': this.range = [2, range]; break;
-    }
     this.equipped = false;
     this.usable = false;
+  }
+}
+
+class Melee extends Weapon {
+  constructor(index, id, icon, name, descrip, power, effects, footprint, slot) {
+    super(index, id, icon, name, descrip, effects, footprint, slot);
+    this.type = 'melee';
+    this.power = power;
+    this.range = [1, 1];
+  }
+}
+
+class Throwing extends Weapon {
+  constructor(index, id, icon, name, descrip, power, range, effects, footprint, slot) {
+    super(index, id, icon, name, descrip, effects, footprint, slot);
+    this.type = 'throwing';
+    this.power = power;
+    this.range = [1, range];
+  }
+}
+
+class Ranged extends Weapon {
+  constructor(index, id, icon, name, descrip, power, range, effects, footprint, slot) {
+    super(index, id, icon, name, descrip, effects, footprint, slot);
+    this.type = 'ranged';
+    this.power = power;
+    this.range = [2, range];
   }
 }
 
@@ -109,27 +129,27 @@ class Accessory extends Item {
   }
 }
 
-class Unarmed extends Weapon {
+class Unarmed extends Melee {
   constructor() {
-    super(1, 'unarmed', 'fist', '--', '--', 'melee', 0, 1, null, [0]);
+    super(1, 'unarmed', 'fist', '--', '--', 0, null, [0]);
   }
 }
 
-class Stick extends Weapon {
+class Stick extends Melee {
   constructor(id, slot) {
-    super(2, id, 'club', 'Heavy Stick', 'An unusually heavy stick.', 'melee', 2, 1, null, [0, 2], slot);
+    super(2, id, 'club', 'Heavy Stick', 'An unusually heavy stick.', 2, null, [0, 2], slot);
   }
 }
 
-class Stones extends Weapon {
+class Stones extends Throwing {
   constructor(id, slot) {
-    super(3, id, 'stones', 'Stones', 'The original projectile weapon.', 'throwing', 1, 3, null, [0], slot);
+    super(3, id, 'stones', 'Stones', 'The original projectile weapon.', 1, 1, null, [0], slot);
   }
 }
 
-class ShortBow extends Weapon {
+class ShortBow extends Ranged {
   constructor(id, slot) {
-    super(4, id, 'bow', 'Short Bow', 'This compact bow is powerful for its size.', 'ranged', 2, 4, null, [0, 2], slot);
+    super(4, id, 'bow', 'Short Bow', 'This compact bow is powerful for its size.', 2, 4, null, [0, 2], slot);
   }
 }
 
@@ -293,7 +313,10 @@ class Unit {
     else { return new Unarmed() }
   }
   get skill() { return this[this.equipped.type] }
-  get range() { return this.equipped.range }
+  get range() {
+    if (this.equipped.type === 'throwing') { return [1, Math.floor(this.strSum / this.equipped.range[1])]}
+    else { return this.equipped.range }
+  }
   get armor() { return this.clothing.reduce( (a, b) => a + b.armor , 0) }
   // skill-derived
   get sklMod() { return this.getFx(this.equipped.type) + this.getImp(this.equipped.type) }
@@ -610,7 +633,7 @@ var ItemInfo = {
         <template v-if="type === 'weapon'">
           <span>{{ capitalize(item.type) }}</span>
           <span>Power: <b>{{ item.power }}</b></span>
-          <span v-if="item.type !== 'melee'">Range: <b>{{ item.range[1] }}</b></span>
+          <span v-if="item.type !== 'melee'">Range: <b>{{ range }}</b></span>
         </template>
         <template v-if="type === 'clothing'">
           <span v-if='item.armor > 0'>Armor: <b>{{ item.armor }}</b></span>
@@ -634,6 +657,13 @@ var ItemInfo = {
         }
         return effects;
       }
+    },
+    range: function () {
+      if (this.item.type === 'throwing') {
+        if (this.item.range[1] === 1) { return 'Str' }
+        else { return 'Str/' + this.item.range[1] }
+      }
+      else { return this.item.range[1] }
     }
   },
   methods: {
