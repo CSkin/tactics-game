@@ -1,4 +1,4 @@
-var mapImage = { backgroundImage: "url('maps/level1.png')" };
+var mapImage = { backgroundImage: "url('maps/level2.png')" };
 
 var mapPlan = [
   ' - - - - - - - - - - - - - - - - ',
@@ -7,10 +7,10 @@ var mapPlan = [
   ' - - - - - - - - - - - - - - - - ',
   ' - - - - - - - - - - - - - - - - ',
   ' - - - - - - - - - - - - - - - - ',
-  ' - - - - b b a a l l a a - - - - ',
-  ' - - - - b s s B B s s a - - - - ',
-  ' - - - - a s s B B s s b - - - - ',
-  ' - - - - a a l l a a b b - - - - ',
+  ' - - - - b b a a a a a a - - - - ',
+  ' - - - - b s s p p s s a - - - - ',
+  ' - - - - a s s p p s s b - - - - ',
+  ' - - - - a a a a a a b b - - - - ',
   ' - - - - - - - - - - - - - - - - ',
   ' - - - - - - - - - - - - - - - - ',
   ' - - - - - - - - - - - - - - - - ',
@@ -19,25 +19,84 @@ var mapPlan = [
   ' - - - - - - - - - - - - - - - - ',
 ];
 
+var topoPlan = [
+  ' 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ',
+  ' 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ',
+  ' 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ',
+  ' 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ',
+  ' 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ',
+  ' 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ',
+  ' 0 0 0 0 0 0 1 2 2 1 0 0 0 0 0 0 ',
+  ' 0 0 0 0 0 0 0 3 3 0 0 0 0 0 0 0 ',
+  ' 0 0 0 0 0 0 0 3 3 0 0 0 0 0 0 0 ',
+  ' 0 0 0 0 0 0 1 2 2 1 0 0 0 0 0 0 ',
+  ' 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ',
+  ' 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ',
+  ' 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ',
+  ' 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ',
+  ' 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ',
+  ' 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ',
+];
+
 class Terrain {
-  constructor(type, name, cost, cover, elevation, seeThru) {
+  constructor(type, cost, cover, seeThru) {
     this.type = type;
-    this.name = name;
+    this.name = capitalize(type);
     this.cost = cost;
     this.cover = cover;
     this.facing = null;
-    this.elevation = elevation;
+    this.elevation = null;
     this.seeThru = seeThru;
   }
 }
 
-var barren = new Terrain('barren', 'Barren', 99, 0, 0, true),
-    ground = new Terrain('ground', 'Ground', 1, 0, 0, true),
-    sand = new Terrain('sand', 'Sand', 2, 0, 0, true),
-    grass = new Terrain('grass', 'Grass', 1, 0, 0, true),
-    brush = new Terrain('brush', 'Brush', 2, 1, 0, true),
-    boulder = new Terrain('boulder', 'Boulder', 99, 0, 0, false),
-    log = new Terrain('log', 'Log', 1, 3, 0, true);
+class Barren extends Terrain {
+  constructor() {
+    super('barren', 99, 0, true);
+  }
+}
+
+class Ground extends Terrain {
+  constructor() {
+    super('ground', 1, 0, true);
+  }
+}
+
+class Sand extends Terrain {
+  constructor() {
+    super('sand', 2, 0, true);
+  }
+}
+
+class Grass extends Terrain {
+  constructor() {
+    super('grass', 1, 0, true);
+  }
+}
+
+class Brush extends Terrain {
+  constructor() {
+    super('brush', 2, 1, true);
+  }
+}
+
+class Boulder extends Terrain {
+  constructor() {
+    super('boulder', 99, 0, false);
+  }
+}
+
+class Log extends Terrain {
+  constructor() {
+    super('log', 1, 3, true);
+  }
+}
+
+class Plateau extends Terrain {
+  constructor() {
+    super('plateau', 1, 0, true);
+  }
+}
 
 class Space {
   constructor(posY, posX, terrain) {
@@ -181,8 +240,8 @@ var stick1 = new Stick('stick1'),
 
 var itemPlan = [
   {
-    posY: 8,
-    posX: 6,
+    posY: 9,
+    posX: 4,
     items: [stick1, stones1, shortbow1, tunic1, boots1, salve1]
   }
 ];
@@ -414,12 +473,13 @@ function loadMap (mapPlan) {
     string = mapPlan[y].replace(/\s/g, '');
     for (x = 0; x < string.length; x++) {
       switch (string[x]) {
-        case '-': row.push(new Space(y, x, barren)); break;
-        case 's': row.push(new Space(y, x, sand)); break;
-        case 'a': row.push(new Space(y, x, grass)); break;
-        case 'b': row.push(new Space(y, x, brush)); break;
-        case 'B': row.push(new Space(y, x, boulder)); break;
-        case 'l': row.push(new Space(y, x, new Terrain('log', 'Log', 1, 3, 0, true))); break;
+        case '-': row.push(new Space(y, x, new Barren())); break;
+        case 's': row.push(new Space(y, x, new Sand())); break;
+        case 'a': row.push(new Space(y, x, new Grass())); break;
+        case 'b': row.push(new Space(y, x, new Brush())); break;
+        case 'B': row.push(new Space(y, x, new Boulder())); break;
+        case 'l': row.push(new Space(y, x, new Log())); break;
+        case 'p': row.push(new Space(y, x, new Plateau())); break;
       }
     }
     mapData.push(row);
@@ -427,7 +487,7 @@ function loadMap (mapPlan) {
   return mapData;
 }
 
-function directionalCover (mapData) {
+function loadFacings (mapData) {
   var y, x;
   for (y = 0; y < 16; y++) {
     for (x = 0; x < 16; x++) {
@@ -437,6 +497,17 @@ function directionalCover (mapData) {
         else if (mapData[y][x - 1].terrain.type === 'log') { mapData[y][x].terrain.facing = 'West' }
         else if (mapData[y - 1][x].terrain.type === 'log') { mapData[y][x].terrain.facing = 'North' }
       }
+    }
+  }
+  return mapData;
+}
+
+function loadTopography (mapData, topoPlan) {
+  var y, x, string;
+  for (y = 0; y < mapData.length; y++) {
+    string = topoPlan[y].replace(/\s/g, '');
+    for (x = 0; x < mapData[y].length; x++) {
+      mapData[y][x].terrain.elevation = Number(string[x]);
     }
   }
   return mapData;
@@ -459,7 +530,15 @@ function loadUnits (mapData, unitPlan) {
 }
 
 function loadLevel () {
-  return loadUnits(loadItems(directionalCover(loadMap(mapPlan)), itemPlan), unitPlan);
+  return  loadUnits(
+            loadItems(
+              loadTopography(
+                loadFacings(
+                  loadMap(mapPlan)
+                )
+              , topoPlan)
+            , itemPlan)
+          , unitPlan);
 }
 
 function loadFactions () {
@@ -702,16 +781,18 @@ var GroundPanel = {
 
 var TerrainInfo = {
   template: `
-    <div class='ui flex'>
-      <div class='columns'>
-        <p class='heading'><img class='icon' :src='imgSrc'>{{ terrain.name }}</p>
-        <p v-if='terrain.cost < 99'>Move cost: <b>{{ terrain.cost }}</b></p><p v-else>Impassable</p>
+    <div class='ui'>
+      <p class='heading'><img class='icon' :src='imgSrc'>{{ terrain.name }}</p>
+      <div class='flex'>
+        <div class='columns'>
+          <p v-if='terrain.cost < 99'>Move cost: <b>{{ terrain.cost }}</b></p><p v-else>Impassable</p>
+          <p v-if='terrain.elevation > 0'>Elevation: <b>{{ terrain.elevation }}</b></p>
+        </div>
+        <div class='columns'>
+          <p v-if='terrain.cover > 0'>Cover: <b>{{ terrain.cover }}</b></p>
+          <p v-if='terrain.facing'>Facing: <b>{{ terrain.facing }}</b></p>
+        </div>
       </div>
-      <div class='columns' style='padding-top: 3px'>
-        <p v-if='terrain.cover > 0'>Cover: <b>{{ terrain.cover }}</b></p>
-        <p v-if='terrain.facing'>Facing: <b>{{ terrain.facing }}</b></p>
-      </div>
-      <p v-if='terrain.elevation > 0'>Elevation: <b>{{ terrain.elevation }}</b></p>
     </div>
   `,
   props: ['terrain'],
