@@ -104,6 +104,7 @@ class Space {
     this.posX = posX;
     this.terrain = terrain;
     this.unit = null;
+    this.unit2 = null;
     this.moves = null;
     this.path = null;
     this.distance = null;
@@ -391,14 +392,15 @@ class Unit {
   get attacksLeft() { return this.attacksPerTurn - this.attacksUsed }
 }
 
-var player0 = new Unit('player0', 'Player', 'Player Unit', 2, 2, 2, 2, 2, 3, 5, [], 9, 4, true, 'player'),
+var player0 = new Unit('player0', 'Player', 'Player Unit', 2, 2, 2, 2, 2, 3, 5, [], 8, 4, true, 'player'),
+    player1 = new Unit('player1', 'Player', 'Player Unit', 2, 2, 2, 2, 2, 3, 5, [], 9, 5, true, 'player'),
     enemy0  = new Unit('enemy0', 'Enemy', 'Enemy Unit', 3, 2, 2, 2, 2, 2, 5, [stones2], 6, 11, false, 'ai', 'sentry');
 
 var unitPlan = [
   {
     faction: 'Player',
     control: 'player',
-    units: [ player0 ]
+    units: [ player0, player1 ]
   }, {
     faction: 'Enemy',
     control: 'ai',
@@ -643,6 +645,7 @@ var Space = {
       <terrain :terrain='space.terrain'></terrain>
       <highlight :space='space'></highlight>
       <unit :unit='space.unit'></unit>
+      <unit :unit='space.unit2'></unit>
     </div>
   `,
   props: ['space'],
@@ -886,6 +889,7 @@ var UnitActions = {
       Game.target = null;
       Game.action = 'moving';
       Game.showMoveRange(unit.posY, unit.posX, unit.movesLeft, '');
+      Game.preventCollision();
     },
     beginAttack: function () {
       if (this.action) { this.cancelAction() }
@@ -1315,25 +1319,33 @@ var Game = new Vue ({
   methods: {
     showMoveRange: function (y, x, moves, path) {
       var origin = this.map[y][x],
-          east = this.map[y][Math.min(x + 1, 15)],
-          sout = this.map[Math.min(y + 1, 15)][x],
-          west = this.map[y][Math.max(x - 1, 0)],
-          nort = this.map[Math.max(y - 1, 0)][x],
+          east = this.map[y][Math.min(x + 1, 15)], eastMoves = moves - east.terrain.cost, eastPath = path + 'e',
+          sout = this.map[Math.min(y + 1, 15)][x], soutMoves = moves - sout.terrain.cost, soutPath = path + 's',
+          west = this.map[y][Math.max(x - 1, 0)],  westMoves = moves - west.terrain.cost, westPath = path + 'w',
+          nort = this.map[Math.max(y - 1, 0)][x],  nortMoves = moves - nort.terrain.cost, nortPath = path + 'n',
           explore = [],
-          goEast = function () { Game.showMoveRange(y, Math.min(x + 1, 15), moves - east.terrain.cost, path + 'e') },
-          goSout = function () { Game.showMoveRange(Math.min(y + 1, 15), x, moves - sout.terrain.cost, path + 's') },
-          goWest = function () { Game.showMoveRange(y, Math.max(x - 1, 0),  moves - west.terrain.cost, path + 'w') },
-          goNort = function () { Game.showMoveRange(Math.max(y - 1, 0), x,  moves - nort.terrain.cost, path + 'n') };
+          goEast = function () { Game.showMoveRange(y, Math.min(x + 1, 15), eastMoves, eastPath) },
+          goSout = function () { Game.showMoveRange(Math.min(y + 1, 15), x, soutMoves, soutPath) },
+          goWest = function () { Game.showMoveRange(y, Math.max(x - 1, 0),  westMoves, westPath) },
+          goNort = function () { Game.showMoveRange(Math.max(y - 1, 0), x,  nortMoves, nortPath) };
       if (!origin.moves) { origin.moves = moves }
-      if (east.terrain.cost <= moves && (!east.moves || moves - east.terrain.cost > east.moves) && east.unit === null)
-        { east.moves = moves - east.terrain.cost; east.path = path + 'e'; explore.push(goEast) }
-      if (sout.terrain.cost <= moves && (!sout.moves || moves - sout.terrain.cost > sout.moves) && sout.unit === null)
-        { sout.moves = moves - sout.terrain.cost; sout.path = path + 's'; explore.push(goSout) }
-      if (west.terrain.cost <= moves && (!west.moves || moves - west.terrain.cost > west.moves) && west.unit === null)
-        { west.moves = moves - west.terrain.cost; west.path = path + 'w'; explore.push(goWest) }
-      if (nort.terrain.cost <= moves && (!nort.moves || moves - nort.terrain.cost > nort.moves) && nort.unit === null)
-        { nort.moves = moves - nort.terrain.cost; nort.path = path + 'n'; explore.push(goNort) }
+      if (this.canMove(origin, east, moves)) { east.moves = eastMoves; east.path = eastPath; explore.push(goEast) }
+      if (this.canMove(origin, sout, moves)) { sout.moves = soutMoves; sout.path = soutPath; explore.push(goSout) }
+      if (this.canMove(origin, west, moves)) { west.moves = westMoves; west.path = westPath; explore.push(goWest) }
+      if (this.canMove(origin, nort, moves)) { nort.moves = nortMoves; nort.path = nortPath; explore.push(goNort) }
       shuffle(explore).forEach( function (f) { f(); } );
+    },
+    canMove: function (origin, space, moves) {
+      return Math.abs(origin.terrain.elevation - space.terrain.elevation) <= 1
+          && space.terrain.cost <= moves
+          && (!space.moves || moves - space.terrain.cost > space.moves)
+          && (space.unit === null || space.unit.friendly)
+    },
+    preventCollision: function () {
+      for (u of this.getUnits(this.faction)) {
+        this.map[u.posY][u.posX].moves = null;
+        this.map[u.posY][u.posX].path = null;
+      }
     },
     cancelMove: function () {
       this.hideMoveRange();
@@ -1352,43 +1364,49 @@ var Game = new Vue ({
       }
     },
     moveUnit: function (y, x, path) {
-      var moveObj = { y: y, x: x, moving: null, changePos: null },
-          spaceFrom, spaceTo, unitData;
+      var spaceFrom = this.map[y][x], unit,
+          moveData = { y: y, x: x, moving: null, changePos: null },
+          spaceTo, unitData;
       if (path) {
         this.hideMoveRange();
         this.map[y][x].unit.path = path;
       }
-      switch (this.map[y][x].unit.path[0]) {
+      if (spaceFrom.unit2) { unit = spaceFrom.unit2 } else { unit = spaceFrom.unit }
+      switch (unit.path[0]) {
         case 'e':
-          moveObj.x = x + 1;
-          moveObj.moving = 'east';
-          moveObj.changePos = function () { unitData.posX += 1 };
+          moveData.x = x + 1;
+          moveData.moving = 'east';
+          moveData.changePos = function () { unitData.posX += 1 };
           break;
         case 's':
-          moveObj.y = y + 1;
-          moveObj.moving = 'south';
-          moveObj.changePos = function () { unitData.posY += 1 };
+          moveData.y = y + 1;
+          moveData.moving = 'south';
+          moveData.changePos = function () { unitData.posY += 1 };
           break;
         case 'w':
-          moveObj.x = x - 1;
-          moveObj.moving = 'west';
-          moveObj.changePos = function () { unitData.posX -= 1 };
+          moveData.x = x - 1;
+          moveData.moving = 'west';
+          moveData.changePos = function () { unitData.posX -= 1 };
           break;
         case 'n':
-          moveObj.y = y - 1;
-          moveObj.moving = 'north';
-          moveObj.changePos = function () { unitData.posY -= 1 };
+          moveData.y = y - 1;
+          moveData.moving = 'north';
+          moveData.changePos = function () { unitData.posY -= 1 };
           break;
       }
-      spaceFrom = this.map[y][x],
-      spaceTo = this.map[moveObj.y][moveObj.x],
-      unitData = spaceFrom.unit;
-      spaceFrom.unit = null;
-      unitData.movesUsed += spaceTo.terrain.cost;
-      unitData.moving = moveObj.moving;
+      spaceTo = this.map[moveData.y][moveData.x];
+      if (spaceFrom.unit2) {
+        unitData = spaceFrom.unit2;
+        spaceFrom.unit2 = null;
+      } else {
+        unitData = spaceFrom.unit;
+        spaceFrom.unit = null;
+      }
       unitData.path = unitData.path.substr(1);
-      moveObj.changePos();
-      spaceTo.unit = unitData;
+      unitData.moving = moveData.moving;
+      unitData.movesUsed += spaceTo.terrain.cost;
+      moveData.changePos();
+      if (!spaceTo.unit) { spaceTo.unit = unitData } else { spaceTo.unit2 = unitData }
       this.active = spaceTo;
     },
     showAttackRange: function () {
