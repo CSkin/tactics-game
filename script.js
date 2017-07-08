@@ -1,3 +1,5 @@
+/*jshint loopfunc: true */
+
 var mapImage = { backgroundImage: "url('maps/level2.png')" };
 
 var mapPlan = [
@@ -20,81 +22,81 @@ var mapPlan = [
 ];
 
 var topoPlan = [
-  ' 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ',
-  ' 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ',
-  ' 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ',
-  ' 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ',
-  ' 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ',
-  ' 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ',
-  ' 0 0 0 0 0 0 1 2 2 1 0 0 0 0 0 0 ',
-  ' 0 0 0 0 0 0 0 3 3 0 0 0 0 0 0 0 ',
-  ' 0 0 0 0 0 0 0 3 3 0 0 0 0 0 0 0 ',
-  ' 0 0 0 0 0 0 1 2 2 1 0 0 0 0 0 0 ',
-  ' 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ',
-  ' 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ',
-  ' 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ',
-  ' 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ',
-  ' 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ',
-  ' 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ',
+  ' 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 ',
+  ' 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 ',
+  ' 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 ',
+  ' 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 ',
+  ' 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 ',
+  ' 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 ',
+  ' 1 1 1 1 1 1 2 3 3 2 1 1 1 1 1 1 ',
+  ' 1 1 1 1 1 0 0 4 4 0 0 1 1 1 1 1 ',
+  ' 1 1 1 1 1 0 0 4 4 0 0 1 1 1 1 1 ',
+  ' 1 1 1 1 1 1 2 3 3 2 1 1 1 1 1 1 ',
+  ' 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 ',
+  ' 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 ',
+  ' 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 ',
+  ' 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 ',
+  ' 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 ',
+  ' 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 ',
 ];
 
 class Terrain {
-  constructor(type, cost, cover, seeThru) {
+  constructor(type, cost, cover, height) {
     this.type = type;
     this.name = capitalize(type);
     this.cost = cost;
     this.cover = cover;
+    this.height = height;
     this.facing = null;
     this.elevation = null;
-    this.seeThru = seeThru;
   }
 }
 
 class Barren extends Terrain {
   constructor() {
-    super('barren', 99, 0, true);
+    super('barren', 99, 0, 0);
   }
 }
 
 class Ground extends Terrain {
   constructor() {
-    super('ground', 1, 0, true);
+    super('ground', 1, 0, 0);
   }
 }
 
 class Sand extends Terrain {
   constructor() {
-    super('sand', 2, 0, true);
+    super('sand', 2, 0, 0);
   }
 }
 
 class Grass extends Terrain {
   constructor() {
-    super('grass', 1, 0, true);
+    super('grass', 1, 0, 0);
   }
 }
 
 class Brush extends Terrain {
   constructor() {
-    super('brush', 2, 1, true);
+    super('brush', 2, 1, 1);
   }
 }
 
 class Boulder extends Terrain {
   constructor() {
-    super('boulder', 99, 0, false);
+    super('boulder', 99, 0, 2);
   }
 }
 
 class Log extends Terrain {
   constructor() {
-    super('log', 1, 3, true);
+    super('log', 1, 3, 0);
   }
 }
 
 class Plateau extends Terrain {
   constructor() {
-    super('plateau', 1, 0, true);
+    super('plateau', 1, 0, 0);
   }
 }
 
@@ -511,12 +513,26 @@ function loadFacings (mapData) {
   return mapData;
 }
 
+function normalizeTopo (topoPlan) {
+  var str, arr, num, normal, y, x,
+      tally = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+      newPlan = [];
+  for (str of topoPlan) {
+    arr = str.substring(1, str.length - 1).split(' ');
+    arr = arr.map( s => Number(s) );
+    for (num of arr) { tally[num]++ }
+    newPlan.push(arr);
+  }
+  normal = tally.indexOf(Math.max(...tally));
+  newPlan = newPlan.map( y => y.map( x => x - normal ) );
+  return newPlan;
+}
+
 function loadTopography (mapData, topoPlan) {
-  var y, x, string;
+  var y, x;
   for (y = 0; y < mapData.length; y++) {
-    string = topoPlan[y].replace(/\s/g, '');
     for (x = 0; x < mapData[y].length; x++) {
-      mapData[y][x].terrain.elevation = Number(string[x]);
+      mapData[y][x].terrain.elevation = topoPlan[y][x];
     }
   }
   return mapData;
@@ -545,7 +561,7 @@ function loadLevel () {
                 loadFacings(
                   loadMap(mapPlan)
                 )
-              , topoPlan)
+              , normalizeTopo(topoPlan))
             , itemPlan)
           , unitPlan);
 }
@@ -796,7 +812,7 @@ var TerrainInfo = {
       <div class='flex'>
         <div class='columns'>
           <p v-if='terrain.cost < 99'>Move cost: <b>{{ terrain.cost }}</b></p><p v-else>Impassable</p>
-          <p v-if='terrain.elevation > 0'>Elevation: <b>{{ terrain.elevation }}</b></p>
+          <p v-if='terrain.elevation !== 0'>Elevation: <b>{{ terrain.elevation }}</b></p>
         </div>
         <div class='columns'>
           <p v-if='terrain.cover > 0'>Cover: <b>{{ terrain.cover }}</b></p>
