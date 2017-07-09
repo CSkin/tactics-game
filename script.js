@@ -41,12 +41,18 @@ var topoPlan = [
 ];
 
 class Terrain {
-  constructor(type, cost, cover, height) {
+  constructor(type, cost, cover, height, shape) {
     this.type = type;
     this.name = capitalize(type);
     this.cost = cost;
     this.cover = cover;
-    this.height = height;
+    if (height) {
+      this.height = height;
+      this.shape = shape;
+    } else {
+      this.height = 0;
+      this.shape = null;
+    }
     this.facing = null;
     this.elevation = null;
   }
@@ -54,49 +60,49 @@ class Terrain {
 
 class Barren extends Terrain {
   constructor() {
-    super('barren', 99, 0, 0);
+    super('barren', 99, 0);
   }
 }
 
 class Ground extends Terrain {
   constructor() {
-    super('ground', 1, 0, 0);
+    super('ground', 1, 0);
   }
 }
 
 class Sand extends Terrain {
   constructor() {
-    super('sand', 2, 0, 0);
+    super('sand', 2, 0);
   }
 }
 
 class Grass extends Terrain {
   constructor() {
-    super('grass', 1, 0, 0);
+    super('grass', 1, 0);
   }
 }
 
 class Brush extends Terrain {
   constructor() {
-    super('brush', 2, 1, 1);
+    super('brush', 2, 1, 1, 'circle');
   }
 }
 
 class Boulder extends Terrain {
   constructor() {
-    super('boulder', 99, 0, 2);
+    super('boulder', 99, 0, 2, 'circle');
   }
 }
 
 class Log extends Terrain {
   constructor() {
-    super('log', 1, 3, 0);
+    super('log', 1, 3);
   }
 }
 
 class Plateau extends Terrain {
   constructor() {
-    super('plateau', 1, 0, 0);
+    super('plateau', 1, 0);
   }
 }
 
@@ -109,9 +115,11 @@ class Space {
     this.unit2 = null;
     this.moves = null;
     this.path = null;
+    this.inLoS = null;
     this.distance = null;
     this.items = [];
   }
+  get posZ() { return (this.terrain.elevation + this.terrain.height) / 2 }
 }
 
 class Item {
@@ -394,15 +402,14 @@ class Unit {
   get attacksLeft() { return this.attacksPerTurn - this.attacksUsed }
 }
 
-var player0 = new Unit('player0', 'Player', 'Player Unit', 2, 2, 2, 2, 2, 3, 5, [], 8, 4, true, 'player'),
-    player1 = new Unit('player1', 'Player', 'Player Unit', 2, 2, 2, 2, 2, 3, 5, [], 9, 5, true, 'player'),
+var player0 = new Unit('player0', 'Player', 'Player Unit', 2, 2, 2, 2, 2, 3, 5, [], 9, 4, true, 'player'),
     enemy0  = new Unit('enemy0', 'Enemy', 'Enemy Unit', 3, 2, 2, 2, 2, 2, 5, [stones2], 6, 11, false, 'ai', 'sentry');
 
 var unitPlan = [
   {
     faction: 'Player',
     control: 'player',
-    units: [ player0, player1 ]
+    units: [ player0, ]
   }, {
     faction: 'Enemy',
     control: 'ai',
@@ -476,6 +483,15 @@ var openingDialog = [
     message: "Go!"
   }
 ];
+
+class Shadow {
+  constructor(dist, hAng1, hAng2, vAng) {
+    this.dist = dist;
+    this.hAng1 = hAng1;
+    this.hAng2 = hAng2;
+    this.vAng = vAng;
+  }
+}
 
 function loadMap (mapPlan) {
   var y, x, row, string, mapData = [];
@@ -1294,7 +1310,8 @@ var Game = new Vue ({
     itemtip: null,
     events: [],
     dialog: openingDialog,
-    scrolled: false
+    scrolled: false,
+    shadows: null
   },
   computed: {
     faction: function () {
@@ -1351,11 +1368,11 @@ var Game = new Vue ({
       if (this.canMove(origin, nort, moves)) { nort.moves = nortMoves; nort.path = nortPath; explore.push(goNort) }
       shuffle(explore).forEach( function (f) { f(); } );
     },
-    canMove: function (origin, space, moves) {
-      return Math.abs(origin.terrain.elevation - space.terrain.elevation) <= 1
-          && space.terrain.cost <= moves
-          && (!space.moves || moves - space.terrain.cost > space.moves)
-          && (space.unit === null || space.unit.friendly)
+    canMove: function (from, to, moves) {
+      return Math.abs(from.terrain.elevation - to.terrain.elevation) <= 1
+          && to.terrain.cost <= moves
+          && (!to.moves || moves - to.terrain.cost > to.moves)
+          && (to.unit === null || to.unit.friendly)
     },
     preventCollision: function () {
       for (u of this.getUnits(this.faction)) {
@@ -1380,14 +1397,14 @@ var Game = new Vue ({
       }
     },
     moveUnit: function (y, x, path) {
-      var spaceFrom = this.map[y][x], unit,
+      var from = this.map[y][x], unit,
           moveData = { y: y, x: x, moving: null, changePos: null },
-          spaceTo, unitData;
+          to, unitData;
       if (path) {
         this.hideMoveRange();
         this.map[y][x].unit.path = path;
       }
-      if (spaceFrom.unit2) { unit = spaceFrom.unit2 } else { unit = spaceFrom.unit }
+      if (from.unit2) { unit = from.unit2 } else { unit = from.unit }
       switch (unit.path[0]) {
         case 'e':
           moveData.x = x + 1;
@@ -1410,56 +1427,129 @@ var Game = new Vue ({
           moveData.changePos = function () { unitData.posY -= 1 };
           break;
       }
-      spaceTo = this.map[moveData.y][moveData.x];
-      if (spaceFrom.unit2) {
-        unitData = spaceFrom.unit2;
-        spaceFrom.unit2 = null;
-      } else {
-        unitData = spaceFrom.unit;
-        spaceFrom.unit = null;
-      }
+      to = this.map[moveData.y][moveData.x];
+      if (from.unit2) { unitData = from.unit2; from.unit2 = null; }
+      else { unitData = from.unit; from.unit = null; }
       unitData.path = unitData.path.substr(1);
       unitData.moving = moveData.moving;
-      unitData.movesUsed += spaceTo.terrain.cost;
+      unitData.movesUsed += to.terrain.cost;
       moveData.changePos();
-      if (!spaceTo.unit) { spaceTo.unit = unitData } else { spaceTo.unit2 = unitData }
-      this.active = spaceTo;
+      if (!to.unit) { to.unit = unitData } else { to.unit2 = unitData }
+      this.active = to;
     },
     showAttackRange: function () {
-      var f, y, x, s, distance, angle, width, shadows = [], inLineOfSight,
-          posY = this.active.unit.posY,
+      var posY = this.active.unit.posY,
           posX = this.active.unit.posX,
           range = this.active.unit.range,
-          findShadows = function (y, x) {
-            if (!Game.map[y][x].terrain.seeThru) {
-              distance = Math.abs(posY - y) + Math.abs(posX - x);
-              angle = Math.atan2(y - posY, x - posX);
-              width = Math.PI / (4 * distance);
-              shadows.push({ distance: distance, angle: angle, width: width });
+          inRange = this.findSpacesInRange(posY, posX, range);
+      this.shadows = [new Shadow(0, -Math.PI, Math.PI, Math.atan2(-0.75, 0.5))];
+      for (var r = 1; r <= range[1]; r++) {
+        shuffle(inRange.filter( s => s.dist === r )).forEach( function (s) {
+          var y = s.posY, x = s.posX, d = s.dist,
+              space = Game.map[y][x], terrain = space.terrain;
+          Game.castSquareShadow(y, x, d, terrain.elevation / 2);
+          if (terrain.height > 0) {
+            switch (terrain.shape) {
+              case 'square': Game.castSquareShadow(y, x, d, space.posZ); break;
+              case 'circle': Game.castCircularShadow(y, x, d, space.posZ); break;
             }
-          },
-          findAttackRange = function (y, x) {
-            distance = Math.abs(posY - y) + Math.abs(posX - x);
-            if (distance >= range[0] && distance <= range[1] && Game.map[y][x].terrain.seeThru) {
-              inLineOfSight = true;
-              angle = Math.atan2(y - posY, x - posX);
-              for (s = 0; s < shadows.length; s++) {
-                if (Math.abs(shadows[s].angle - angle) < shadows[s].width && distance > shadows[s].distance) {
-                  inLineOfSight = false;
-                  break;
-                }
-              }
-              if (inLineOfSight) { Game.map[y][x].distance = distance }
-            }
-          },
-          functions = [findShadows, findAttackRange];
-      for (f = 0; f < 2; f++) {
-        for (y = Math.max(posY - range[1], 0); y <= Math.min(posY + range[1], 15); y++) {
-          for (x = Math.max(posX - range[1], 0); x <= Math.min(posX + range[1], 15); x++) {
-            functions[f](y, x);
+          }
+          Game.findLineOfSight(y, x, d);
+        });
+      }
+      for (y = Math.max(posY - range[1], 0); y <= Math.min(posY + range[1], 15); y++) {
+        for (x = Math.max(posX - range[1], 0); x <= Math.min(posX + range[1], 15); x++) {
+          if (this.canAttack(this.active, this.map[y][x], range)) {
+            this.map[y][x].distance = Math.abs(y - posY) + Math.abs(x - posX);
           }
         }
       }
+      console.log('Reached end of showAttackRange.');
+    },
+    findSpacesInRange: function (posY, posX, range) {
+      var y, x, distance, inRange = [];
+      for (y = Math.max(posY - range[1], 0); y <= Math.min(posY + range[1], 15); y++) {
+        for (x = Math.max(posX - range[1], 0); x <= Math.min(posX + range[1], 15); x++) {
+          distance = Math.abs(y - posY) + Math.abs(x - posX);
+          if (distance > 0 && distance <= range[1]) { inRange.push({ posY: y, posX: x, dist: distance}) }
+        }
+      }
+      return inRange;
+    },
+    findLineOfSight: function (y, x, d) {
+      var yDist = y - this.active.posY,
+          xDist = x - this.active.posX,
+          hDist = Math.sqrt(yDist * yDist + xDist * xDist),
+          vDist = this.map[y][x].posZ - this.active.posZ,
+          hAng = Math.atan2(yDist, xDist),
+          vAng = Math.atan2(vDist, hDist),
+          inShadeOf = this.shadows.filter( s => s.dist < d && hAng > s.hAng1 && hAng < s.hAng2 && vAng < s.vAng );
+      if (inShadeOf.length === 0) {
+        Game.map[y][x].inLoS = true;
+        console.log(y + ', ' + x + ' is in LoS.');
+      } else {
+        Game.map[y][x].inLoS = false;
+        console.log(y + ', ' + x + ' is out of LoS.');
+        console.log(inShadeOf);
+      }
+    },
+    castSquareShadow: function (y, x, d, z) {
+      var aY = this.active.posY, yDist = y - aY,
+          aX = this.active.posX, xDist = x - aX,
+          edges = this.findSquareShadowEdges(y, x),
+          hDist = Math.sqrt(yDist * yDist + xDist * xDist),
+          vDist = z - (this.active.terrain.elevation / 2 + 0.75),
+          hAng1, hAng2, vAng;
+      if      (vDist > 0) { hDist -= 0.5; d -= 1 }
+      else if (vDist < 0) { hDist += 0.5 }
+      hAng1 = Math.atan2(edges[1].Y - aY, edges[1].X - aX);
+      hAng2 = Math.atan2(edges[2].Y - aY, edges[2].X - aX);
+      vAng = Math.atan2(vDist, hDist);
+      this.shadows.push(new Shadow(d, hAng1, hAng2, vAng));
+    },
+    findSquareShadowEdges: function (y, x) {
+      var e1, e2,
+          aY = this.active.posY,
+          aX = this.active.posX,
+          a = { Y: y - 0.5, X: x - 0.5 }, // top left corner
+          b = { Y: y - 0.5, X: x + 0.5 }, // top right corner
+          c = { Y: y + 0.5, X: x - 0.5 }, // bottom left corner
+          d = { Y: y + 0.5, X: x + 0.5 }; // bottom right corner
+      if (y < aY) {
+        if (x < aX)      { e1 = c; e2 = b; }
+        else if (x > aX) { e1 = a; e2 = d; }
+        else             { e1 = c; e2 = d; }
+      }
+      else if (y > aY) {
+        if (x < aX)      { e1 = d; e2 = a; }
+        else if (x > aX) { e1 = b; e2 = c; }
+        else             { e1 = b; e2 = a; }
+      }
+      else {
+        if (x < aX) { e1 = d; e2 = b; }
+        else        { e1 = a; e2 = c; }
+      }
+      return { 1: e1, 2: e2 };
+    },
+    castCircularShadow: function (y, x, d, z) {
+      var yDist = y - this.active.posY,
+          xDist = x - this.active.posX,
+          hDist = Math.sqrt(yDist * yDist + xDist * xDist),
+          hAng = Math.atan2(yDist, xDist),
+          hWidth = Math.asin(0.5 / hDist),
+          vDist = z - (this.active.terrain.elevation / 2 + 0.75),
+          hAng1, hAng2, vAng;
+      if      (vDist > 0) { hDist -= 0.5; d -= 1 }
+      else if (vDist < 0) { hDist += 0.5 }
+      hAng1 = hAng - hWidth;
+      hAng2 = hAng + hWidth;
+      vAng = Math.atan2(vDist, hDist);
+      this.shadows.push(new Shadow(d, hAng1, hAng2, vAng));
+    },
+    canAttack: function (from, to, range) {
+      var hDist = Math.abs(from.posY - to.posY) + Math.abs(from.posX - to.posX),
+          vDist = to.terrain.elevation - from.terrain.elevation;
+      return (to.inLoS && hDist >= range[0] && hDist <= range[1] && vDist <= range[1]);
     },
     cancelAttack: function () {
       this.hideAttackRange();
@@ -1474,6 +1564,7 @@ var Game = new Vue ({
       if (targetY && targetX) { targetDistance = this.map[targetY][targetX].distance }
       for (y = Math.max(posY - range[1], 0); y <= Math.min(posY + range[1], 15); y++) {
         for (x = Math.max(posX - range[1], 0); x <= Math.min(posX + range[1], 15); x++) {
+          this.map[y][x].inLoS = null;
           this.map[y][x].distance = null;
         }
       }
