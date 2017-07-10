@@ -115,7 +115,6 @@ class Space {
     this.unit2 = null;
     this.moves = null;
     this.path = null;
-    this.inLoS = null;
     this.distance = null;
     this.items = [];
   }
@@ -1438,13 +1437,11 @@ var Game = new Vue ({
       this.active = to;
     },
     showAttackRange: function () {
-      var posY = this.active.unit.posY,
-          posX = this.active.unit.posX,
-          range = this.active.unit.range,
-          inRange = this.findSpacesInRange(posY, posX, range);
+      var unit = this.active.unit,
+          inRange = this.findSpacesInRange(unit.posY, unit.posX, unit.range);
       this.shadows = [new Shadow(0, -Math.PI, Math.PI, Math.atan2(-0.75, 0.5))];
-      for (var r = 1; r <= range[1]; r++) {
-        shuffle(inRange.filter( s => s.dist === r )).forEach( function (s) {
+      for (var r = 1; r <= unit.range[1]; r++) {
+        inRange.filter( s => s.dist === r ).forEach( function (s) {
           var y = s.posY, x = s.posX, d = s.dist,
               space = Game.map[y][x], terrain = space.terrain;
           Game.castSquareShadow(y, x, d, terrain.elevation / 2);
@@ -1457,14 +1454,6 @@ var Game = new Vue ({
           Game.findLineOfSight(y, x, d);
         });
       }
-      for (y = Math.max(posY - range[1], 0); y <= Math.min(posY + range[1], 15); y++) {
-        for (x = Math.max(posX - range[1], 0); x <= Math.min(posX + range[1], 15); x++) {
-          if (this.canAttack(this.active, this.map[y][x], range)) {
-            this.map[y][x].distance = Math.abs(y - posY) + Math.abs(x - posX);
-          }
-        }
-      }
-      console.log('Reached end of showAttackRange.');
     },
     findSpacesInRange: function (posY, posX, range) {
       var y, x, distance, inRange = [];
@@ -1475,23 +1464,6 @@ var Game = new Vue ({
         }
       }
       return inRange;
-    },
-    findLineOfSight: function (y, x, d) {
-      var yDist = y - this.active.posY,
-          xDist = x - this.active.posX,
-          hDist = Math.sqrt(yDist * yDist + xDist * xDist),
-          vDist = this.map[y][x].posZ - this.active.posZ,
-          hAng = Math.atan2(yDist, xDist),
-          vAng = Math.atan2(vDist, hDist),
-          inShadeOf = this.shadows.filter( s => s.dist < d && hAng > s.hAng1 && hAng < s.hAng2 && vAng < s.vAng );
-      if (inShadeOf.length === 0) {
-        Game.map[y][x].inLoS = true;
-        console.log(y + ', ' + x + ' is in LoS.');
-      } else {
-        Game.map[y][x].inLoS = false;
-        console.log(y + ', ' + x + ' is out of LoS.');
-        console.log(inShadeOf);
-      }
     },
     castSquareShadow: function (y, x, d, z) {
       var aY = this.active.posY, yDist = y - aY,
@@ -1546,15 +1518,34 @@ var Game = new Vue ({
       vAng = Math.atan2(vDist, hDist);
       this.shadows.push(new Shadow(d, hAng1, hAng2, vAng));
     },
+    findLineOfSight: function (y, x, d) {
+      var from = this.active, to = this.map[y][x],
+          yDist = y - from.posY, xDist = x - from.posX,
+          hDist = Math.sqrt(yDist * yDist + xDist * xDist),
+          vDist = to.posZ - from.posZ,
+          hAng = Math.atan2(yDist, xDist),
+          vAng = Math.atan2(vDist, hDist),
+          shadows = this.shadows.filter( function (s) {
+            if (s.hAng1 < 0 || s.hAng2 > 0) {
+              return s.dist < d && hAng > s.hAng1 && hAng < s.hAng2 && vAng < s.vAng;
+            } else {
+              return s.dist < d && (hAng > s.hAng1 || hAng < s.hAng2) && vAng < s.vAng;
+            }
+          });
+      if (shadows.length === 0 && this.canAttack(from, to, from.unit.range)) {
+        this.map[y][x].distance = Math.abs(yDist) + Math.abs(xDist);
+      }
+    },
     canAttack: function (from, to, range) {
-      var hDist = Math.abs(from.posY - to.posY) + Math.abs(from.posX - to.posX),
-          vDist = to.terrain.elevation - from.terrain.elevation;
-      return (to.inLoS && hDist >= range[0] && hDist <= range[1] && vDist <= range[1]);
+      var hDiff = Math.abs(to.posY - from.posY) + Math.abs(to.posX - from.posX),
+          vDiff = to.terrain.elevation - from.terrain.elevation;
+      return hDiff >= range[0] && hDiff <= range[1] && vDiff <= range[1];
     },
     cancelAttack: function () {
       this.hideAttackRange();
       this.action = null;
       this.target = null;
+      this.shadows = null;
     },
     hideAttackRange: function (targetY, targetX) {
       var y, x, distance, targetDistance,
@@ -1564,7 +1555,6 @@ var Game = new Vue ({
       if (targetY && targetX) { targetDistance = this.map[targetY][targetX].distance }
       for (y = Math.max(posY - range[1], 0); y <= Math.min(posY + range[1], 15); y++) {
         for (x = Math.max(posX - range[1], 0); x <= Math.min(posX + range[1], 15); x++) {
-          this.map[y][x].inLoS = null;
           this.map[y][x].distance = null;
         }
       }
@@ -1580,7 +1570,7 @@ var Game = new Vue ({
           }
         }
       }
-      this.target = target;
+      this.target = this.map[y][x];
     },
     calculateAttack: function (atkSpace) {
       // attack = strength + skill + power - distance
@@ -1698,6 +1688,7 @@ var Game = new Vue ({
       var unit = this.active.unit;
       if (unit) { this.map[unit.posY][unit.posX].unit.attacksUsed += 1 }
       this.action = null;
+      this.shadows = null;
     },
     makeEquipItemsDraggable: function (draggables) {
       $( draggables ).toArray().forEach( function (item) {
