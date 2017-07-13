@@ -27,12 +27,12 @@ var topoPlan = [
   ' 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 ',
   ' 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 ',
   ' 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 ',
-  ' 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 ',
+  ' 1 1 1 1 1 1 1 2 2 1 1 1 1 1 1 1 ',
   ' 1 1 1 1 1 1 2 3 3 2 1 1 1 1 1 1 ',
   ' 1 1 1 1 1 0 0 4 4 0 0 1 1 1 1 1 ',
   ' 1 1 1 1 1 0 0 4 4 0 0 1 1 1 1 1 ',
   ' 1 1 1 1 1 1 2 3 3 2 1 1 1 1 1 1 ',
-  ' 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 ',
+  ' 1 1 1 1 1 1 1 2 2 1 1 1 1 1 1 1 ',
   ' 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 ',
   ' 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 ',
   ' 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 ',
@@ -1108,15 +1108,15 @@ var SidePanel = {
       <transition :name='dynamicTransition'>
         <div v-if='space && space.unit'>
           <unit-info :unit='space.unit'></unit-info>
+          <unit-items v-if="side === 'left' && action === 'equipping'" :unit='space.unit' :itemtip='itemtip'></unit-items>
           <template v-if="side === 'left'">
-            <unit-actions v-if="control === 'player' && space.unit.control === 'player'" :action='action' :unit='space.unit'></unit-actions>
             <combat-info v-if="combat && action === 'attacking'" type='active' :combat='combat'></combat-info>
+            <unit-actions v-if="control === 'player' && space.unit.control === 'player'" :action='action' :unit='space.unit'></unit-actions>
           </template>
           <template v-else-if="side === 'right' && action === 'attacking'">
-            <target-actions v-if="control === 'player' && space"></target-actions>
             <combat-info v-if='combat' type='target' :combat='combat'></combat-info>
+            <target-actions v-if="control === 'player' && space"></target-actions>
           </template>
-          <unit-items v-if="side === 'left' && action === 'equipping'" :unit='space.unit' :itemtip='itemtip'></unit-items>
         </div>
       </transition>
     </div>
@@ -1229,6 +1229,27 @@ var EventLog = {
   }
 };
 
+var TopoControl = {
+  template: `
+    <div class='ui'>
+      <p><span class='sa'>Elevation View:</span>
+        <button id='btn-topo' title='Toggle Elevation View' @click='toggleTopoView'>{{ btnText }}</button>
+      </p>
+    </div>
+  `,
+  props: ['topoView'],
+  computed: {
+    btnText: function () {
+      if (this.topoView) { return 'Off' } else { return 'On' }
+    }
+  },
+  methods: {
+    toggleTopoView: function () {
+      Game.topoView = !Game.topoView;
+    }
+  }
+};
+
 var StatusPanel = {
   template: `
     <div class='ui'>
@@ -1310,7 +1331,8 @@ var Game = new Vue ({
     events: [],
     dialog: openingDialog,
     scrolled: false,
-    shadows: null
+    shadows: null,
+    topoView: false
   },
   computed: {
     faction: function () {
@@ -2037,6 +2059,7 @@ var Game = new Vue ({
     'side-panel': SidePanel,
     'ground-panel': GroundPanel,
     'event-log': EventLog,
+    'topo-control': TopoControl,
     'status-panel': StatusPanel,
     'turn-banner': TurnBanner
   }
