@@ -607,15 +607,24 @@ function capitalize (string) {
 $( document ).ready( function () {
 
 var Terrain = {
-  // To use terrain sprites instead of map image, set v-if to true.
-  template: "<div v-if='false' class='terrain space' :class='terrain.type'></div>",
-  props: ['terrain']
+  // To use terrain sprites instead of map image, add :class='terrain.type' to parent div.
+  template: `
+    <div class='space terrain'>
+      <img class='space terrain' :src='imgSrc'></img>
+    </div>
+  `,
+  props: ['terrain'],
+  computed: {
+    imgSrc: function () {
+      return 'sprites/elevation' + this.terrain.elevation + '.png';
+    }
+  }
 };
 
 var Highlight = {
   template: `
     <transition name='fade'>
-      <div v-if='space.path || space.distance' class='highlight space' :class='classes'></div>
+      <div v-if='space.path || space.distance' class='space highlight' :class='classes'></div>
     </transition>
   `,
   props: ['space'],
@@ -636,7 +645,7 @@ var Highlight = {
 var Unit = {
   template: `
     <transition :name='dynamicTransition' @after-enter='moveHandler'>
-      <img v-if='unit' :id='unit.id' class='unit space' :src='unit.sprite' :title='unit.name'></img>
+      <img v-if='unit' :id='unit.id' class='space unit' :src='unit.sprite' :title='unit.name'></img>
     </transition>
   `,
   props: ['unit'],
@@ -736,7 +745,7 @@ var Space = {
 var Row = {
   template: `
     <div class='row'>
-      <space v-for='space in row' :key='space' :space='space'></space>
+      <space v-for='(space, index) in row' :key='index' :space='space'></space>
     </div>
   `,
   props: ['row'],
@@ -1220,7 +1229,7 @@ var EventSwitcher = {
 var EventLog = {
   template:`
     <div id='event-log'>
-      <event-switcher v-for='event in events' :event='event' :key='event'></event-switcher>
+      <event-switcher v-for='(event, index) in events' :event='event' :key='index'></event-switcher>
     </div>
   `,
   props: ['events'],
