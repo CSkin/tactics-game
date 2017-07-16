@@ -610,11 +610,14 @@ var Terrain = {
   // To use terrain sprites instead of map image, add :class='terrain.type' to parent div.
   template: `
     <div class='space terrain'>
-      <img class='space terrain' :src='imgSrc'></img>
+      <img v-if='imgVif' class='space terrain' :src='imgSrc'></img>
     </div>
   `,
-  props: ['terrain'],
+  props: ['terrain', 'topoView'],
   computed: {
+    imgVif: function () {
+      return this.terrain.type !== 'barren' && this.topoView;
+    },
     imgSrc: function () {
       return 'sprites/elevation' + this.terrain.elevation + '.png';
     }
@@ -682,13 +685,13 @@ var Unit = {
 var Space = {
   template: `
     <div class='space' @click='clickHandler'>
-      <terrain :terrain='space.terrain'></terrain>
+      <terrain :terrain='space.terrain' :topo-view='topoView'></terrain>
       <highlight :space='space'></highlight>
       <unit :unit='space.unit'></unit>
       <unit :unit='space.unit2'></unit>
     </div>
   `,
-  props: ['space'],
+  props: ['space', 'topoView'],
   methods: {
     clickHandler: function () {
       var y = this.space.posY,
@@ -745,10 +748,10 @@ var Space = {
 var Row = {
   template: `
     <div class='row'>
-      <space v-for='(space, index) in row' :key='index' :space='space'></space>
+      <space v-for='(space, index) in row' :key='index' :space='space' :topo-view='topoView'></space>
     </div>
   `,
-  props: ['row'],
+  props: ['row', 'topoView'],
   components: {
     'space': Space
   }
