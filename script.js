@@ -610,7 +610,9 @@ var Terrain = {
   // To use terrain sprites instead of map image, add :class='terrain.type' to parent div.
   template: `
     <div class='space terrain'>
-      <img v-if='imgVif' class='space terrain' :src='imgSrc'></img>
+      <transition name='fade'>
+        <img v-if='imgVif' class='space terrain' :src='imgSrc'></img>
+      </transition>
     </div>
   `,
   props: ['terrain', 'topoView'],
@@ -1243,17 +1245,22 @@ var EventLog = {
 
 var TopoControl = {
   template: `
-    <div class='ui'>
-      <p><span class='sa'>Elevation View:</span>
-        <button id='btn-topo' title='Toggle Elevation View' @click='toggleTopoView'>{{ btnText }}</button>
-      </p>
+    <div class='ui flex center'>
+      <span class='sa'>Elevation View:</span>
+      <div class='tgl-shadow'>
+        <div class='tgl-switch' :class="{ 'switch-on': topoView }" @click='toggleTopoView'>
+          <div class='tgl-slider' :class="{ 'slider-on': topoView }">
+            <span class='tgl-text' :class="{ 'text-on': topoView }">On</span>
+            <div class='tgl-handle'></div>
+            <span class='tgl-text' :class="{ 'text-on': topoView }">Off</span>
+          </div>
+        </div>
+      </div>
     </div>
   `,
   props: ['topoView'],
   computed: {
-    btnText: function () {
-      if (this.topoView) { return 'Off' } else { return 'On' }
-    }
+    
   },
   methods: {
     toggleTopoView: function () {
@@ -1573,7 +1580,11 @@ var Game = new Vue ({
     canAttack: function (from, to, range) {
       var hDiff = Math.abs(to.posY - from.posY) + Math.abs(to.posX - from.posX),
           vDiff = to.terrain.elevation - from.terrain.elevation;
-      return hDiff >= range[0] && hDiff <= range[1] && vDiff <= range[1];
+      if (range[1] <= 1) {
+        return hDiff >= range[0] && hDiff <= range[1] && Math.abs(vDiff) <= range[1];
+      } else {
+        return hDiff >= range[0] && hDiff <= range[1] && vDiff <= range[1];
+      }
     },
     cancelAttack: function () {
       this.hideAttackRange();

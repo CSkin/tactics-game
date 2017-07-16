@@ -141,6 +141,14 @@ p {
   margin: 10px 10px 25px 10px;
 }
 
+.flex {
+  display: flex;
+}
+
+.center {
+  align-items: center;
+}
+
 .heading {
   height: 18px;
   margin: 5px 0;
@@ -154,10 +162,6 @@ p {
   width: 18px;
   height: 18px;
   margin-right: 5px;
-}
-
-.flex {
-  display: flex;
 }
 
 .columns {
@@ -277,7 +281,7 @@ p {
 }
 
 #item-tip:before {
-  content:"";
+  content:'';
   position: absolute;
   right: 100%;
   top: 4px;
@@ -289,7 +293,7 @@ p {
 }
 
 #item-tip:after {
-  content:"";
+  content:'';
   position: absolute;
   right: 100%;
   top: 7px;
@@ -420,6 +424,65 @@ p {
   font-weight: normal;
   color: black;
   white-space: pre;
+}
+
+.tgl-shadow {
+  width: 54px;
+  height: 22px;
+  margin-left: 5px;
+  border-radius: 50% 50% 10px 10px;
+  background: linear-gradient(to right, #704706, #996108 10px, #996108 44px, #c27b0a);
+}
+
+.tgl-switch {
+  position: relative;
+  display: inline-flex;
+  width: 54px;
+  height: 20px;
+  align-items: center;
+  border-radius: 10px;
+  background-color: #e6c585;
+  cursor: pointer;
+  overflow: hidden;
+  transition: background-color 0.5s;
+}
+
+.tgl-slider {
+  position: absolute;
+  left: -32px;
+  display: flex;
+  width: 84px;
+  height: 16px;
+  transition: left 0.5s;
+}
+
+.tgl-handle {
+  width: 16px;
+  height: 16px;
+  background-color: #c27b0a;
+  border-radius: 50%;
+  box-shadow: 0 1px 1px #704706;
+}
+
+.tgl-text {
+  width: 34px;
+  font-size: 0.9em;
+  font-weight: bold;
+  color: #4729a3;
+  text-align: center;
+  transition: color 0.5s;
+}
+
+.switch-on {
+  background-color: #4729a3;
+}
+
+.slider-on {
+  left: 2px;
+}
+
+.text-on {
+  color: #e6c585;
 }
 
 .banner {
