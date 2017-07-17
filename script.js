@@ -428,11 +428,11 @@ class DialogEvent {
 }
 
 class CombatEvent {
-  constructor(unit, target, damage) {
+  constructor(unit, target, damage, activeTurn, counter) {
     this.eventType = 'combat';
     this.subject = unit.name;
     this.subjectIcon = 'sprites/' + unit.id.replace(/\d/, '') + '-icon.png';
-    this.verb = 'attacked';
+    if (!counter) { this.verb = 'attacked' } else { this.verb = 'countered' }
     this.verbIcon = unit.equipped.icon;
     this.object = target.name;
     this.objectIcon = 'sprites/' + target.id.replace(/\d/, '') + '-icon.png';
@@ -441,11 +441,12 @@ class CombatEvent {
       case 1: this.result = 'Attack hit.'; break;
       case 2: this.result = 'Critical hit!'; break;
     }
+    this.activeTurn = activeTurn;
   }
 }
 
 class ConditionEvent {
-  constructor(unit) {
+  constructor(unit, activeTurn) {
     this.eventType = 'condition';
     this.subject = unit.name;
     this.subjectIcon = 'sprites/' + unit.id.replace(/\d/, '') + '-icon.png';
@@ -454,17 +455,19 @@ class ConditionEvent {
     if (this.object === 'wounded' || this.object === 'critical') {
       this.result = capitalize(unit.impaired[unit.impaired.length - 1]) + ' -50%';
     }
+    this.activeTurn = activeTurn;
   }
 }
 
 class ItemEvent {
-  constructor(unit, verb, item) {
+  constructor(unit, verb, item, activeTurn) {
     this.eventType = 'item';
     this.subject = unit.name;
     this.subjectIcon = 'sprites/' + unit.id.replace(/\d/, '') + '-icon.png';
     this.verb = verb;
     this.object = item.name;
     this.objectIcon = item.icon;
+    this.activeTurn = activeTurn;
   }
 }
 
@@ -611,13 +614,13 @@ var Terrain = {
   template: `
     <div class='space terrain'>
       <transition name='fade'>
-        <img v-if='imgVif' class='space terrain' :src='imgSrc'></img>
+        <img v-show='imgShow' class='space terrain' :src='imgSrc'></img>
       </transition>
     </div>
   `,
   props: ['terrain', 'topoView'],
   computed: {
-    imgVif: function () {
+    imgShow: function () {
       return this.terrain.type !== 'barren' && this.topoView;
     },
     imgSrc: function () {
@@ -1156,7 +1159,6 @@ var EventDialog = {
   template: `
     <transition name='fade-long'>
       <div class='event dialog'>
-        <div class='spacer'></div>
         <div class='content' :class='alignment'>
           <img v-if='event.alignLeft' class='portrait' :src='event.portrait' :title='event.subject'>
           <div class='message' :style='messageColor'>{{ event.message }}</div>
@@ -1183,8 +1185,7 @@ var EventAction = {
   template: `
     <transition name='fade-long'>
       <div class='event action'>
-        <div class='spacer'></div>
-        <p class='content'>
+        <div class='content' :style='contentStyle'>
           <img class='icon' :src='event.subjectIcon'>
           <span class='bold sa'>{{ event.subject }}</span>
           <img v-if='event.verbIcon' class='icon' :src='event.verbIcon'>
@@ -1192,12 +1193,18 @@ var EventAction = {
           <img v-if='event.objectIcon' class='icon' :src='event.objectIcon'>
           <span class='bold' :class='objectClass'>{{ event.object }}</span><span class='sa'>.</span>
           <span v-if='event.result' :class='resultClass'>{{ event.result }}</span>
-        </p>
+        </div>
       </div>
     </transition>
   `,
   props: ['event'],
   computed: {
+    contentStyle: function () {
+      switch (this.event.activeTurn) {
+        case 'Player': return { background: '#f9ebc8' };
+        case 'Enemy': return { background: '#bde6d2' };
+      }
+    },
     objectClass: function () {
       var type = this.event.eventType,
           cond = this.event.object;
@@ -1680,15 +1687,15 @@ var Game = new Vue ({
       }
       this.animateCombat(attacker, defender, damage);
       window.setTimeout(function(){
-        Game.events.push(new CombatEvent(attacker, defender, damage));
+        Game.events.push(new CombatEvent(attacker, defender, damage, Game.faction, counter));
         if (damage > 0) {
           Game.dealDamage(defender.posY, defender.posX, damage);
-          Game.events.push(new ConditionEvent(defender));
+          Game.events.push(new ConditionEvent(defender, Game.faction));
         }
       }, 250);
       window.setTimeout(function(){
         if (!counter && Game.combat.canCounter && defender.condition !== 'Defeated') {
-          Game.attackUnit('counter');
+          Game.attackUnit(true);
         } else {
           Game.endAttack();
         }
@@ -1795,8 +1802,8 @@ var Game = new Vue ({
             var unit = Game.active.unit, oldHp = unit.hp,
                 item = unit.items.filter( i => i.id === itemId )[0];
             Game.map[y][x].unit.useItem(itemId);
-            Game.events.push(new ItemEvent(unit, 'used', item));
-            if (unit.hp !== oldHp) { Game.events.push(new ConditionEvent(unit)) }
+            Game.events.push(new ItemEvent(unit, 'used', item, Game.faction));
+            if (unit.hp !== oldHp) { Game.events.push(new ConditionEvent(unit, Game.faction)) }
           }
         }
       });
@@ -1811,7 +1818,7 @@ var Game = new Vue ({
           item.slots = null;
           Game.map[y][x].items.push(item);
           Game.map[y][x].items.sort(Game.compareItems);
-          Game.events.push(new ItemEvent(Game.active.unit, 'dropped', item));
+          Game.events.push(new ItemEvent(Game.active.unit, 'dropped', item, Game.faction));
           Vue.nextTick(function(){ Game.makeGroundItemsDraggable('#' + itemId) });
         }
       });
@@ -1921,7 +1928,7 @@ var Game = new Vue ({
             itemString = item.slots.map( s => '#' + itemId + '-' + s ).join(',');
             Game.map[y][x].unit.items.push(item);
             Game.map[y][x].unit.items.sort(Game.compareItems);
-            Game.events.push(new ItemEvent(Game.active.unit, 'picked up', item));
+            Game.events.push(new ItemEvent(Game.active.unit, 'picked up', item, Game.faction));
             Vue.nextTick(function(){ Game.makeEquipItemsDraggable(itemString) });
           }
         });
@@ -2049,7 +2056,7 @@ var Game = new Vue ({
       }
     },
     scrollEventLog: function () {
-      var events = this.events, index;
+      var events = this.events, index, scrollTo, posY;
       if (events[events.length - 1].eventType === 'dialog') {
         if (events.length === 1) { index = 0 }
         else { index = events.length - 2 }
@@ -2060,7 +2067,12 @@ var Game = new Vue ({
         }
         index = events.length - i;
       }
-      document.getElementsByClassName('event')[index].scrollIntoView();
+      scrollTo = document.getElementsByClassName('event')[index];
+      switch (scrollTo.classList[1]) {
+        case 'dialog': posY = scrollTo.offsetTop - 18; break;
+        case 'action': posY = scrollTo.offsetTop - 5; break;
+      }
+      document.getElementById('bottom-center').scrollTop = posY;
       window.setTimeout(function(){
         Game.scrolled = false;
         Game.addFadeClasses(1);
@@ -2068,14 +2080,14 @@ var Game = new Vue ({
     },
     addFadeClasses: function (i) {
       var event = $( '.event:nth-last-child(' + i + ')' );
-      if (i <= 8 && event.hasClass( 'action' )) {
+      if (i <= 9 && event.hasClass( 'action' )) {
         this.removeFadeClasses(event);
         event.addClass( 'fade' + i );
         this.addFadeClasses(i + 1);
       }
     },
     removeFadeClasses: function ( selector ) {
-      $( selector ).removeClass( 'fade1 fade2 fade3 fade4 fade5 fade6 fade7 fade8' );
+      $( selector ).removeClass( 'fade1 fade2 fade3 fade4 fade5 fade6 fade7 fade8 fade9' );
     },
     scrollHandler: function () {
       if (!this.scrolled) {

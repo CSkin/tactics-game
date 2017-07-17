@@ -305,32 +305,40 @@ p {
 }
 
 #event-log {
-  margin: 0 10px;
+  position: relative;
 }
 
-.event:last-of-type {
-  min-height: 247px;
+.event.dialog {
+  margin: 18px 10px;
 }
 
-.dialog .spacer {
-  height: 15px;
+.event.dialog:first-of-type {
+  margin-top: 0;
+  padding-top: 18px;
 }
 
-.action .spacer {
-  height: 10px;
+.event.dialog:last-of-type {
+  min-height: 211px;
+}
+
+.event.action:last-of-type {
+  min-height: 242px;
 }
 
 .content {
   display: flex;
-  margin: 0;
 }
 
 .dialog .content {
   align-items: center;
 }
 
+.action .content {
+  padding: 5px 10px;
+}
+
 .event .icon {
-  bottom: 1px;
+  bottom: 0;
   left: 1px;
   margin 0;
 }
@@ -575,6 +583,10 @@ p {
 
 .fade8 {
   opacity: 0.125;
+}
+
+.fade9 {
+  opacity: 0;
 }
 
 .barren {
