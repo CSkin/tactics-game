@@ -426,7 +426,7 @@ p {
   white-space: pre;
 }
 
-.tgl-shadow {
+.tgl-switch {
   width: 54px;
   height: 22px;
   margin-left: 5px;
@@ -434,7 +434,7 @@ p {
   background: linear-gradient(to right, #704706, #996108 10px, #996108 44px, #c27b0a);
 }
 
-.tgl-switch {
+.tgl-holder {
   position: relative;
   display: inline-flex;
   width: 54px;
@@ -456,14 +456,6 @@ p {
   transition: left 0.5s;
 }
 
-.tgl-handle {
-  width: 16px;
-  height: 16px;
-  background-color: #c27b0a;
-  border-radius: 50%;
-  box-shadow: 0 1px 1px #704706;
-}
-
 .tgl-text {
   width: 34px;
   font-size: 0.9em;
@@ -473,15 +465,23 @@ p {
   transition: color 0.5s;
 }
 
-.switch-on {
+.tgl-handle {
+  width: 16px;
+  height: 16px;
+  background-color: #c27b0a;
+  border-radius: 50%;
+  box-shadow: 0 1px 1px #704706;
+}
+
+.tgl-holder.tgl-on {
   background-color: #4729a3;
 }
 
-.slider-on {
+.tgl-slider.tgl-on {
   left: 2px;
 }
 
-.text-on {
+.tgl-text.tgl-on {
   color: #e6c585;
 }
 

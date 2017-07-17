@@ -1247,20 +1247,27 @@ var TopoControl = {
   template: `
     <div class='ui flex center'>
       <span class='sa'>Elevation View:</span>
-      <div class='tgl-shadow'>
-        <div class='tgl-switch' :class="{ 'switch-on': topoView }" @click='toggleTopoView'>
-          <div class='tgl-slider' :class="{ 'slider-on': topoView }">
-            <span class='tgl-text' :class="{ 'text-on': topoView }">On</span>
-            <div class='tgl-handle'></div>
-            <span class='tgl-text' :class="{ 'text-on': topoView }">Off</span>
+      <div id='tgl-topoview' class='tgl-switch' :title='title' @click='toggleTopoView'>
+        <div class='tgl-holder' :class='tglOn' :title='title'>
+          <div class='tgl-slider' :class='tglOn' :title='title'>
+            <span class='tgl-text' :class='tglOn' :title='title'>On</span>
+            <div class='tgl-handle' :title='title'></div>
+            <span class='tgl-text' :class='tglOn' :title='title'>Off</span>
           </div>
         </div>
       </div>
     </div>
   `,
   props: ['topoView'],
+  data: function () {
+    return {
+      title: 'Toggle Elevation View (V)'
+    }
+  },
   computed: {
-    
+    tglOn: function () {
+      return { 'tgl-on': this.topoView }
+    }
   },
   methods: {
     toggleTopoView: function () {
@@ -2090,33 +2097,37 @@ var Game = new Vue ({
 
 function keyHandler () {
   // console.log('keyCode: ' + event.keyCode); // Developer mode
-  if (Game.control === 'player' && Game.active && Game.active.unit && Game.active.unit.control === 'player') {
-    switch (event.keyCode) {
-      case 13: // enter
-        $( '#btn-confatk' ).trigger( 'click' );
-        break;
-      case 27: //escape
-        $( '#btn-cancel' ).trigger( 'click' );
-        break;
-      case 65: // a
-        if (Game.action !== 'attacking') { $( '#btn-attack' ).trigger( 'click' ); }
-        else {
-          if (Game.target) { $( '#btn-confatk' ).trigger( 'click' ); }
+  if (event.keyCode !== 86) {
+    if (Game.control === 'player' && Game.active && Game.active.unit && Game.active.unit.control === 'player') {
+      switch (event.keyCode) {
+        case 13: // enter
+          $( '#btn-confatk' ).trigger( 'click' );
+          break;
+        case 27: //escape
+          $( '#btn-cancel' ).trigger( 'click' );
+          break;
+        case 65: // a
+          if (Game.action !== 'attacking') { $( '#btn-attack' ).trigger( 'click' ); }
+          else {
+            if (Game.target) { $( '#btn-confatk' ).trigger( 'click' ); }
+            else { $( '#btn-cancel' ).trigger( 'click' ); }
+          }
+          break;
+        case 67: // c
+          $( '#btn-cancel' ).trigger( 'click' );
+          break;
+        case 69: // e
+          if (Game.action !== 'equipping') { $( '#btn-equip' ).trigger( 'click' ); }
           else { $( '#btn-cancel' ).trigger( 'click' ); }
-        }
-        break;
-      case 67: // c
-        $( '#btn-cancel' ).trigger( 'click' );
-        break;
-      case 69: // e
-        if (Game.action !== 'equipping') { $( '#btn-equip' ).trigger( 'click' ); }
-        else { $( '#btn-cancel' ).trigger( 'click' ); }
-        break;
-      case 77: // m
-        if (Game.action !== 'moving') { $( '#btn-move' ).trigger( 'click' ); }
-        else { $( '#btn-cancel' ).trigger( 'click' ); }
-        break;
+          break;
+        case 77: // m
+          if (Game.action !== 'moving') { $( '#btn-move' ).trigger( 'click' ); }
+          else { $( '#btn-cancel' ).trigger( 'click' ); }
+          break;
+      }
     }
+  } else { //v
+    $( '#tgl-topoview' ).trigger( 'click' );
   }
 }
 
