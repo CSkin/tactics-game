@@ -28,6 +28,9 @@
         <div id='top-center' class='panel' :style='mapImage'>
           <row v-for='(row, index) in map' :key='index' :row='row' :topo-view='topoView'></row>
           <ground-panel v-if="action === 'equipping'" :items='active.items'></ground-panel>
+          <div class='overlay'>
+            <p>Drop</p>
+          </div>
         </div>
         
         <div id='top-right' class='panel'>

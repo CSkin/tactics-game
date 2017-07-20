@@ -1,4 +1,4 @@
-/*jshint loopfunc: true */
+/* jshint loopfunc: true */
 
 var mapImage = { backgroundImage: "url('maps/level2.png')" };
 
@@ -878,7 +878,7 @@ var Modifier = {
 
 var UnitInfo = {
   template: `
-    <div class='ui' id='unit-info'>
+    <div class='ui unit-info'>
       <p class='heading'><img class='icon' :src='imgSrc'>{{ unit.name }}</p>
       <p>Condition: <b :class='unit.condition.toLowerCase()'>{{ unit.condition }}</b></p>
       <div class='flex'>
@@ -895,6 +895,9 @@ var UnitInfo = {
             <b>{{ unit.equipped.name }}</b>
           </p>
         </div>
+      </div>
+      <div class='overlay'>
+        <p>Equip</p>
       </div>
     </div>
   `,
@@ -1365,7 +1368,12 @@ var Game = new Vue ({
     dialog: openingDialog,
     scrolled: false,
     shadows: null,
-    topoView: false
+    topoView: false,
+    itemActions: {
+      canEquip: false,
+      canUse: false,
+      canDrop: false
+    }
   },
   computed: {
     faction: function () {

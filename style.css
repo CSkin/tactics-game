@@ -1,7 +1,7 @@
 body {
   display: flex;
   justify-content: center;
-  background-color: #708090;
+  background: #708090;
   font-family: sans-serif;
 }
 
@@ -16,7 +16,7 @@ p {
 
 .panel {
   border: 1px solid black;
-  background-color: #dfefff;
+  background: #dfefff;
 }
 
 #top-panel {
@@ -31,12 +31,13 @@ p {
 }
 
 #top-center {
+  position: relative;
   display: flex;
   flex-direction: column;
   width: 512px;
   height: 512px;
-  justify-content: center;
   align-items: center;
+  justify-content: center;
 }
 
 #top-right {
@@ -70,7 +71,7 @@ p {
 
 .row {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: row;
 }
 
 .space {
@@ -196,6 +197,44 @@ p {
 
 .debuff {
   color: #aa00ff;
+}
+
+.unit-info {
+  position: relative;
+}
+
+.overlay {
+  position: absolute;
+  display: flex;
+  box-sizing: border-box;
+  width: 242px;
+  height: 159px;
+  border: 4px dashed;
+  align-items: center;
+  justify-content: center;
+}
+
+.unit-info .overlay {
+  top: -10px;
+  left: -7px;
+  border-color: #00aaff;
+  background: rgb(180, 230, 255);
+  background: rgba(180, 230, 255, 0.8);
+  color: #00aaff;
+}
+
+#top-center .overlay {
+  z-index: 85;
+  border-color: #b5651d;
+  background: rgb(243, 211, 182);
+  background: rgba(243, 211, 182, 0.8);
+  color: #b5651d;
+}
+
+.overlay p {
+  font-size: 2em;
+  font-weight: bold;
+  color: inherit;
 }
 
 #action-buttons {
@@ -408,13 +447,13 @@ p {
   left: 100%;
 }
 
-/* space before*/
+/* space before */
 .sb:before {
   content: ' ';
   white-space: pre;
 }
 
-/* space after*/
+/* space after */
 .sa:after {
   content: ' ';
   white-space: pre;
@@ -449,10 +488,10 @@ p {
   height: 20px;
   align-items: center;
   border-radius: 10px;
-  background-color: #e6c585;
+  background: #e6c585;
   cursor: pointer;
   overflow: hidden;
-  transition: background-color 0.5s;
+  transition: background 0.5s;
 }
 
 .tgl-slider {
@@ -476,13 +515,13 @@ p {
 .tgl-handle {
   width: 16px;
   height: 16px;
-  background-color: #c27b0a;
+  background: #c27b0a;
   border-radius: 50%;
   box-shadow: 0 1px 1px #704706;
 }
 
 .tgl-holder.tgl-on {
-  background-color: #4729a3;
+  background: #4729a3;
 }
 
 .tgl-slider.tgl-on {
@@ -522,19 +561,19 @@ p {
 /* Dynamic Classes */
 
 .movable {
-  background-color: rgb(0, 191, 255);
-  background-color: rgba(0, 191, 255, 0.7);
+  background: rgb(0, 191, 255);
+  background: rgba(0, 191, 255, 0.7);
   cursor: pointer;
 }
 
 .attackable {
-  background-color: rgb(255, 36, 0);
-  background-color: rgba(255, 36, 0, 0.5);
+  background: rgb(255, 36, 0);
+  background: rgba(255, 36, 0, 0.5);
 }
 
 .targeted {
-  background-color: rgb(255, 36, 0);
-  background-color: rgba(255, 36, 0, 1);
+  background: rgb(255, 36, 0);
+  background: rgba(255, 36, 0, 1);
 }
 
 .healthy {
