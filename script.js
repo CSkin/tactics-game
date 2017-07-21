@@ -878,7 +878,7 @@ var Modifier = {
 
 var UnitInfo = {
   template: `
-    <div class='ui unit-info'>
+    <div class='ui' id='unit-info'>
       <p class='heading'><img class='icon' :src='imgSrc'>{{ unit.name }}</p>
       <p>Condition: <b :class='unit.condition.toLowerCase()'>{{ unit.condition }}</b></p>
       <div class='flex'>
@@ -895,9 +895,6 @@ var UnitInfo = {
             <b>{{ unit.equipped.name }}</b>
           </p>
         </div>
-      </div>
-      <div class='overlay'>
-        <p>Equip</p>
       </div>
     </div>
   `,
@@ -1762,11 +1759,13 @@ var Game = new Vue ({
         var itemSrc = item.src.match(/sprites\/.*\.png/)[0],
             cursorOffset = Game.findCursorOffset(itemSrc),
             helperSrc = itemSrc.replace(/\d/, ''),
+            helperImg = $( '<img>', { src: helperSrc } ),
+            helperDiv = $( '<div id="helper"></div>' ),
             itemClass = '.' + item.classList[3];
         $( '#' + item.id ).draggable({
           cursor: '-webkit-grabbing',
           cursorAt: cursorOffset,
-          helper: function(){ return $( '<img>', { src: helperSrc } ) },
+          helper: function(){ return helperDiv.append(helperImg) },
           revert: 'invalid',
           zIndex: 95,
           start: function (event, ui) {
@@ -1799,6 +1798,9 @@ var Game = new Vue ({
       $( '#unit-info' ).droppable({
         accept: '.weapon, .usable',
         tolerance: 'pointer',
+        over: function (event, ui) {
+          $( '.ui-draggable-dragging' ).prepend($( '<span>', { html: 'Equip' } ));
+        },
         drop: function (event, ui) {
           var y = Game.active.unit.posY, x = Game.active.unit.posX,
               itemType = ui.draggable[0].classList[2],

@@ -199,44 +199,6 @@ p {
   color: #aa00ff;
 }
 
-.unit-info {
-  position: relative;
-}
-
-.overlay {
-  position: absolute;
-  display: flex;
-  box-sizing: border-box;
-  width: 242px;
-  height: 159px;
-  border: 4px dashed;
-  align-items: center;
-  justify-content: center;
-}
-
-.unit-info .overlay {
-  top: -10px;
-  left: -7px;
-  border-color: #00aaff;
-  background: rgb(180, 230, 255);
-  background: rgba(180, 230, 255, 0.8);
-  color: #00aaff;
-}
-
-#top-center .overlay {
-  z-index: 85;
-  border-color: #b5651d;
-  background: rgb(243, 211, 182);
-  background: rgba(243, 211, 182, 0.8);
-  color: #b5651d;
-}
-
-.overlay p {
-  font-size: 2em;
-  font-weight: bold;
-  color: inherit;
-}
-
 #action-buttons {
   display: flex;
   width: 228px;
@@ -574,6 +536,25 @@ p {
 .targeted {
   background: rgb(255, 36, 0);
   background: rgba(255, 36, 0, 1);
+}
+
+#helper {
+  width: fit-content;
+  white-space: nowrap;
+}
+
+#helper span {
+  font-size: 24px;
+  font-weight: bold;
+  color: #800000;
+  vertical-align: middle;
+  padding-left: 25px;
+  margin-right: 5px;
+}
+
+#helper img {
+  display: inline-block;
+  vertical-align: middle;
 }
 
 .healthy {
