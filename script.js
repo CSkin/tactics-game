@@ -839,7 +839,7 @@ var GroundPanel = {
 
 var TerrainInfo = {
   template: `
-    <div class='ui'>
+    <div class='ui terrain-info'>
       <p class='heading'><img class='icon' :src='imgSrc'>{{ terrain.name }}</p>
       <div class='flex'>
         <div class='columns'>
@@ -878,7 +878,7 @@ var Modifier = {
 
 var UnitInfo = {
   template: `
-    <div class='ui' id='unit-info'>
+    <div class='ui unit-info'>
       <p class='heading'><img class='icon' :src='imgSrc'>{{ unit.name }}</p>
       <p>Condition: <b :class='unit.condition.toLowerCase()'>{{ unit.condition }}</b></p>
       <div class='flex'>
@@ -1795,13 +1795,39 @@ var Game = new Vue ({
       } else { return { top: 16, left: 16 } }
     },
     makePanelsDroppable: function () {
-      $( '#unit-info' ).droppable({
+      var dragover = function (html, style, id) {
+            $( '#helper' ).prepend($( '<span>', { html: html, style: style } ));
+            $( '#helper' ).css( 'cursor', 'none' );
+            var cursorAt = $( '#' + id ).draggable( 'option', 'cursorAt' ),
+                helperAt = {
+                  top: Math.round(Number($( '#helper' ).css( 'height' ).slice(0, -2))) / 2,
+                  left: Math.round(Number($( '#helper' ).css( 'width' ).slice(0, -2))) / 2
+                },
+                y = cursorAt.top - helperAt.top,
+                x = cursorAt.left - helperAt.left;
+            $( '#helper *' ).css({ 'top': y + 'px', 'left': x + 'px' });
+          },
+          dragout = function () {
+            $( '#helper span' ).remove();
+            $( '#helper' ).css( 'cursor', '' );
+            $( '#helper *' ).css({ 'top': '', 'left': '' });
+          }
+      $( '.unit-info' ).droppable({
         accept: '.weapon, .usable',
+        classes: {
+          'ui-droppable-active': 'drop-zone',
+          'ui-droppable-hover': 'drop-hover'
+        },
         tolerance: 'pointer',
         over: function (event, ui) {
-          $( '.ui-draggable-dragging' ).prepend($( '<span>', { html: 'Equip' } ));
+          var itemType = ui.draggable[0].classList[2], html, style;
+          if (itemType === 'weapon') { html = 'Equip'; style = 'color:#800000; background-color:#dfefff' }
+          else if (itemType === 'accessory') { html = 'Use'; style = 'color:#005900' }
+          dragover(html, style, ui.draggable[0].id);
         },
+        out: function (event, ui) { dragout() },
         drop: function (event, ui) {
+          dragout();
           var y = Game.active.unit.posY, x = Game.active.unit.posX,
               itemType = ui.draggable[0].classList[2],
               itemId = ui.draggable[0].id.slice(0, -2);
@@ -1819,7 +1845,10 @@ var Game = new Vue ({
       });
       $( '#top-center' ).droppable({
         tolerance: 'pointer',
+        over: function (event, ui) { dragover('Drop', 'color:#654321', ui.draggable[0].id) },
+        out: function (event, ui) { dragout() },
         drop: function (event, ui) {
+          dragout();
           var y = Game.active.unit.posY, x = Game.active.unit.posX,
               itemList = Game.map[y][x].unit.items,
               itemId = ui.draggable[0].id.slice(0, -2),

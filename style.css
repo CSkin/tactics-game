@@ -199,6 +199,26 @@ p {
   color: #aa00ff;
 }
 
+.terrain-info {
+  margin-bottom: 16px;
+}
+
+.unit-info {
+  padding: 2px 4px 2px 4px;
+  border: 2px dashed rgb(0,0,0);
+  border: 2px dashed rgba(0,0,0,0);
+  border-radius: 10px;
+  margin: 6px 4px 21px 4px;
+}
+
+.drop-zone {
+  border-color: #bfbfbf;
+}
+
+.drop-hover {
+  border-color: #808080;
+}
+
 #action-buttons {
   display: flex;
   width: 228px;
@@ -303,6 +323,28 @@ p {
   border-top: 7px solid transparent;
   border-right: 12px solid #e8dac6;
   border-bottom: 7px solid transparent;
+}
+
+#helper {
+  position: relative;
+  width: fit-content;
+  height: fit-content;
+  white-space: nowrap;
+}
+
+#helper span {
+  position: relative;
+  font-size: 24px;
+  font-weight: bold;
+  vertical-align: middle;
+  border-radius: 5px;
+  margin-right: 5px;
+}
+
+#helper img {
+  position: relative;
+  display: inline-block;
+  vertical-align: middle;
 }
 
 #event-log {
@@ -538,25 +580,6 @@ p {
   background: rgba(255, 36, 0, 1);
 }
 
-#helper {
-  width: fit-content;
-  white-space: nowrap;
-}
-
-#helper span {
-  font-size: 24px;
-  font-weight: bold;
-  color: #800000;
-  vertical-align: middle;
-  padding-left: 25px;
-  margin-right: 5px;
-}
-
-#helper img {
-  display: inline-block;
-  vertical-align: middle;
-}
-
 .healthy {
   color: #259925;
 }
@@ -635,6 +658,10 @@ p {
 
 .log {
   background-image: url('sprites/log.png');
+}
+
+.ui-draggable-dragging {
+  cursor: -webkit-grabbing;
 }
 
 /* Transition Classes */
