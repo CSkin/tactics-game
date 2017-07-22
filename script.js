@@ -1216,7 +1216,12 @@ var EventAction = {
       }
     },
     resultClass: function () {
-      return { debuff: this.event.eventType === 'condition' }
+      var type = this.event.eventType,
+          result = this.event.result;
+      return {
+        red: type === 'combat' && result === 'Critical hit!',
+        debuff: type === 'condition'
+      }
     }
   }
 }
@@ -1820,10 +1825,11 @@ var Game = new Vue ({
         },
         tolerance: 'pointer',
         over: function (event, ui) {
-          var itemType = ui.draggable[0].classList[2], html, style;
-          if (itemType === 'weapon') { html = 'Equip'; style = 'color:#800000; background-color:#dfefff' }
-          else if (itemType === 'accessory') { html = 'Use'; style = 'color:#005900' }
-          dragover(html, style, ui.draggable[0].id);
+          var itemType = ui.draggable[0].classList[2],
+              html, style = 'background-color:#dfefff;';
+          if (itemType === 'weapon') { html = 'Equip'; style += ' color:#800000' }
+          else if (itemType === 'accessory') { html = 'Use'; style += ' color:#005900' }
+          Vue.nextTick(function(){ dragover(html, style, ui.draggable[0].id) });
         },
         out: function (event, ui) { dragout() },
         drop: function (event, ui) {

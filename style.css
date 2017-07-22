@@ -199,6 +199,10 @@ p {
   color: #aa00ff;
 }
 
+.red {
+  color: #e60000;
+}
+
 .terrain-info {
   margin-bottom: 16px;
 }
