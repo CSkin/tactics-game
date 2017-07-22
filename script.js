@@ -9,10 +9,10 @@ var mapPlan = [
   ' - - - - - - - - - - - - - - - - ',
   ' - - - - - - - - - - - - - - - - ',
   ' - - - - - - - - - - - - - - - - ',
-  ' - - - - b b a a a a a a - - - - ',
+  ' - - - - S b a a a a a a - - - - ',
   ' - - - - b s s p p s s a - - - - ',
   ' - - - - a s s p p s s b - - - - ',
-  ' - - - - a a a a a a b b - - - - ',
+  ' - - - - a a a a a a b S - - - - ',
   ' - - - - - - - - - - - - - - - - ',
   ' - - - - - - - - - - - - - - - - ',
   ' - - - - - - - - - - - - - - - - ',
@@ -41,11 +41,12 @@ var topoPlan = [
 ];
 
 class Terrain {
-  constructor(type, cost, cover, height, shape) {
+  constructor(type, cost, cover, effects, height, shape) {
     this.type = type;
     this.name = capitalize(type);
     this.cost = cost;
     this.cover = cover;
+    this.effects = effects;
     if (height) {
       this.height = height;
       this.shape = shape;
@@ -60,49 +61,55 @@ class Terrain {
 
 class Barren extends Terrain {
   constructor() {
-    super('barren', 99, 0);
+    super('barren', 99, 0, null);
   }
 }
 
 class Ground extends Terrain {
   constructor() {
-    super('ground', 1, 0);
+    super('ground', 1, 0, null);
   }
 }
 
 class Sand extends Terrain {
   constructor() {
-    super('sand', 2, 0);
+    super('sand', 2, 0, null);
   }
 }
 
 class Grass extends Terrain {
   constructor() {
-    super('grass', 1, 0);
+    super('grass', 1, 0, null);
   }
 }
 
 class Brush extends Terrain {
   constructor() {
-    super('brush', 2, 1, 1, 'circle');
+    super('brush', 2, 1, null, 1, 'circle');
   }
 }
 
 class Boulder extends Terrain {
   constructor() {
-    super('boulder', 99, 0, 2, 'circle');
+    super('boulder', 99, 0, null, 2, 'circle');
   }
 }
 
 class Log extends Terrain {
   constructor() {
-    super('log', 1, 3);
+    super('log', 1, 2, null);
   }
 }
 
 class Plateau extends Terrain {
   constructor() {
-    super('plateau', 1, 0);
+    super('plateau', 1, 0, null);
+  }
+}
+
+class Silversword extends Terrain {
+  constructor() {
+    super('silversword', 2, 0, { restoreHealth: 1 }, 1, 'circle');
   }
 }
 
@@ -509,6 +516,7 @@ function loadMap (mapPlan) {
         case 'B': row.push(new Space(y, x, new Boulder())); break;
         case 'l': row.push(new Space(y, x, new Log())); break;
         case 'p': row.push(new Space(y, x, new Plateau())); break;
+        case 'S': row.push(new Space(y, x, new Silversword())); break;
       }
     }
     mapData.push(row);
@@ -1980,9 +1988,19 @@ var Game = new Vue ({
       }
     },
     beginTurn: function () {
+      var space, effects, unit, oldHp;
       if (this.units.length) {
         for (u of this.units) {
-          this.map[u.posY][u.posX].unit.resetActionPoints();
+          space = this.map[u.posY][u.posX];
+          effects = space.terrain.effects;
+          unit = space.unit; oldHp = unit.hp;
+          if (effects) {
+            for (var effect in effects) {
+              unit[effect](effects[effect]);
+            }
+          }
+          if (unit.hp !== oldHp) { Game.events.push(new ConditionEvent(unit, Game.faction)) }
+          unit.resetActionPoints();
         }
         this.banner = true;
         this.action = 'waiting';
