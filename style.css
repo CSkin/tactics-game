@@ -385,7 +385,7 @@ p {
 }
 
 .event .icon {
-  bottom: 0;
+  bottom: 1px;
   left: 1px;
   margin 0;
 }

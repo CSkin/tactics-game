@@ -1624,8 +1624,8 @@ var Game = new Vue ({
           hAng1, hAng2, vAng;
       if      (vDist > 0) { hDist -= 0.5; d -= 1 }
       else if (vDist < 0) { hDist += 0.5 }
-      hAng1 = hAng - hWidth;
-      hAng2 = hAng + hWidth;
+      hAng1 = hAng - hWidth; if (hAng1 < -Math.PI) { hAng1 += Math.PI * 2 }
+      hAng2 = hAng + hWidth; if (hAng2 > Math.PI) { hAng2 -= Math.PI * 2 }
       vAng = Math.atan2(vDist, hDist);
       this.shadows.push(new Shadow(d, hAng1, hAng2, vAng));
     },
@@ -1633,7 +1633,7 @@ var Game = new Vue ({
       var from = this.active, to = this.map[y][x],
           yDist = y - from.posY, xDist = x - from.posX,
           hDist = Math.sqrt(yDist * yDist + xDist * xDist),
-          vDist = to.posZ - from.posZ,
+          vDist = to.terrain.elevation / 2 - from.terrain.elevation / 2,
           hAng = Math.atan2(yDist, xDist),
           vAng = Math.atan2(vDist, hDist),
           shadows = this.shadows.filter( function (s) {
