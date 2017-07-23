@@ -907,6 +907,18 @@ var TerrainInfo = {
   }
 };
 
+var GroundInfo = {
+  template: `
+    <div class='ui ground-info'>
+      <p class='heading'><img class='icon' src='sprites/equipment-icon.png'>Items</p>
+      <p v-for='item in items' :key='item.id'>
+        <img class='icon' :src='item.icon'>{{ item.name }}
+      </p>
+    </div>
+  `,
+  props: ['items']
+};
+
 var Modifier = {
   template: `
     <transition name='fade'>
@@ -1166,6 +1178,7 @@ var SidePanel = {
       <transition name='fade'>
         <div v-if='space && space.terrain'>
           <terrain-info :terrain='space.terrain'></terrain-info>
+          <ground-info v-if='space.items && !space.unit' :items='space.items'></ground-info>
         </div>
       </transition>
       <transition :name='dynamicTransition'>
@@ -1193,6 +1206,7 @@ var SidePanel = {
   },
   components: {
     'terrain-info': TerrainInfo,
+    'ground-info': GroundInfo,
     'unit-info': UnitInfo,
     'combat-info': CombatInfo,
     'unit-actions': UnitActions,
@@ -1800,9 +1814,11 @@ var Game = new Vue ({
       });
     },
     sayGoodbye: function (y, x) {
-      var space = this.map[y][x];
+      var space = this.map[y][x], item;
       while (space.unit.items.length) {
-        space.items.push(space.unit.items.shift());
+        item = space.unit.items.shift();
+        space.items.push(item);
+        this.events.push(new ItemEvent(space.unit, 'dropped', item, Game.faction));
       }
       space.items.sort(this.compareItems);
       this.map[y][x].unit = null;
