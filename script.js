@@ -617,16 +617,46 @@ function capitalize (string) {
 
 $( document ).ready( function () {
 
+var GroundIcon = {
+  template: `
+    <transition name='fade'>
+      <img class='space terrain' :style='imgStyle' :src='imgSrc'>
+    </transition>
+  `,
+  props: ['itemType', 'transform'],
+  computed: {
+    imgStyle: function () {
+      return { '-webkit-transform': this.transform }
+    },
+    imgSrc: function () {
+      return 'sprites/ground-' + this.itemType + '.png';
+    }
+  }
+};
+
 var Terrain = {
   // To use terrain sprites instead of map image, add :class='terrain.type' to parent div.
   template: `
     <div class='space terrain'>
+      <ground-icon v-if="itemsOfType(weapon).length" :itemType='weapon' :transform='transform'></ground-icon>
+      <ground-icon v-if="itemsOfType(clothing).length" :itemType='clothing' :transform='transform'></ground-icon>
+      <ground-icon v-if="itemsOfType(accessory).length" :itemType='accessory' :transform='transform'></ground-icon>
       <transition name='fade'>
-        <img v-show='imgShow' class='space terrain' :src='imgSrc'></img>
+        <img v-show='imgShow' class='space terrain' :src='imgSrc'>
       </transition>
     </div>
   `,
-  props: ['terrain', 'topoView'],
+  props: ['terrain', 'items', 'topoView'],
+  data: function () {
+    var scaleX = Math.sign(Math.random() - 0.5),
+        rotate = [0, 0.25, 0.5, 0.75][Math.floor(Math.random() * 4)];
+    return {
+      weapon: 'weapon',
+      clothing: 'clothing',
+      accessory: 'accessory',
+      transform: 'scaleX(' + scaleX + ') rotate(' + rotate + 'turn)'
+    };
+  },
   computed: {
     imgShow: function () {
       return this.terrain.type !== 'barren' && this.topoView;
@@ -634,6 +664,14 @@ var Terrain = {
     imgSrc: function () {
       return 'sprites/elevation' + this.terrain.elevation + '.png';
     }
+  },
+  methods: {
+    itemsOfType: function (type) {
+      return this.items.filter( i => i.itemType === type);
+    }
+  },
+  components: {
+    'ground-icon': GroundIcon
   }
 };
 
@@ -661,7 +699,7 @@ var Highlight = {
 var Unit = {
   template: `
     <transition :name='dynamicTransition' @after-enter='moveHandler'>
-      <img v-if='unit' :id='unit.id' class='space unit' :src='unit.sprite' :title='unit.name'></img>
+      <img v-if='unit' :id='unit.id' class='space unit' :src='unit.sprite' :title='unit.name'>
     </transition>
   `,
   props: ['unit'],
@@ -698,7 +736,7 @@ var Unit = {
 var Space = {
   template: `
     <div class='space' @click='clickHandler'>
-      <terrain :terrain='space.terrain' :topo-view='topoView'></terrain>
+      <terrain :terrain='space.terrain' :items='space.items' :topo-view='topoView'></terrain>
       <highlight :space='space'></highlight>
       <unit :unit='space.unit'></unit>
       <unit :unit='space.unit2'></unit>
