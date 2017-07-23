@@ -1750,7 +1750,7 @@ var Game = new Vue ({
         }
       }, 250);
       window.setTimeout(function(){
-        if (!counter && Game.combat.canCounter && defender.condition !== 'Defeated') {
+        if (!counter && Game.combat.canCounter && defender.hp > 0) {
           Game.attackUnit(true);
         } else {
           Game.endAttack();
@@ -1795,9 +1795,17 @@ var Game = new Vue ({
       this.map[y][x].unit.sustainDamage(damage);
       Vue.nextTick(function(){
         if (Game.map[y][x].unit.hp === 0) {
-          window.setTimeout(function(){ Game.map[y][x].unit = null }, 500)
+          window.setTimeout(function(){ Game.sayGoodbye(y, x) }, 500);
         }
       });
+    },
+    sayGoodbye: function (y, x) {
+      var space = this.map[y][x];
+      while (space.unit.items.length) {
+        space.items.push(space.unit.items.shift());
+      }
+      space.items.sort(this.compareItems);
+      this.map[y][x].unit = null;
     },
     endAttack: function () {
       var unit = this.active.unit;
