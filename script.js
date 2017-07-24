@@ -1178,7 +1178,7 @@ var SidePanel = {
       <transition name='fade'>
         <div v-if='space && space.terrain'>
           <terrain-info :terrain='space.terrain'></terrain-info>
-          <ground-info v-if='space.items && !space.unit' :items='space.items'></ground-info>
+          <ground-info v-if='space.items.length && !space.unit' :items='space.items'></ground-info>
         </div>
       </transition>
       <transition :name='dynamicTransition'>
