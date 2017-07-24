@@ -1318,7 +1318,8 @@ var EventLog = {
 var TopoControl = {
   template: `
     <div class='ui flex center'>
-      <span class='sa'>Elevation View:</span>
+      <img class='icon' src='sprites/elevation-icon.png'>
+      <span class='bold sa'>Elevation View</span>
       <div id='tgl-topoview' class='tgl-switch' :title='title' @click='toggleTopoView'>
         <div class='tgl-holder' :class='tglOn' :title='title'>
           <div class='tgl-slider' :class='tglOn' :title='title'>
@@ -1351,6 +1352,7 @@ var TopoControl = {
 var StatusPanel = {
   template: `
     <div class='ui'>
+      <p class='heading'><img class='icon' src='sprites/status-icon.png'>Status</p>
       <p>Turn: <b>{{ turn }}</b></p>
       <p>Faction: <b>{{ faction }}</b></p>
       <p>Units: <b>{{ units }}</b></p>
