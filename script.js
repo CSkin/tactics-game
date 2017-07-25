@@ -1472,7 +1472,10 @@ var Game = new Vue ({
   },
   watch: {
     events: function () {
-      Vue.nextTick(function(){ Game.scrollEventLog() });
+      Vue.nextTick(function(){
+        Game.scrollEventLog();
+        Game.moveTriangle(true);
+      });
     }
   },
   methods: {
@@ -2178,6 +2181,7 @@ var Game = new Vue ({
           this.events.push(new DialogEvent(next.unit, next.message, alignLeft));
         } else {
           this.dialog = null;
+          this.moveTriangle();
           this.beginTurn();
         }
       }
@@ -2215,6 +2219,17 @@ var Game = new Vue ({
     },
     removeFadeClasses: function ( selector ) {
       $( selector ).removeClass( 'fade1 fade2 fade3 fade4 fade5 fade6 fade7 fade8 fade9' );
+    },
+    moveTriangle: function (replace) {
+      var triangle, events = this.events;
+      if ($( '#triangle' ).length) {
+        triangle = $( '#triangle' ).detach();
+      } else {
+        triangle = $( '<img>', { id: 'triangle', src: 'sprites/advance-dialog.gif' } );
+      }
+      if (events[events.length - 1].eventType === 'dialog' && replace) {
+        $( '.event' ).filter( ':last' ).find( '.message' ).append( triangle );
+      }
     },
     scrollHandler: function () {
       if (!this.scrolled) {

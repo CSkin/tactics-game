@@ -359,16 +359,20 @@ p {
   margin: 18px 10px;
 }
 
-.event.dialog:first-of-type {
+.event.dialog:first-child {
   margin-top: 0;
   padding-top: 18px;
 }
 
-.event.dialog:last-of-type {
+.event.dialog:nth-child(odd) {
+  margin-bottom: 19px;
+}
+
+.event.dialog:last-child {
   min-height: 211px;
 }
 
-.event.action:last-of-type {
+.event.action:last-child {
   min-height: 242px;
 }
 
@@ -453,6 +457,13 @@ p {
 
 .align-right .message:after {
   left: 100%;
+}
+
+#triangle {
+  position: relative;
+  top: 1px;
+  display: inline-block;
+  margin-left: 5px;
 }
 
 /* space before */
