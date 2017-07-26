@@ -620,29 +620,29 @@ $( document ).ready( function () {
 var GroundIcon = {
   template: `
     <transition name='fade'>
-      <img class='space terrain' :style='imgStyle' :src='imgSrc'>
+      <img class='space terrain' :style='iconStyle' :src='iconSrc'>
     </transition>
   `,
   props: ['itemType', 'transform'],
   computed: {
-    imgStyle: function () {
+    iconStyle: function () {
       return { '-webkit-transform': this.transform }
     },
-    imgSrc: function () {
+    iconSrc: function () {
       return 'sprites/ground-' + this.itemType + '.png';
     }
   }
 };
 
 var Terrain = {
-  // To use terrain sprites instead of map image, add :class='terrain.type' to parent div.
+  // To use terrain sprites instead of map image, add :style='terrainStyle' to parent div.
   template: `
     <div class='space terrain'>
       <ground-icon v-if="itemsOfType(weapon).length" :itemType='weapon' :transform='transform'></ground-icon>
       <ground-icon v-if="itemsOfType(clothing).length" :itemType='clothing' :transform='transform'></ground-icon>
       <ground-icon v-if="itemsOfType(accessory).length" :itemType='accessory' :transform='transform'></ground-icon>
       <transition name='fade'>
-        <img v-show='imgShow' class='space terrain' :src='imgSrc'>
+        <img v-show='elevationShow' class='space terrain' :src='elevationSrc'>
       </transition>
     </div>
   `,
@@ -658,10 +658,13 @@ var Terrain = {
     };
   },
   computed: {
-    imgShow: function () {
+    terrainStyle: function () {
+      return { backgroundImage: "url('sprites/" + this.terrain.type + ".png')" }
+    },
+    elevationShow: function () {
       return this.terrain.type !== 'barren' && this.topoView;
     },
-    imgSrc: function () {
+    elevationSrc: function () {
       return 'sprites/elevation' + this.terrain.elevation + '.png';
     }
   },
@@ -886,7 +889,7 @@ var GroundPanel = {
 var TerrainInfo = {
   template: `
     <div class='ui terrain-info'>
-      <p class='heading'><img class='icon' :src='imgSrc'>{{ terrain.name }}</p>
+      <p class='heading'><img class='icon' :src='iconSrc'>{{ terrain.name }}</p>
       <div class='flex'>
         <div class='columns'>
           <p v-if='terrain.cost < 99'>Move cost: <b>{{ terrain.cost }}</b></p><p v-else>Impassable</p>
@@ -901,7 +904,7 @@ var TerrainInfo = {
   `,
   props: ['terrain'],
   computed: {
-    imgSrc: function () {
+    iconSrc: function () {
       return 'sprites/' + this.terrain.type + '.png';
     }
   }
@@ -937,7 +940,7 @@ var Modifier = {
 var UnitInfo = {
   template: `
     <div class='ui unit-info'>
-      <p class='heading'><img class='icon' :src='imgSrc'>{{ unit.name }}</p>
+      <p class='heading'><img class='icon' :src='iconSrc'>{{ unit.name }}</p>
       <p>Condition: <b :class='unit.condition.toLowerCase()'>{{ unit.condition }}</b></p>
       <div class='flex'>
         <div class='col60'>
@@ -958,7 +961,7 @@ var UnitInfo = {
   `,
   props: ['unit'],
   computed: {
-    imgSrc: function () {
+    iconSrc: function () {
       return 'sprites/' + this.unit.faction.toLowerCase() + '-icon.png';
     }
   },
@@ -967,57 +970,47 @@ var UnitInfo = {
   }
 };
 
+var ActionButton = {
+  template: `
+    <div class='btn-holder' :style='holderStyle'>
+      <img v-if='enabled' :id='buttonId' class='button' :src='buttonSrc' :title='title' @click='onclick'>
+    </div>
+  `,
+  props: ['type', 'title', 'onclick', 'enabled'],
+  computed: {
+    holderStyle: function () {
+      return { backgroundImage: "url('sprites/btn-" + this.type + "-disabled.png')" }
+    },
+    buttonId: function () {
+      return 'btn-' + this.type;
+    },
+    buttonSrc: function () {
+      return 'sprites/btn-' + this.type + '.png';
+    }
+  }
+};
+
 var UnitActions = {
   template: `
     <div class='ui'>
       <p class='heading'><img class='icon' src='sprites/actions-icon.png'>Actions</p>
       <div id='action-buttons'>
-        <div id='move-holder' class='btn-holder'>
-          <img v-if="action !== 'moving' && unit.movesLeft > 0" id='btn-move' class='button' src='sprites/btn-move.png' title='Move (M)' @click='beginMove'>
-        </div>
-        <div id='attack-holder' class='btn-holder'>
-          <img v-if="action !== 'attacking' && unit.attacksLeft > 0" id='btn-attack' class='button' src='sprites/btn-attack.png' title='Attack (A)' @click='beginAttack'>
-        </div>
-        <div id='equip-holder' class='btn-holder'>
-          <img v-if="action !== 'equipping'" id='btn-equip' class='button' src='sprites/btn-equip.png' title='Equip (E)' @click='beginEquip'>
-        </div>
-        <div id='cancel-holder' class='btn-holder'>
-          <img v-if='action' id='btn-cancel' class='button' src='sprites/btn-cancel.png' title='Cancel (C)' @click='cancelAction'>
-        </div>
+        <action-button type='move' title='Move (M)' :onclick='beginMove' :enabled="action !== 'moving' && unit.movesLeft > 0"></action-button>
+        <action-button type='attack' title='Attack (A)' :onclick='beginAttack' :enabled="action !== 'attacking' && unit.attacksLeft > 0"></action-button>
+        <action-button type='equip' title='Equip (E)' :onclick='beginEquip' :enabled="action !== 'equipping'"></action-button>
+        <action-button type='cancel' title='Cancel (C)' :onclick='cancelAction' :enabled='action'></action-button>
       </div>
     </div>
   `,
   props: ['action', 'unit'],
   methods: {
-    beginMove: function () {
-      if (this.action) { this.cancelAction() }
-      var unit = Game.active.unit;
-      Game.target = null;
-      Game.action = 'moving';
-      Game.showMoveRange(unit.posY, unit.posX, unit.movesLeft, '');
-      Game.preventCollision();
-    },
-    beginAttack: function () {
-      if (this.action) { this.cancelAction() }
-      Game.target = null;
-      Game.action = 'attacking';
-      Game.showAttackRange();
-    },
-    beginEquip: function () {
-      if (this.action) { this.cancelAction() }
-      Game.action = 'equipping';
-      Vue.nextTick(function(){
-        Game.makeEquipItemsDraggable('.equip');
-        Game.makeGroundItemsDraggable('.ground');
-      });
-    },
-    cancelAction: function () {
-      switch (this.action) {
-        case 'moving': Game.cancelMove(); break;
-        case 'attacking': Game.cancelAttack(); break;
-        case 'equipping': Game.cancelEquip(); break;
-      }
-    }
+    beginMove: function () { Game.beginMove() },
+    beginAttack: function () { Game.beginAttack() },
+    beginEquip: function () { Game.beginEquip() },
+    cancelAction: function () { Game.cancelAction() }
+  },
+  components: {
+    'action-button': ActionButton
   }
 };
 
@@ -1086,7 +1079,7 @@ var CombatInfo = {
 var ItemSlot = {
   template: `
     <div :id='type + n' class='item-slot' :style='slotBackground' @click='showInfo($event)'>
-      <img v-if='item' :id="item.id + '-' + n" class='item equip' :class='[type, item.id, { usable: item.usable }]' :src='imgSrc' :title='item.name'>
+      <img v-if='item' :id="item.id + '-' + n" class='item equip' :class='[type, item.id, { usable: item.usable }]' :src='itemSrc' :title='item.name'>
       <transition name='fade'>
         <div v-if="item && itemtip === type + n" id='item-tip'>
           <item-info :type='type' :item='item'></item-info>
@@ -1097,10 +1090,9 @@ var ItemSlot = {
   props: ['type', 'n', 'item', 'itemtip'],
   computed: {
     slotBackground: function () {
-      var imgUrl = "url('sprites/" + this.type + "-slot.png')";
-      return { backgroundImage: imgUrl }
+      return { backgroundImage: "url('sprites/" + this.type + "-slot.png')" }
     },
-    imgSrc: function () {
+    itemSrc: function () {
       if (this.item) {
         return this.item.sprites[this.item.slots.indexOf(this.n)];
       }
@@ -1479,6 +1471,35 @@ var Game = new Vue ({
     }
   },
   methods: {
+    beginMove: function () {
+      if (this.action) { this.cancelAction() }
+      var unit = this.active.unit;
+      this.target = null;
+      this.action = 'moving';
+      this.showMoveRange(unit.posY, unit.posX, unit.movesLeft, '');
+      this.preventCollision();
+    },
+    beginAttack: function () {
+      if (this.action) { this.cancelAction() }
+      this.target = null;
+      this.action = 'attacking';
+      this.showAttackRange();
+    },
+    beginEquip: function () {
+      if (this.action) { this.cancelAction() }
+      this.action = 'equipping';
+      Vue.nextTick(function(){
+        Game.makeEquipItemsDraggable('.equip');
+        Game.makeGroundItemsDraggable('.ground');
+      });
+    },
+    cancelAction: function () {
+      switch (this.action) {
+        case 'moving': this.cancelMove(); break;
+        case 'attacking': this.cancelAttack(); break;
+        case 'equipping': this.cancelEquip(); break;
+      }
+    },
     showMoveRange: function (y, x, moves, path) {
       var origin = this.map[y][x],
           east = this.map[y][Math.min(x + 1, 15)], eastMoves = moves - east.terrain.cost, eastPath = path + 'e',

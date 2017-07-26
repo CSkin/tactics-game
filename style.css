@@ -225,33 +225,13 @@ p {
 
 #action-buttons {
   display: flex;
-  width: 228px;
+  width: 100%;
 }
 
 .btn-holder {
   width: 40px;
   height: 40px;
   margin-right: 5px;
-}
-
-#move-holder {
-  background-image: url('sprites/btn-move-disabled.png');
-}
-
-#attack-holder {
-  background-image: url('sprites/btn-attack-disabled.png');
-}
-
-#equip-holder {
-  background-image: url('sprites/btn-equip-disabled.png');
-}
-
-#cancel-holder {
-  background-image: url('sprites/btn-cancel-disabled.png');
-}
-
-#confatk-holder {
-  background-image: url('sprites/btn-confatk-disabled.png');
 }
 
 #end-holder {
@@ -645,34 +625,6 @@ p {
 
 .fade9 {
   opacity: 0;
-}
-
-.barren {
-  background-image: url('sprites/barren.png');
-}
-
-.ground {
-  background-image: url('sprites/ground.png');
-}
-
-.sand {
-  background-image: url('sprites/sand.png');
-}
-
-.grass {
-  background-image: url('sprites/grass.png');
-}
-
-.brush {
-  background-image: url('sprites/brush.png');
-}
-
-.boulder {
-  background-image: url('sprites/boulder.png');
-}
-
-.log {
-  background-image: url('sprites/log.png');
 }
 
 .ui-draggable-dragging {
