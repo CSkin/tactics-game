@@ -995,10 +995,17 @@ var UnitActions = {
     <div class='ui'>
       <p class='heading'><img class='icon' src='sprites/actions-icon.png'>Actions</p>
       <div id='action-buttons'>
-        <action-button type='move' title='Move (M)' :onclick='beginMove' :enabled="action !== 'moving' && unit.movesLeft > 0"></action-button>
-        <action-button type='attack' title='Attack (A)' :onclick='beginAttack' :enabled="action !== 'attacking' && unit.attacksLeft > 0"></action-button>
-        <action-button type='equip' title='Equip (E)' :onclick='beginEquip' :enabled="action !== 'equipping'"></action-button>
-        <action-button type='cancel' title='Cancel (C)' :onclick='cancelAction' :enabled='action'></action-button>
+        <template v-if="unit.control === 'player'">
+          <action-button type='move' title='Move (M)' :onclick='beginMove' :enabled="action !== 'moving' && unit.movesLeft > 0"></action-button>
+          <action-button type='attack' title='Attack (A)' :onclick='beginAttack' :enabled="action !== 'attacking' && unit.attacksLeft > 0"></action-button>
+          <action-button type='equip' title='Equip (E)' :onclick='beginEquip' :enabled="action !== 'equipping'"></action-button>
+          <action-button type='cancel' title='Cancel (C)' :onclick='cancelAction' :enabled='action'></action-button>
+        </template>
+        <template v-else>
+          <action-button type='checkrange' title='Check Range (M or A)' :onclick='checkRange' :enabled="action !== 'checking'"></action-button>
+          <action-button type='checkequip' title='Check Equipment (E)' :onclick='checkEquip' :enabled="action !== 'equipping'"></action-button>
+          <action-button type='cancel' title='Cancel (C)' :onclick='cancelAction' :enabled='action'></action-button>
+        </template>
       </div>
     </div>
   `,
@@ -1007,6 +1014,8 @@ var UnitActions = {
     beginMove: function () { Game.beginMove() },
     beginAttack: function () { Game.beginAttack() },
     beginEquip: function () { Game.beginEquip() },
+    checkRange: function () { Game.checkRange() },
+    checkEquip: function () { Game.checkEquip() },
     cancelAction: function () { Game.cancelAction() }
   },
   components: {
@@ -1179,7 +1188,7 @@ var SidePanel = {
           <unit-items v-if="side === 'left' && action === 'equipping'" :unit='space.unit' :itemtip='itemtip'></unit-items>
           <template v-if="side === 'left'">
             <combat-info v-if="combat && action === 'attacking'" type='active' :combat='combat'></combat-info>
-            <unit-actions v-if="control === 'player' && space.unit.control === 'player'" :action='action' :unit='space.unit'></unit-actions>
+            <unit-actions v-if="control === 'player'" :action='action' :unit='space.unit'></unit-actions>
           </template>
           <template v-else-if="side === 'right' && action === 'attacking'">
             <combat-info v-if='combat' type='target' :combat='combat'></combat-info>
@@ -1404,7 +1413,9 @@ var TurnBanner = {
   }
 };
 
-// VUE INSTANCE STARTS HERE VUE INSTANCE STARTS HERE VUE INSTANCE STARTS HERE VUE INSTANCE STARTS HERE
+// ========================================================================
+//                         Vue Instance Starts Here
+// ========================================================================
 
 var Game = new Vue ({
   el:'#game',
@@ -1457,7 +1468,7 @@ var Game = new Vue ({
           get targetHit() { return Math.round(this.targetAtk / (this.targetAtk + this.activeDef) * 100) },
           get activeCrt() { return Game.active.unit.sklSum },
           get targetCrt() { return Game.target.unit.sklSum },
-          canCounter: this.checkRange(this.distance, this.target.unit.range)
+          canCounter: this.inRange(this.distance, this.target.unit.range)
         }
       }
     }
@@ -1493,11 +1504,20 @@ var Game = new Vue ({
         Game.makeGroundItemsDraggable('.ground');
       });
     },
+    checkRange: function () {
+      if (this.action) { this.cancelAction() }
+      this.action = 'checking';
+    },
+    checkEquip: function () {
+      if (this.action) { this.cancelAction() }
+      this.action = 'equipping';
+    },
     cancelAction: function () {
       switch (this.action) {
         case 'moving': this.cancelMove(); break;
         case 'attacking': this.cancelAttack(); break;
         case 'equipping': this.cancelEquip(); break;
+        case 'checking': this.cancelCheck(); break;
       }
     },
     showMoveRange: function (y, x, moves, path) {
@@ -1717,9 +1737,9 @@ var Game = new Vue ({
     },
     targetUnit: function (y, x) {
       var target = this.map[y][x];
-      if (!this.checkRange(target.distance, target.unit.range)) {
+      if (!this.inRange(target.distance, target.unit.range)) {
         for (var weapon of target.unit.weapons) {
-          if (Game.checkRange(target.distance, weapon.range)) {
+          if (this.inRange(target.distance, weapon.range)) {
             this.map[y][x].unit.equipWeapon(weapon.id);
             break;
           }
@@ -1758,7 +1778,7 @@ var Game = new Vue ({
       defense += Math.max(defSpace.terrain.elevation - atkSpace.terrain.elevation, 0);
       return defense;
     },
-    checkRange: function (distance, range) {
+    inRange: function (distance, range) {
       if (distance >= range[0] && distance <= range[1]) { return true }
     },
     attackUnit: function (counter) {
@@ -2075,6 +2095,9 @@ var Game = new Vue ({
         });
       }
     },
+    cancelCheck: function () {
+      this.action = null;
+    },
     beginTurn: function () {
       var space, effects, unit, oldHp;
       if (this.units.length) {
@@ -2273,7 +2296,7 @@ var Game = new Vue ({
 function keyHandler () {
   // console.log('keyCode: ' + event.keyCode); // Developer mode
   if (event.keyCode !== 86) {
-    if (Game.control === 'player' && Game.active && Game.active.unit && Game.active.unit.control === 'player') {
+    if (Game.control === 'player' && Game.active && Game.active.unit) {
       switch (event.keyCode) {
         case 13: // enter
           $( '#btn-confatk' ).trigger( 'click' );
@@ -2282,9 +2305,14 @@ function keyHandler () {
           $( '#btn-cancel' ).trigger( 'click' );
           break;
         case 65: // a
-          if (Game.action !== 'attacking') { $( '#btn-attack' ).trigger( 'click' ); }
-          else {
-            if (Game.target) { $( '#btn-confatk' ).trigger( 'click' ); }
+          if (Game.active.unit.control === 'player') {
+            if (Game.action !== 'attacking') { $( '#btn-attack' ).trigger( 'click' ); }
+            else {
+              if (Game.target) { $( '#btn-confatk' ).trigger( 'click' ); }
+              else { $( '#btn-cancel' ).trigger( 'click' ); }
+            }
+          } else {
+            if (Game.action !== 'checking') { $( '#btn-checkrange' ).trigger( 'click' ); }
             else { $( '#btn-cancel' ).trigger( 'click' ); }
           }
           break;
@@ -2292,16 +2320,24 @@ function keyHandler () {
           $( '#btn-cancel' ).trigger( 'click' );
           break;
         case 69: // e
-          if (Game.action !== 'equipping') { $( '#btn-equip' ).trigger( 'click' ); }
+          if (Game.action !== 'equipping') {
+            $( '#btn-equip' ).trigger( 'click' );
+            $( '#btn-checkequip' ).trigger( 'click' );
+          }
           else { $( '#btn-cancel' ).trigger( 'click' ); }
           break;
         case 77: // m
-          if (Game.action !== 'moving') { $( '#btn-move' ).trigger( 'click' ); }
-          else { $( '#btn-cancel' ).trigger( 'click' ); }
+          if (Game.active.unit.control === 'player') {
+            if (Game.action !== 'moving') { $( '#btn-move' ).trigger( 'click' ); }
+            else { $( '#btn-cancel' ).trigger( 'click' ); }
+          } else {
+            if (Game.action !== 'checking') { $( '#btn-checkrange' ).trigger( 'click' ); }
+            else { $( '#btn-cancel' ).trigger( 'click' ); }
+          }
           break;
       }
     }
-  } else { //v
+  } else { // v
     $( '#tgl-topoview' ).trigger( 'click' );
   }
 }
