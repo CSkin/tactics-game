@@ -1,43 +1,43 @@
 /* jshint loopfunc: true */
 
-var mapImage = { backgroundImage: "url('maps/level2.png')" };
+var mapImage = { backgroundImage: 'none' };
 
 var mapPlan = [
-  ' - - - - - - - - - - - - - - - - ',
-  ' - - - - - - - - - - - - - - - - ',
-  ' - - - - - - - - - - - - - - - - ',
-  ' - - - - - - - - - - - - - - - - ',
-  ' - - - - - - - - - - - - - - - - ',
-  ' - - - - - - - - - - - - - - - - ',
-  ' - - - - S b a a a a a a - - - - ',
-  ' - - - - b s s p p s s a - - - - ',
-  ' - - - - a s s p p s s b - - - - ',
-  ' - - - - a a a a a a b S - - - - ',
-  ' - - - - - - - - - - - - - - - - ',
-  ' - - - - - - - - - - - - - - - - ',
-  ' - - - - - - - - - - - - - - - - ',
-  ' - - - - - - - - - - - - - - - - ',
-  ' - - - - - - - - - - - - - - - - ',
-  ' - - - - - - - - - - - - - - - - ',
+  ' a a a a a a a a a a a a a a a a ',
+  ' a a a a a a a a a a a a a a a a ',
+  ' a a a a a a a a a a a a a a a a ',
+  ' a a a a a a a a a a a a a a a a ',
+  ' a a a a a a a a a a a a a a a a ',
+  ' a a a a a a a a a a a a a a a a ',
+  ' a a a a a a a a a a a a a a a a ',
+  ' a a a a a a a a a a a a a a a a ',
+  ' a a a a a a a a a a a a a a a a ',
+  ' a a a a a a a a a a a a a a a a ',
+  ' a a a a a a a a a a a a a a a a ',
+  ' a a a a a a a a a a a a a a a a ',
+  ' a a a a a a a a a a a a a a a a ',
+  ' a a a a a a a a a a a a a a a a ',
+  ' a a a a a a a a a a a a a a a a ',
+  ' a a a a a a a a a a a a a a a a ',
 ];
 
 var topoPlan = [
-  ' 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 ',
-  ' 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 ',
-  ' 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 ',
-  ' 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 ',
-  ' 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 ',
-  ' 1 1 1 1 1 1 1 2 2 1 1 1 1 1 1 1 ',
-  ' 1 1 1 1 1 1 2 3 3 2 1 1 1 1 1 1 ',
-  ' 1 1 1 1 1 0 0 4 4 0 0 1 1 1 1 1 ',
-  ' 1 1 1 1 1 0 0 4 4 0 0 1 1 1 1 1 ',
-  ' 1 1 1 1 1 1 2 3 3 2 1 1 1 1 1 1 ',
-  ' 1 1 1 1 1 1 1 2 2 1 1 1 1 1 1 1 ',
-  ' 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 ',
-  ' 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 ',
-  ' 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 ',
-  ' 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 ',
-  ' 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 ',
+  ' 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ',
+  ' 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ',
+  ' 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ',
+  ' 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ',
+  ' 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ',
+  ' 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ',
+  ' 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ',
+  ' 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ',
+  ' 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ',
+  ' 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ',
+  ' 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ',
+  ' 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ',
+  ' 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ',
+  ' 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ',
+  ' 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ',
+  ' 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ',
 ];
 
 class Terrain {
@@ -262,13 +262,7 @@ var stick1 = new Stick('stick1'),
     boots1 = new Boots('boots1'),
     salve1 = new Salve('salve1');
 
-var itemPlan = [
-  {
-    posY: 9,
-    posX: 4,
-    items: [stick1, stones1, slingshot1, shortbow1, tunic1, boots1, salve1]
-  }
-];
+var itemPlan = [];
 
 class Unit {
   constructor(id, faction, name, strength, melee, throwing, ranged, agility, toughness, movement, items, posY, posX, friendly, control, behavior) {
@@ -408,8 +402,8 @@ class Unit {
   get attacksLeft() { return this.attacksPerTurn - this.attacksUsed }
 }
 
-var player0 = new Unit('player0', 'Player', 'Player Unit', 2, 2, 2, 2, 2, 3, 5, [], 9, 4, true, 'player'),
-    enemy0  = new Unit('enemy0', 'Enemy', 'Enemy Unit', 3, 2, 2, 2, 2, 2, 5, [stones2], 6, 11, false, 'ai', 'sentry');
+var player0 = new Unit('player0', 'Player', 'Player Unit', 2, 2, 2, 2, 2, 3, 5, [slingshot1], 11, 4, true, 'player'),
+    enemy0  = new Unit('enemy0', 'Enemy', 'Enemy Unit', 3, 2, 2, 2, 2, 2, 5, [stones2], 4, 11, false, 'ai', 'sentry');
 
 var unitPlan = [
   {
@@ -637,7 +631,7 @@ var GroundIcon = {
 var Terrain = {
   // To use terrain sprites instead of map image, add :style='terrainStyle' to parent div.
   template: `
-    <div class='space terrain'>
+    <div class='space terrain' :style='terrainStyle'>
       <ground-icon v-if="itemsOfType(weapon).length" :itemType='weapon' :transform='transform'></ground-icon>
       <ground-icon v-if="itemsOfType(clothing).length" :itemType='clothing' :transform='transform'></ground-icon>
       <ground-icon v-if="itemsOfType(accessory).length" :itemType='accessory' :transform='transform'></ground-icon>
@@ -692,7 +686,8 @@ var Highlight = {
           distance = this.space.distance;
       return {
         movable: path,
-        attackable: distance && (!unit || unit.friendly === Game.active.unit.friendly),
+        nopointer: path && Game.active.unit.control === 'ai',
+        attackable: distance,
         targeted: distance && unit && unit.friendly !== Game.active.unit.friendly
       };
     }
@@ -1002,7 +997,7 @@ var UnitActions = {
           <action-button type='cancel' title='Cancel (C)' :onclick='cancelAction' :enabled='action'></action-button>
         </template>
         <template v-else>
-          <action-button type='checkrange' title='Check Range (M or A)' :onclick='checkRange' :enabled="action !== 'checking'"></action-button>
+          <action-button type='checkranges' title='Check Range (M or A)' :onclick='checkRanges' :enabled="action !== 'checking'"></action-button>
           <action-button type='checkequip' title='Check Equipment (E)' :onclick='checkEquip' :enabled="action !== 'equipping'"></action-button>
           <action-button type='cancel' title='Cancel (C)' :onclick='cancelAction' :enabled='action'></action-button>
         </template>
@@ -1014,7 +1009,7 @@ var UnitActions = {
     beginMove: function () { Game.beginMove() },
     beginAttack: function () { Game.beginAttack() },
     beginEquip: function () { Game.beginEquip() },
-    checkRange: function () { Game.checkRange() },
+    checkRanges: function () { Game.checkRanges() },
     checkEquip: function () { Game.checkEquip() },
     cancelAction: function () { Game.cancelAction() }
   },
@@ -1482,6 +1477,9 @@ var Game = new Vue ({
     }
   },
   methods: {
+    
+// ----------------------------{  Executive  }-----------------------------
+    
     beginMove: function () {
       if (this.action) { this.cancelAction() }
       var unit = this.active.unit;
@@ -1492,9 +1490,10 @@ var Game = new Vue ({
     },
     beginAttack: function () {
       if (this.action) { this.cancelAction() }
+      var unit = this.active.unit;
       this.target = null;
       this.action = 'attacking';
-      this.showAttackRange();
+      this.showAttackRange(unit.posY, unit.posX, unit.range);
     },
     beginEquip: function () {
       if (this.action) { this.cancelAction() }
@@ -1504,9 +1503,16 @@ var Game = new Vue ({
         Game.makeGroundItemsDraggable('.ground');
       });
     },
-    checkRange: function () {
+    checkRanges: function () {
       if (this.action) { this.cancelAction() }
+      var unit = this.active.unit;
       this.action = 'checking';
+      this.showMoveRange(unit.posY, unit.posX, unit.movesLeft, '');
+      this.preventCollision();
+      this.findFarthestInRange().forEach( function (s) {
+        Game.showAttackRange(s.posY, s.posX, s.range);
+      });
+      this.map[unit.posY][unit.posX].distance = null;
     },
     checkEquip: function () {
       if (this.action) { this.cancelAction() }
@@ -1520,6 +1526,28 @@ var Game = new Vue ({
         case 'checking': this.cancelCheck(); break;
       }
     },
+    cancelMove: function () {
+      this.hideMoveRange();
+      this.action = null;
+    },
+    cancelAttack: function () {
+      this.hideAttackRange();
+      this.action = null;
+      this.target = null;
+      this.shadows = null;
+    },
+    cancelEquip: function () {
+      this.action = null;
+      this.itemtip = null;
+    },
+    cancelCheck: function () {
+      this.hideEverything();
+      this.action = null;
+      this.shadows = null;
+    },
+    
+// -----------------------------{  Movement  }-----------------------------
+    
     showMoveRange: function (y, x, moves, path) {
       var origin = this.map[y][x],
           east = this.map[y][Math.min(x + 1, 15)], eastMoves = moves - east.terrain.cost, eastPath = path + 'e',
@@ -1549,10 +1577,6 @@ var Game = new Vue ({
         this.map[u.posY][u.posX].moves = null;
         this.map[u.posY][u.posX].path = null;
       }
-    },
-    cancelMove: function () {
-      this.hideMoveRange();
-      this.action = null;
     },
     hideMoveRange: function () {
       var y, x,
@@ -1607,22 +1631,25 @@ var Game = new Vue ({
       if (!to.unit) { to.unit = unitData } else { to.unit2 = unitData }
       this.active = to;
     },
-    showAttackRange: function () {
-      var unit = this.active.unit,
-          inRange = this.findSpacesInRange(unit.posY, unit.posX, unit.range);
+    
+// ------------------------------{  Combat  }------------------------------
+    
+    showAttackRange: function (posY, posX, range) {
+      console.log('Showing attack range for ' + posY + ', ' + posX);
+      var inRange = this.findSpacesInRange(posY, posX, range);
       this.shadows = [new Shadow(0, -Math.PI, Math.PI, Math.atan2(-0.75, 0.5))];
-      for (var r = 1; r <= unit.range[1]; r++) {
+      for (var r = 1; r <= range[1]; r++) {
         inRange.filter( s => s.dist === r ).forEach( function (s) {
           var y = s.posY, x = s.posX, d = s.dist,
               space = Game.map[y][x], terrain = space.terrain;
-          Game.castSquareShadow(y, x, d, terrain.elevation / 2);
+          Game.castSquareShadow(posY, posX, y, x, d, terrain.elevation / 2);
           if (terrain.height > 0) {
             switch (terrain.shape) {
-              case 'square': Game.castSquareShadow(y, x, d, space.posZ); break;
-              case 'circle': Game.castCircularShadow(y, x, d, space.posZ); break;
+              case 'square': Game.castSquareShadow(posY, posX, y, x, d, space.posZ); break;
+              case 'circle': Game.castCircularShadow(posY, posX, y, x, d, space.posZ); break;
             }
           }
-          Game.findLineOfSight(y, x, d);
+          Game.findLineOfSight(posY, posX, y, x, d);
         });
       }
     },
@@ -1636,10 +1663,9 @@ var Game = new Vue ({
       }
       return inRange;
     },
-    castSquareShadow: function (y, x, d, z) {
-      var aY = this.active.posY, yDist = y - aY,
-          aX = this.active.posX, xDist = x - aX,
-          edges = this.findSquareShadowEdges(y, x),
+    castSquareShadow: function (aY, aX, y, x, d, z) {
+      var yDist = y - aY, xDist = x - aX,
+          edges = this.findSquareShadowEdges(aY, aX, y, x),
           hDist = Math.sqrt(yDist * yDist + xDist * xDist),
           vDist = z - (this.active.terrain.elevation / 2 + 0.75),
           hAng1, hAng2, vAng;
@@ -1650,10 +1676,8 @@ var Game = new Vue ({
       vAng = Math.atan2(vDist, hDist);
       this.shadows.push(new Shadow(d, hAng1, hAng2, vAng));
     },
-    findSquareShadowEdges: function (y, x) {
+    findSquareShadowEdges: function (aY, aX, y, x) {
       var e1, e2,
-          aY = this.active.posY,
-          aX = this.active.posX,
           a = { Y: y - 0.5, X: x - 0.5 }, // top left corner
           b = { Y: y - 0.5, X: x + 0.5 }, // top right corner
           c = { Y: y + 0.5, X: x - 0.5 }, // bottom left corner
@@ -1674,9 +1698,8 @@ var Game = new Vue ({
       }
       return { 1: e1, 2: e2 };
     },
-    castCircularShadow: function (y, x, d, z) {
-      var yDist = y - this.active.posY,
-          xDist = x - this.active.posX,
+    castCircularShadow: function (aY, aX, y, x, d, z) {
+      var yDist = y - aY, xDist = x - aX,
           hDist = Math.sqrt(yDist * yDist + xDist * xDist),
           hAng = Math.atan2(yDist, xDist),
           hWidth = Math.asin(0.5 / hDist),
@@ -1689,9 +1712,9 @@ var Game = new Vue ({
       vAng = Math.atan2(vDist, hDist);
       this.shadows.push(new Shadow(d, hAng1, hAng2, vAng));
     },
-    findLineOfSight: function (y, x, d) {
-      var from = this.active, to = this.map[y][x],
-          yDist = y - from.posY, xDist = x - from.posX,
+    findLineOfSight: function (aY, aX, y, x, d) {
+      var from = this.map[aY][aX], to = this.map[y][x],
+          yDist = y - aY, xDist = x - aX,
           hDist = Math.sqrt(yDist * yDist + xDist * xDist),
           vDist = to.terrain.elevation / 2 - from.terrain.elevation / 2,
           hAng = Math.atan2(yDist, xDist),
@@ -1703,7 +1726,7 @@ var Game = new Vue ({
               return s.dist < d && (hAng > s.hAng1 || hAng < s.hAng2) && vAng < s.vAng;
             }
           });
-      if (shadows.length === 0 && this.canAttack(from, to, from.unit.range)) {
+      if (shadows.length === 0 && this.canAttack(from, to, this.active.unit.range)) {
         this.map[y][x].distance = Math.abs(yDist) + Math.abs(xDist);
       }
     },
@@ -1715,12 +1738,6 @@ var Game = new Vue ({
       } else {
         return hDiff >= range[0] && hDiff <= range[1] && vDiff <= range[1];
       }
-    },
-    cancelAttack: function () {
-      this.hideAttackRange();
-      this.action = null;
-      this.target = null;
-      this.shadows = null;
     },
     hideAttackRange: function (targetY, targetX) {
       var y, x, distance, targetDistance,
@@ -1746,6 +1763,9 @@ var Game = new Vue ({
         }
       }
       this.target = this.map[y][x];
+    },
+    inRange: function (distance, range) {
+      if (distance >= range[0] && distance <= range[1]) { return true }
     },
     calculateAttack: function (atkSpace) {
       // attack = strength + skill + power - distance
@@ -1777,9 +1797,6 @@ var Game = new Vue ({
       }
       defense += Math.max(defSpace.terrain.elevation - atkSpace.terrain.elevation, 0);
       return defense;
-    },
-    inRange: function (distance, range) {
-      if (distance >= range[0] && distance <= range[1]) { return true }
     },
     attackUnit: function (counter) {
       var attacker, defender, hitChance, crtChance, damage = 0;
@@ -1875,6 +1892,9 @@ var Game = new Vue ({
       this.action = null;
       this.shadows = null;
     },
+    
+// ----------------------------{  Equipment  }-----------------------------
+    
     makeEquipItemsDraggable: function (draggables) {
       $( draggables ).toArray().forEach( function (item) {
         var itemSrc = item.src.match(/sprites\/.*\.png/)[0],
@@ -2010,10 +2030,6 @@ var Game = new Vue ({
         });
       });
     },
-    cancelEquip: function () {
-      this.action = null;
-      this.itemtip = null;
-    },
     findDroppableSlots: function (itemStatus, itemType, itemId, slotNum) {
       var itemList = this.active.unit[this.convertItemType(itemType)],
           itemMap = [null, null, null, null, null, null],
@@ -2095,9 +2111,45 @@ var Game = new Vue ({
         });
       }
     },
-    cancelCheck: function () {
-      this.action = null;
+    
+// --------------------------{  Range Checking  }--------------------------
+    
+    findFarthestInRange: function () {
+      var y, x, onEdge, neighbors, farthest = [],
+          posY = this.active.unit.posY,
+          posX = this.active.unit.posX,
+          moves = this.active.unit.movesLeft;
+      for (y = Math.max(posY - moves, 0); y <= Math.min(posY + moves, 15); y++) {
+        for (x = Math.max(posX - moves, 0); x <= Math.min(posX + moves, 15); x++) {
+          if (this.map[y][x].path) {
+            onEdge = false;
+            neighbors = [
+              this.map[y][Math.min(x + 1, 15)],
+              this.map[Math.min(y + 1, 15)][x],
+              this.map[y][Math.max(x - 1, 0)],
+              this.map[Math.max(y - 1, 0)][x],
+            ];
+            for (space of neighbors) {
+              if (!space.path && !(y === posY && x === posX)) { onEdge = true }
+            }
+            if (onEdge) { farthest.push({ posY: y, posX: x, range: this.active.unit.range }) }
+          }
+        }
+      }
+      return farthest;
     },
+    hideEverything: function () {
+      for (var row of this.map) {
+        for (var space of row) {
+          space.moves = null;
+          space.path = null;
+          space.distance = null;
+        }
+      }
+    },
+    
+// ---------------------{  Artificial Intelligence  }----------------------
+    
     beginTurn: function () {
       var space, effects, unit, oldHp;
       if (this.units.length) {
@@ -2154,7 +2206,7 @@ var Game = new Vue ({
       unit = this.active.unit;
       window.setTimeout(function(){
         Game.action = 'attacking';
-        Game.showAttackRange();
+        Game.showAttackRange(unit.posY, unit.posX, unit.range);
         Game.aiChooseTarget();
       }, 500);
       window.setTimeout(function(){
@@ -2212,6 +2264,9 @@ var Game = new Vue ({
       this.target = null;
       this.beginTurn();
     },
+    
+// ----------------------------{  Event Log  }-----------------------------
+    
     advanceDialog: function () {
       var next, alignLeft;
       if (this.dialog) {
@@ -2312,7 +2367,7 @@ function keyHandler () {
               else { $( '#btn-cancel' ).trigger( 'click' ); }
             }
           } else {
-            if (Game.action !== 'checking') { $( '#btn-checkrange' ).trigger( 'click' ); }
+            if (Game.action !== 'checking') { $( '#btn-checkranges' ).trigger( 'click' ); }
             else { $( '#btn-cancel' ).trigger( 'click' ); }
           }
           break;
@@ -2331,7 +2386,7 @@ function keyHandler () {
             if (Game.action !== 'moving') { $( '#btn-move' ).trigger( 'click' ); }
             else { $( '#btn-cancel' ).trigger( 'click' ); }
           } else {
-            if (Game.action !== 'checking') { $( '#btn-checkrange' ).trigger( 'click' ); }
+            if (Game.action !== 'checking') { $( '#btn-checkranges' ).trigger( 'click' ); }
             else { $( '#btn-cancel' ).trigger( 'click' ); }
           }
           break;

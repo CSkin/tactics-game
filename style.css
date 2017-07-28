@@ -151,6 +151,10 @@ p {
   align-items: center;
 }
 
+.center .icon {
+  bottom: 1px;
+}
+
 .heading {
   height: 18px;
   margin: 5px 0;
@@ -558,15 +562,19 @@ p {
 
 /* Dynamic Classes */
 
+.attackable {
+  background: rgb(255, 36, 0);
+  background: rgba(255, 36, 0, 0.5);
+}
+
 .movable {
   background: rgb(0, 191, 255);
   background: rgba(0, 191, 255, 0.7);
   cursor: pointer;
 }
 
-.attackable {
-  background: rgb(255, 36, 0);
-  background: rgba(255, 36, 0, 0.5);
+.nopointer {
+  cursor: initial;
 }
 
 .targeted {
