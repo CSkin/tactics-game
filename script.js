@@ -124,6 +124,7 @@ class Space {
     this.path = null;
     this.distance = null;
     this.items = [];
+    this.selected = false;
     this.hideEverything = function () {
       this.moves = null;
       this.path = null;
@@ -752,13 +753,21 @@ var Unit = {
 var Space = {
   template: `
     <div class='space' @click='clickHandler'>
-      <terrain :terrain='space.terrain' :items='space.items' :topo-view='topoView'></terrain>
+      <terrain :terrain='space.terrain' :items='space.items' :topo-view='status.topoView'></terrain>
       <highlight v-if='space.path || space.distance' :space='space'></highlight>
       <unit v-if='space.unit'  :unit='space.unit'></unit>
       <unit v-if='space.unit2' :unit='space.unit2'></unit>
+      <transition name='fade'>
+        <div v-if='isActive' class='space active'></div>
+      </transition>
     </div>
   `,
-  props: ['space', 'topoView'],
+  props: ['space', 'status'],
+  computed: {
+    isActive: function () {
+      return this.space.posY === this.status.activeY && this.space.posX === this.status.activeX;
+    }
+  },
   methods: {
     clickHandler: function () {
       var y = this.space.posY,
@@ -810,10 +819,10 @@ var Space = {
 var Row = {
   template: `
     <div class='row'>
-      <space v-for='(space, index) in row' :key='index' :space='space' :topo-view='topoView'></space>
+      <space v-for='(space, index) in row' :key='index' :space='space' :status='status'></space>
     </div>
   `,
-  props: ['row', 'topoView'],
+  props: ['row', 'status'],
   components: {
     'space': Space
   }
@@ -1479,6 +1488,13 @@ var Game = new Vue ({
           canCounter: this.inRange(this.distance, this.target.unit.range)
         }
       }
+    },
+    status: function () {
+      return {
+        activeY: this.active ? this.active.posY : null,
+        activeX: this.active ? this.active.posX : null,
+        topoView: this.topoView
+      };
     }
   },
   watch: {

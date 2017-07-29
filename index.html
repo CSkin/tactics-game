@@ -26,7 +26,7 @@
         </div>
         
         <div id='top-center' class='panel' :style='mapImage'>
-          <row v-for='(row, index) in map' :key='index' :row='row' :topo-view='topoView'></row>
+          <row v-for='(row, index) in map' :key='index' :row='row' :status='status'></row>
           <ground-panel v-if="action === 'equipping'" :items='active.items'></ground-panel>
         </div>
         
