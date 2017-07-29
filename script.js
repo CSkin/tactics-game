@@ -124,6 +124,11 @@ class Space {
     this.path = null;
     this.distance = null;
     this.items = [];
+    this.hideEverything = function () {
+      this.moves = null;
+      this.path = null;
+      this.distance = null;
+    };
   }
   get posZ() { return (this.terrain.elevation + this.terrain.height) / 2 }
 }
@@ -998,7 +1003,7 @@ var UnitActions = {
         </template>
         <template v-else>
           <action-button type='checkranges' title='Check Range (M or A)' :onclick='checkRanges' :enabled="action !== 'checking'"></action-button>
-          <action-button type='checkequip' title='Check Equipment (E)' :onclick='checkEquip' :enabled="action !== 'equipping'"></action-button>
+          <action-button type='equip' title='Check Equipment (E)' :onclick='checkEquip' :enabled="action !== 'equipping'"></action-button>
           <action-button type='cancel' title='Cancel (C)' :onclick='cancelAction' :enabled='action'></action-button>
         </template>
       </div>
@@ -1509,7 +1514,7 @@ var Game = new Vue ({
       this.action = 'checking';
       this.showMoveRange(unit.posY, unit.posX, unit.movesLeft, '');
       this.preventCollision();
-      this.findFarthestInRange().forEach( function (s) {
+      this.findSpacesInMoveRange().forEach( function (s) {
         Game.showAttackRange(s.posY, s.posX, s.range);
       });
       this.map[unit.posY][unit.posX].distance = null;
@@ -1636,7 +1641,7 @@ var Game = new Vue ({
     
     showAttackRange: function (posY, posX, range) {
       console.log('Showing attack range for ' + posY + ', ' + posX);
-      var inRange = this.findSpacesInRange(posY, posX, range);
+      var inRange = this.findSpacesInAttackRange(posY, posX, range);
       this.shadows = [new Shadow(0, -Math.PI, Math.PI, Math.atan2(-0.75, 0.5))];
       for (var r = 1; r <= range[1]; r++) {
         inRange.filter( s => s.dist === r ).forEach( function (s) {
@@ -1653,7 +1658,7 @@ var Game = new Vue ({
         });
       }
     },
-    findSpacesInRange: function (posY, posX, range) {
+    findSpacesInAttackRange: function (posY, posX, range) {
       var y, x, distance, inRange = [];
       for (y = Math.max(posY - range[1], 0); y <= Math.min(posY + range[1], 15); y++) {
         for (x = Math.max(posX - range[1], 0); x <= Math.min(posX + range[1], 15); x++) {
@@ -2114,36 +2119,24 @@ var Game = new Vue ({
     
 // --------------------------{  Range Checking  }--------------------------
     
-    findFarthestInRange: function () {
-      var y, x, onEdge, neighbors, farthest = [],
+    findSpacesInMoveRange: function () {
+      var y, x,
           posY = this.active.unit.posY,
           posX = this.active.unit.posX,
-          moves = this.active.unit.movesLeft;
+          moves = this.active.unit.movesLeft,
+          range = this.active.unit.range,
+          inRange = [{ posY: posY, posX: posX, range: range }];
       for (y = Math.max(posY - moves, 0); y <= Math.min(posY + moves, 15); y++) {
         for (x = Math.max(posX - moves, 0); x <= Math.min(posX + moves, 15); x++) {
-          if (this.map[y][x].path) {
-            onEdge = false;
-            neighbors = [
-              this.map[y][Math.min(x + 1, 15)],
-              this.map[Math.min(y + 1, 15)][x],
-              this.map[y][Math.max(x - 1, 0)],
-              this.map[Math.max(y - 1, 0)][x],
-            ];
-            for (space of neighbors) {
-              if (!space.path && !(y === posY && x === posX)) { onEdge = true }
-            }
-            if (onEdge) { farthest.push({ posY: y, posX: x, range: this.active.unit.range }) }
-          }
+          if (this.map[y][x].path) { inRange.push({ posY: y, posX: x, range: range }) }
         }
       }
-      return farthest;
+      return inRange;
     },
     hideEverything: function () {
       for (var row of this.map) {
         for (var space of row) {
-          space.moves = null;
-          space.path = null;
-          space.distance = null;
+          space.hideEverything();
         }
       }
     },
