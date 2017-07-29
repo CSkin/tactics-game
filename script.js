@@ -772,7 +772,6 @@ var Space = {
           case 'moving':
             if (path) { Game.moveUnit(Game.active.posY, Game.active.posX, path) }
             else {
-              $( '#btn-cancel' ).trigger( 'click' );
               this.selectSpace(y, x);
             }
             break;
@@ -786,13 +785,8 @@ var Space = {
               }
             }
             else {
-              $( '#btn-cancel' ).trigger( 'click' );
               this.selectSpace(y, x);
             }
-            break;
-          case 'equipping':
-            $( '#btn-cancel' ).trigger( 'click' );
-            this.selectSpace(y, x);
             break;
           default:
             this.selectSpace(y, x);
@@ -801,6 +795,7 @@ var Space = {
       }
     },
     selectSpace: function (y, x) {
+      $( '#btn-cancel' ).trigger( 'click' );
       Game.active = Game.map[y][x];
       Game.target = null;
     }
@@ -1503,15 +1498,19 @@ var Game = new Vue ({
       var unit = this.active.unit;
       this.target = null;
       this.action = 'moving';
-      this.showMoveRange(unit.posY, unit.posX, unit.movesLeft, '');
-      this.preventCollision();
+      Vue.nextTick(function(){
+        Game.showMoveRange(unit.posY, unit.posX, unit.movesLeft, '');
+        Game.preventCollision();
+      });
     },
     beginAttack: function () {
       if (this.action) { this.cancelAction() }
       var unit = this.active.unit;
       this.target = null;
       this.action = 'attacking';
-      this.showAttackRange(unit.posY, unit.posX, unit.range);
+      Vue.nextTick(function(){
+        Game.showAttackRange(unit.posY, unit.posX, unit.range);
+      });
     },
     beginEquip: function () {
       if (this.action) { this.cancelAction() }
