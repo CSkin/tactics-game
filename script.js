@@ -680,21 +680,34 @@ var Terrain = {
 var Highlight = {
   template: `
     <transition name='fade'>
-      <div v-if='space.path || space.distance' class='space highlight' :class='classes'></div>
+      <div class='space highlight'>
+        <svg width='32' height='32' :style='cursorStyle'>
+          <image x='-32' y='-32' width='64' height='64' :xlink:href='highlightHref'>
+            <animateTransform attributeName="transform" attributeType="XML" type="translate"
+                              from="0 0" to="32 32" dur="1.5s" repeatCount="indefinite"/>
+          </image>
+        </svg>
+      </div>
     </transition>
   `,
   props: ['space'],
   computed: {
-    classes: function () {
-      var unit = this.space.unit,
-          path = this.space.path,
-          distance = this.space.distance;
-      return {
-        movable: path,
-        nopointer: path && Game.active.unit.control === 'ai',
-        attackable: distance,
-        targeted: distance && unit && unit.friendly !== Game.active.unit.friendly
-      };
+    highlightHref: function () {
+      if (this.space.path) { return 'sprites/movable.png' }
+      if (this.space.distance) {
+        if (this.space.unit && this.space.unit.friendly !== Game.active.unit.friendly) {
+          return 'sprites/targeted.png'
+        } else {
+          return 'sprites/attackable.png'
+        }
+      }
+    },
+    cursorStyle: function () {
+      if (this.space.path && Game.active.unit.control === 'player') {
+        return { cursor: 'pointer' }
+      } else {
+        return { cursor: 'initial' }
+      }
     }
   }
 };
@@ -702,7 +715,7 @@ var Highlight = {
 var Unit = {
   template: `
     <transition :name='dynamicTransition' @after-enter='moveHandler'>
-      <img v-if='unit' :id='unit.id' class='space unit' :src='unit.sprite' :title='unit.name'>
+      <img :id='unit.id' class='space unit' :src='unit.sprite' :title='unit.name'>
     </transition>
   `,
   props: ['unit'],
@@ -740,9 +753,9 @@ var Space = {
   template: `
     <div class='space' @click='clickHandler'>
       <terrain :terrain='space.terrain' :items='space.items' :topo-view='topoView'></terrain>
-      <highlight :space='space'></highlight>
-      <unit :unit='space.unit'></unit>
-      <unit :unit='space.unit2'></unit>
+      <highlight v-if='space.path || space.distance' :space='space'></highlight>
+      <unit v-if='space.unit'  :unit='space.unit'></unit>
+      <unit v-if='space.unit2' :unit='space.unit2'></unit>
     </div>
   `,
   props: ['space', 'topoView'],

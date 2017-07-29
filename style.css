@@ -562,26 +562,6 @@ p {
 
 /* Dynamic Classes */
 
-.attackable {
-  background: rgb(255, 36, 0);
-  background: rgba(255, 36, 0, 0.5);
-}
-
-.movable {
-  background: rgb(0, 191, 255);
-  background: rgba(0, 191, 255, 0.7);
-  cursor: pointer;
-}
-
-.nopointer {
-  cursor: initial;
-}
-
-.targeted {
-  background: rgb(255, 36, 0);
-  background: rgba(255, 36, 0, 1);
-}
-
 .healthy {
   color: #259925;
 }
