@@ -3,41 +3,41 @@
 var mapImage = { backgroundImage: 'none' };
 
 var mapPlan = [
-  ' a a a a a a a a a a a a a a a a ',
-  ' a a a a a a a a a a a a a a a a ',
-  ' a a a a a a a a a a a a a a a a ',
-  ' a a a a a a a a a a a a a a a a ',
-  ' a a a a a a a a a a a a a a a a ',
-  ' a a a a a a a a a a a a a a a a ',
-  ' a a a a a a a a a a a a a a a a ',
-  ' a a a a a a a a a a a a a a a a ',
-  ' a a a a a a a a a a a a a a a a ',
-  ' a a a a a a a a a a a a a a a a ',
-  ' a a a a a a a a a a a a a a a a ',
-  ' a a a a a a a a a a a a a a a a ',
-  ' a a a a a a a a a a a a a a a a ',
-  ' a a a a a a a a a a a a a a a a ',
-  ' a a a a a a a a a a a a a a a a ',
-  ' a a a a a a a a a a a a a a a a ',
+  ' p p p p p p p p p p p p p p p p ',
+  ' p p p p p p p p p p p p p p p p ',
+  ' p p p p p p p p p p p p p p p p ',
+  ' p p p p p p p p p p p p p p p p ',
+  ' p p p p a a a a a a a a p p p p ',
+  ' p p p p a a a a a a a a p p p p ',
+  ' p p p p a a a a a a a a p p p p ',
+  ' p p p p a a a a a a a a p p p p ',
+  ' p p p p a a a a a a a a p p p p ',
+  ' p p p p a a a a a a a a p p p p ',
+  ' p p p p a a a a a a a a p p p p ',
+  ' p p p p a a a a a a a a p p p p ',
+  ' p p p p p p p p p p p p p p p p ',
+  ' p p p p p p p p p p p p p p p p ',
+  ' p p p p p p p p p p p p p p p p ',
+  ' p p p p p p p p p p p p p p p p ',
 ];
 
 var topoPlan = [
-  ' 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ',
-  ' 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ',
-  ' 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ',
-  ' 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ',
-  ' 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ',
-  ' 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ',
-  ' 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ',
-  ' 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ',
-  ' 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ',
-  ' 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ',
-  ' 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ',
-  ' 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ',
-  ' 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ',
-  ' 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ',
-  ' 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ',
-  ' 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ',
+  ' 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 ',
+  ' 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 ',
+  ' 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 ',
+  ' 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 ',
+  ' 3 3 3 3 0 0 0 0 0 0 0 0 3 3 3 3 ',
+  ' 3 3 3 3 0 0 0 0 0 0 0 0 3 3 3 3 ',
+  ' 3 3 3 3 0 0 0 0 0 0 0 0 3 3 3 3 ',
+  ' 3 3 3 3 0 0 0 0 0 0 0 0 3 3 3 3 ',
+  ' 3 3 3 3 0 0 0 0 0 0 0 0 3 3 3 3 ',
+  ' 3 3 3 3 0 0 0 0 0 0 0 0 3 3 3 3 ',
+  ' 3 3 3 3 0 0 0 0 0 0 0 0 3 3 3 3 ',
+  ' 3 3 3 3 0 0 0 0 0 0 0 0 3 3 3 3 ',
+  ' 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 ',
+  ' 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 ',
+  ' 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 ',
+  ' 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 ',
 ];
 
 class Terrain {
@@ -327,6 +327,11 @@ class Unit {
       }
       this.items[this.findItemIndex(id)].equipped = true;
     };
+    this.unequipWeapon = function () {
+      if (this.equipped.id !== 'unarmed') {
+        this.items[this.findItemIndex(this.equipped.id)].equipped = false;
+      }
+    };
     this.useItem = function (id) {
       var item = this.items.splice(this.findItemIndex(id), 1)[0];
       for (var effect in item.effects) {
@@ -408,7 +413,7 @@ class Unit {
   get attacksLeft() { return this.attacksPerTurn - this.attacksUsed }
 }
 
-var player0 = new Unit('player0', 'Player', 'Player Unit', 2, 2, 2, 2, 2, 3, 5, [slingshot1], 11, 4, true, 'player'),
+var player0 = new Unit('player0', 'Player', 'Player Unit', 2, 2, 2, 2, 2, 3, 5, [slingshot1, stones1], 11, 4, true, 'player'),
     enemy0  = new Unit('enemy0', 'Enemy', 'Enemy Unit', 3, 2, 2, 2, 2, 2, 5, [stones2], 4, 11, false, 'ai', 'sentry');
 
 var unitPlan = [
@@ -1911,6 +1916,7 @@ var Game = new Vue ({
     },
     sayGoodbye: function (y, x) {
       var space = this.map[y][x], item;
+      space.unit.unequipWeapon();
       while (space.unit.items.length) {
         item = space.unit.items.shift();
         space.items.push(item);
