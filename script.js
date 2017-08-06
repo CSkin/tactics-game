@@ -3,41 +3,41 @@
 var mapImage = { backgroundImage: 'none' };
 
 var mapPlan = [
-  ' p p p p p p p p p p p p p p p p ',
-  ' p p p p p p p p p p p p p p p p ',
-  ' p p p p p p p p p p p p p p p p ',
-  ' p p p p p p p p p p p p p p p p ',
-  ' p p p p a a a a a a a a p p p p ',
-  ' p p p p a a a a a a a a p p p p ',
-  ' p p p p a a a a a a a a p p p p ',
-  ' p p p p a a a a a a a a p p p p ',
-  ' p p p p a a a a a a a a p p p p ',
-  ' p p p p a a a a a a a a p p p p ',
-  ' p p p p a a a a a a a a p p p p ',
-  ' p p p p a a a a a a a a p p p p ',
-  ' p p p p p p p p p p p p p p p p ',
-  ' p p p p p p p p p p p p p p p p ',
-  ' p p p p p p p p p p p p p p p p ',
-  ' p p p p p p p p p p p p p p p p ',
+  ' a a a a a a a a a a a a a a a a ',
+  ' a a a a a a a a a a a a a a a a ',
+  ' a a a a a a a a a a a a a a a a ',
+  ' a a a a a a a a a a a a a a a a ',
+  ' a a a a a a a a a a a a a a a a ',
+  ' a a a a a a a a a a a a a a a a ',
+  ' a a a a a a a a a a a a a a a a ',
+  ' a a a a a a a a a a a a a a a a ',
+  ' a a a a a a a a a a a a a a a a ',
+  ' a a a a a a a a a a a a a a a a ',
+  ' a a a a a a a a a a a a a a a a ',
+  ' a a a a a a a a a a a a a a a a ',
+  ' a a a a a a a a a a a a a a a a ',
+  ' a a a a a a a a a a a a a a a a ',
+  ' a a a a a a a a a a a a a a a a ',
+  ' a a a a a a a a a a a a a a a a ',
 ];
 
 var topoPlan = [
-  ' 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 ',
-  ' 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 ',
-  ' 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 ',
-  ' 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 ',
-  ' 3 3 3 3 0 0 0 0 0 0 0 0 3 3 3 3 ',
-  ' 3 3 3 3 0 0 0 0 0 0 0 0 3 3 3 3 ',
-  ' 3 3 3 3 0 0 0 0 0 0 0 0 3 3 3 3 ',
-  ' 3 3 3 3 0 0 0 0 0 0 0 0 3 3 3 3 ',
-  ' 3 3 3 3 0 0 0 0 0 0 0 0 3 3 3 3 ',
-  ' 3 3 3 3 0 0 0 0 0 0 0 0 3 3 3 3 ',
-  ' 3 3 3 3 0 0 0 0 0 0 0 0 3 3 3 3 ',
-  ' 3 3 3 3 0 0 0 0 0 0 0 0 3 3 3 3 ',
-  ' 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 ',
-  ' 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 ',
-  ' 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 ',
-  ' 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 ',
+  ' 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ',
+  ' 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ',
+  ' 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ',
+  ' 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ',
+  ' 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ',
+  ' 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ',
+  ' 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ',
+  ' 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ',
+  ' 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ',
+  ' 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ',
+  ' 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ',
+  ' 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ',
+  ' 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ',
+  ' 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ',
+  ' 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ',
+  ' 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ',
 ];
 
 class Terrain {
@@ -231,7 +231,7 @@ class Stones extends Throwing {
 
 class Slingshot extends Ranged {
   constructor(id, slot) {
-    super(4, id, 'bow', 'Slingshot', 'Packs a sting, fits in a pocket.', 1, 10, null, [0], slot);
+    super(4, id, 'bow', 'Slingshot', 'Packs a sting, fits in a pocket.', 1, 3, null, [0], slot);
   }
 }
 
@@ -260,9 +260,9 @@ class Salve extends Accessory {
 }
 
 var stick1 = new Stick('stick1'),
-    stones1 = new Stones('stones1', 0),
+    stones1 = new Stones('stones1'),
     stones2 = new Stones('stones2'),
-    slingshot1 = new Slingshot('slingshot1', 1),
+    slingshot1 = new Slingshot('slingshot1'),
     shortbow1 = new ShortBow('shortbow1'),
     tunic1 = new Tunic('tunic1'),
     boots1 = new Boots('boots1'),
@@ -413,8 +413,16 @@ class Unit {
   get attacksLeft() { return this.attacksPerTurn - this.attacksUsed }
 }
 
-var player0 = new Unit('player0', 'Player', 'Player Unit', 2, 2, 2, 2, 2, 3, 5, [stones1, slingshot1], 11, 4, true, 'player'),
-    enemy0  = new Unit('enemy0', 'Enemy', 'Enemy Unit', 3, 2, 2, 2, 2, 2, 5, [stones2], 4, 11, false, 'ai', 'sentry');
+var player0 = new Unit(
+      'player0', 'Player', 'Player Unit',
+      4, 4, 5, 6, 4, 7, 5, [slingshot1],
+      11, 4, true, 'player'
+    ),
+    enemy0 = new Unit(
+      'enemy0', 'Enemy', 'Enemy Unit',
+      6, 4, 5, 3, 6, 4, 5, [stones2],
+      4, 11, false, 'ai', 'sentry'
+    );
 
 var unitPlan = [
   {
