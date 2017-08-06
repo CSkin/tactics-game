@@ -3,41 +3,41 @@
 var mapImage = { backgroundImage: 'none' };
 
 var mapPlan = [
-  ' a a a a a a a a a a a a a a a a ',
-  ' a a a a a a a a a a a a a a a a ',
-  ' a a a a a a a a a a a a a a a a ',
-  ' a a a a a a a a a a a a a a a a ',
-  ' a a a a a a a a a a a a a a a a ',
-  ' a a a a a a a a a a a a a a a a ',
-  ' a a a a a a a a a a a a a a a a ',
-  ' a a a a a a a a a a a a a a a a ',
-  ' a a a a a a a a a a a a a a a a ',
-  ' a a a a a a a a a a a a a a a a ',
-  ' a a a a a a a a a a a a a a a a ',
-  ' a a a a a a a a a a a a a a a a ',
-  ' a a a a a a a a a a a a a a a a ',
-  ' a a a a a a a a a a a a a a a a ',
-  ' a a a a a a a a a a a a a a a a ',
-  ' a a a a a a a a a a a a a a a a ',
+  ' L L L L t a a a a a a a p p p p ',
+  ' L L L t t t a a a a a a a p p p ',
+  ' L L t a t a a a a a a a a p p p ',
+  ' L t a t a a T a a a a a a a p r ',
+  ' s t T a a a a a a a a b r r r r ',
+  ' a a a a a a a b r r r r r r r r ',
+  ' b a T a a a a a a b a r r r r r ',
+  ' a a a a a a a a a a a b b r r r ',
+  ' r a b a a a a a a a a a a b r r ',
+  ' r r a a a a T T a a a a a b T r ',
+  ' r r r r r a b b a a T a a a b r ',
+  ' r r r r r r r b b a a a a b a b ',
+  ' r r r r r b b a a a a a a a b a ',
+  ' r r b b a a a a a a T a a a g H ',
+  ' r a a a a a a a T a g a T a a g ',
+  ' b b a a a a T a g a T g a g T a ',
 ];
 
 var topoPlan = [
-  ' 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ',
-  ' 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ',
-  ' 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ',
-  ' 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ',
-  ' 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ',
-  ' 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ',
-  ' 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ',
-  ' 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ',
-  ' 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ',
-  ' 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ',
-  ' 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ',
-  ' 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ',
-  ' 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ',
-  ' 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ',
-  ' 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ',
-  ' 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ',
+  ' 0 0 1 2 3 3 3 3 3 3 3 4 5 5 5 5 ',
+  ' 0 1 2 3 3 3 3 3 3 3 3 3 4 5 5 5 ',
+  ' 1 2 3 3 3 3 3 3 3 3 3 3 4 5 5 5 ',
+  ' 2 3 3 3 3 3 3 3 3 3 3 3 4 4 5 5 ',
+  ' 3 3 3 3 3 3 3 3 4 4 4 4 5 5 5 6 ',
+  ' 3 3 3 3 3 3 3 4 5 5 5 5 5 6 6 6 ',
+  ' 3 3 3 3 3 3 3 3 4 4 4 5 5 5 6 6 ',
+  ' 4 3 3 3 3 3 3 3 3 3 3 4 4 5 5 6 ',
+  ' 5 4 3 3 3 3 3 3 3 3 3 3 3 4 5 5 ',
+  ' 5 5 4 4 4 3 3 3 3 3 3 3 3 3 4 5 ',
+  ' 6 5 5 5 5 4 4 3 3 3 3 3 3 3 4 5 ',
+  ' 6 6 6 5 5 5 5 4 3 3 3 3 3 3 3 4 ',
+  ' 6 5 5 5 5 4 4 3 3 3 3 3 3 3 3 3 ',
+  ' 5 5 4 4 4 3 3 3 3 3 3 3 3 3 3 3 ',
+  ' 5 4 3 3 3 3 3 3 3 3 3 3 3 3 3 3 ',
+  ' 4 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 ',
 ];
 
 class Terrain {
@@ -83,9 +83,15 @@ class Grass extends Terrain {
   }
 }
 
+class TallGrass extends Terrain {
+  constructor() {
+    super('tall grass', 1, 1, null, 1, 'square');
+  }
+}
+
 class Brush extends Terrain {
   constructor() {
-    super('brush', 2, 1, null, 1, 'circle');
+    super('brush', 2, 2, null, 1, 'circle');
   }
 }
 
@@ -95,9 +101,15 @@ class Boulder extends Terrain {
   }
 }
 
+class Tree extends Terrain {
+  constructor() {
+    super('tree', 99, 0, null, 3, 'circle');
+  }
+}
+
 class Log extends Terrain {
   constructor() {
-    super('log', 1, 2, null);
+    super('log', 1, 3, null);
   }
 }
 
@@ -110,6 +122,24 @@ class Plateau extends Terrain {
 class Silversword extends Terrain {
   constructor() {
     super('silversword', 2, 0, { restoreHealth: 1 }, 1, 'circle');
+  }
+}
+
+class Rocky extends Terrain {
+  constructor() {
+    super('rocky', 4, 3, null);
+  }
+}
+
+class Lake extends Terrain {
+  constructor() {
+    super('lake', 99, 0, null);
+  }
+}
+
+class Hut extends Terrain {
+  constructor() {
+    super('hut', 99, 0, null, 3, 'square');
   }
 }
 
@@ -268,7 +298,13 @@ var stick1 = new Stick('stick1'),
     boots1 = new Boots('boots1'),
     salve1 = new Salve('salve1');
 
-var itemPlan = [];
+var itemPlan = [
+  {
+    posY: 15,
+    posX: 8,
+    items: [stick1]
+  }
+];
 
 class Unit {
   constructor(id, faction, name, strength, melee, throwing, ranged, agility, toughness, movement, items, posY, posX, friendly, control, behavior) {
@@ -415,13 +451,13 @@ class Unit {
 
 var player0 = new Unit(
       'player0', 'Player', 'Player Unit',
-      4, 4, 5, 6, 4, 7, 5, [slingshot1],
-      11, 4, true, 'player'
+      4, 4, 5, 6, 4, 7, 5, [],
+      14, 2, true, 'player'
     ),
     enemy0 = new Unit(
       'enemy0', 'Enemy', 'Enemy Unit',
       6, 4, 5, 3, 6, 4, 5, [stones2],
-      4, 11, false, 'ai', 'sentry'
+      1, 14, false, 'ai', 'sentry'
     );
 
 var unitPlan = [
@@ -531,13 +567,19 @@ function loadMap (mapPlan) {
     for (x = 0; x < string.length; x++) {
       switch (string[x]) {
         case '-': row.push(new Space(y, x, new Barren())); break;
+        case 'g': row.push(new Space(y, x, new Ground())); break;
         case 's': row.push(new Space(y, x, new Sand())); break;
         case 'a': row.push(new Space(y, x, new Grass())); break;
+        case 't': row.push(new Space(y, x, new TallGrass())); break;
         case 'b': row.push(new Space(y, x, new Brush())); break;
+        case 'T': row.push(new Space(y, x, new Tree())); break;
         case 'B': row.push(new Space(y, x, new Boulder())); break;
         case 'l': row.push(new Space(y, x, new Log())); break;
         case 'p': row.push(new Space(y, x, new Plateau())); break;
         case 'S': row.push(new Space(y, x, new Silversword())); break;
+        case 'r': row.push(new Space(y, x, new Rocky())); break;
+        case 'L': row.push(new Space(y, x, new Lake())); break;
+        case 'H': row.push(new Space(y, x, new Hut())); break;
       }
     }
     mapData.push(row);
@@ -680,7 +722,7 @@ var Terrain = {
   },
   computed: {
     terrainStyle: function () {
-      return { backgroundImage: "url('sprites/" + this.terrain.type + ".png')" }
+      return { backgroundImage: "url('sprites/" + this.terrain.type.replace(/\s/g, '') + ".png')" }
     },
     elevationShow: function () {
       return this.terrain.type !== 'barren' && this.topoView;
@@ -943,7 +985,7 @@ var TerrainInfo = {
   props: ['terrain'],
   computed: {
     iconSrc: function () {
-      return 'sprites/' + this.terrain.type + '.png';
+      return 'sprites/' + this.terrain.type.replace(/\s/g, '') + '.png';
     }
   }
 };
