@@ -231,7 +231,7 @@ class Stones extends Throwing {
 
 class Slingshot extends Ranged {
   constructor(id, slot) {
-    super(4, id, 'bow', 'Slingshot', 'Packs a sting, fits in a pocket.', 1, 3, null, [0], slot);
+    super(4, id, 'bow', 'Slingshot', 'Packs a sting, fits in a pocket.', 1, 10, null, [0], slot);
   }
 }
 
@@ -499,12 +499,20 @@ var openingDialog = [
 ];
 
 class Shadow {
-  constructor(dist, hAng1, hAng2, vAng) {
+  constructor(dist, hAng1, hAng2, vDist, hDist) {
     this.dist = dist;
     this.hAng1 = hAng1;
     this.hAng2 = hAng2;
-    this.vAng = vAng;
+    this.vDist = vDist;
+    this.hDist = hDist;
   }
+  get vAng() { return Math.atan2(this.vDist, this.hDist) }
+  get hDistAdj() {
+    if (this.vAng > 0) { return this.hDist + 0.5 }
+    else if (this.vAng < 0) { return this.hDist - 0.5 }
+    else { return this.hDist }
+  }
+  get vAngAdj() { return Math.atan2(this.vDist, this.hDistAdj) }
 }
 
 function loadMap (mapPlan) {
@@ -1675,7 +1683,7 @@ var Game = new Vue ({
     showAttackRange: function (posY, posX, range) {
       console.log('Showing attack range for ' + posY + ', ' + posX);
       var inRange = this.findSpacesInAttackRange(posY, posX, range);
-      this.shadows = [new Shadow(0, -Math.PI, Math.PI, Math.atan2(-0.75, 0.5))];
+      this.shadows = [new Shadow(0, -Math.PI, Math.PI, -0.75, 0.5)];
       for (var r = 1; r <= range[1]; r++) {
         inRange.filter( s => s.dist === r ).forEach( function (s) {
           var y = s.posY, x = s.posX, d = s.dist,
@@ -1706,13 +1714,12 @@ var Game = new Vue ({
           edges = this.findSquareShadowEdges(aY, aX, y, x),
           hDist = Math.sqrt(yDist * yDist + xDist * xDist),
           vDist = z - (this.active.terrain.elevation / 2 + 0.75),
-          hAng1, hAng2, vAng;
+          hAng1, hAng2;
       if      (vDist > 0) { hDist -= 0.5; d -= 1 }
       else if (vDist < 0) { hDist += 0.5 }
       hAng1 = Math.atan2(edges[1].Y - aY, edges[1].X - aX);
       hAng2 = Math.atan2(edges[2].Y - aY, edges[2].X - aX);
-      vAng = Math.atan2(vDist, hDist);
-      this.shadows.push(new Shadow(d, hAng1, hAng2, vAng));
+      this.shadows.push(new Shadow(d, hAng1, hAng2, vDist, hDist));
     },
     findSquareShadowEdges: function (aY, aX, y, x) {
       var e1, e2,
@@ -1742,13 +1749,12 @@ var Game = new Vue ({
           hAng = Math.atan2(yDist, xDist),
           hWidth = Math.asin(0.5 / hDist),
           vDist = z - (this.active.terrain.elevation / 2 + 0.75),
-          hAng1, hAng2, vAng;
+          hAng1, hAng2;
       if      (vDist > 0) { hDist -= 0.5; d -= 1 }
       else if (vDist < 0) { hDist += 0.5 }
       hAng1 = hAng - hWidth; if (hAng1 < -Math.PI) { hAng1 += Math.PI * 2 }
       hAng2 = hAng + hWidth; if (hAng2 > Math.PI) { hAng2 -= Math.PI * 2 }
-      vAng = Math.atan2(vDist, hDist);
-      this.shadows.push(new Shadow(d, hAng1, hAng2, vAng));
+      this.shadows.push(new Shadow(d, hAng1, hAng2, vDist, hDist));
     },
     findLineOfSight: function (aY, aX, y, x, d) {
       var from = this.map[aY][aX], to = this.map[y][x],
@@ -1757,12 +1763,15 @@ var Game = new Vue ({
           vDist = to.terrain.elevation / 2 - from.terrain.elevation / 2,
           hAng = Math.atan2(yDist, xDist),
           vAng = Math.atan2(vDist, hDist),
+          hAngDiff = Math.atan2(1, 2) - Math.atan2(0.5, 1.5),
+          hAngCheck, vAngCheck,
           shadows = this.shadows.filter( function (s) {
-            if (s.hAng1 < 0 || s.hAng2 > 0) {
-              return s.dist < d && hAng > s.hAng1 && hAng < s.hAng2 && vAng < s.vAng;
-            } else {
-              return s.dist < d && (hAng > s.hAng1 || hAng < s.hAng2) && vAng < s.vAng;
-            }
+            if (s.hAng1 < 0 || s.hAng2 > 0) { hAngCheck = hAng > s.hAng1 && hAng < s.hAng2 }
+            else                            { hAngCheck = hAng > s.hAng1 || hAng < s.hAng2 }
+            if (Math.abs(hAng - s.hAng1) > hAngDiff && Math.abs(hAng - s.hAng2) > hAngDiff)
+                 { vAngCheck = vAng < s.vAng }
+            else { vAngCheck = vAng < s.vAngAdj }
+            return s.dist < d && hAngCheck && vAngCheck;
           });
       if (shadows.length === 0 && this.canAttack(from, to, this.active.unit.range)) {
         this.map[y][x].distance = Math.abs(yDist) + Math.abs(xDist);
