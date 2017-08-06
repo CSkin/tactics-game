@@ -219,50 +219,50 @@ class Unarmed extends Melee {
 
 class Stick extends Melee {
   constructor(id, slot) {
-    super(2, id, 'club', 'Heavy Stick', 'An unusually heavy stick.', 2, null, [0, 2]);
+    super(2, id, 'club', 'Heavy Stick', 'An unusually heavy stick.', 2, null, [0, 2], slot);
   }
 }
 
 class Stones extends Throwing {
   constructor(id, slot) {
-    super(3, id, 'stones', 'Stones', 'The original projectile weapon.', 1, 1, null, [0]);
+    super(3, id, 'stones', 'Stones', 'The original projectile weapon.', 1, 1, null, [0], slot);
   }
 }
 
 class Slingshot extends Ranged {
   constructor(id, slot) {
-    super(4, id, 'bow', 'Slingshot', 'Packs a sting, fits in a pocket.', 1, 3, null, [0]);
+    super(4, id, 'bow', 'Slingshot', 'Packs a sting, fits in a pocket.', 1, 3, null, [0], slot);
   }
 }
 
 class ShortBow extends Ranged {
   constructor(id, slot) {
-    super(5, id, 'bow', 'Short Bow', 'This compact bow is powerful for its size.', 2, 4, null, [0, 2]);
+    super(5, id, 'bow', 'Short Bow', 'This compact bow is powerful for its size.', 2, 4, null, [0, 2], slot);
   }
 }
 
 class Tunic extends Clothing {
   constructor(id, slot) {
-    super(6, id, 'shirt', 'Tunic', 'Comfy and easy to wear.', 1, null, [0]);
+    super(6, id, 'shirt', 'Tunic', 'Comfy and easy to wear.', 1, null, [0], slot);
   }
 }
 
 class Boots extends Clothing {
   constructor(id, slot) {
-    super(7, id, 'footwear', 'Boots', "Made for walking.", 0, { movement: 1 }, [0]);
+    super(7, id, 'footwear', 'Boots', "Made for walking.", 0, { movement: 1 }, [0], slot);
   }
 }
 
 class Salve extends Accessory {
   constructor(id, slot) {
-    super(8, id, 'salve', 'Salve', 'Heals most any wound.', true, { restoreHealth: 2 }, [0]);
+    super(8, id, 'salve', 'Salve', 'Heals most any wound.', true, { restoreHealth: 2 }, [0], slot);
   }
 }
 
 var stick1 = new Stick('stick1'),
-    stones1 = new Stones('stones1'),
+    stones1 = new Stones('stones1', 0),
     stones2 = new Stones('stones2'),
-    slingshot1 = new Slingshot('slingshot1'),
+    slingshot1 = new Slingshot('slingshot1', 1),
     shortbow1 = new ShortBow('shortbow1'),
     tunic1 = new Tunic('tunic1'),
     boots1 = new Boots('boots1'),
@@ -413,7 +413,7 @@ class Unit {
   get attacksLeft() { return this.attacksPerTurn - this.attacksUsed }
 }
 
-var player0 = new Unit('player0', 'Player', 'Player Unit', 2, 2, 2, 2, 2, 3, 5, [slingshot1, stones1], 11, 4, true, 'player'),
+var player0 = new Unit('player0', 'Player', 'Player Unit', 2, 2, 2, 2, 2, 3, 5, [stones1, slingshot1], 11, 4, true, 'player'),
     enemy0  = new Unit('enemy0', 'Enemy', 'Enemy Unit', 3, 2, 2, 2, 2, 2, 5, [stones2], 4, 11, false, 'ai', 'sentry');
 
 var unitPlan = [
@@ -1770,7 +1770,7 @@ var Game = new Vue ({
     },
     canAttack: function (from, to, range) {
       var hDiff = Math.abs(to.posY - from.posY) + Math.abs(to.posX - from.posX),
-          vDiff = to.terrain.elevation - from.terrain.elevation;
+          vDiff = to.terrain.elevation / 2 - from.terrain.elevation / 2;
       if (range[1] <= 1) {
         return hDiff >= range[0] && hDiff <= range[1] && Math.abs(vDiff) <= range[1];
       } else {
