@@ -1,44 +1,6 @@
 /* jshint loopfunc: true */
 
-var mapImage = { backgroundImage: 'none' };
-
-var mapPlan = [
-  ' L L L L t a a a a a a a p p p p ',
-  ' L L L t t t a a a a a a a p p p ',
-  ' L L t a t a a a a a a a a p p p ',
-  ' L t a t a a T a a a a a a a p r ',
-  ' s t T a a a a a a a a b r r r r ',
-  ' a a a a a a a b r r r r r r r r ',
-  ' b a T a a a a a a b a r r r r r ',
-  ' a a a a a a a a a a a b b r r r ',
-  ' r a b a a a a a a a a a a b r r ',
-  ' r r a a a a T T a a a a a b T r ',
-  ' r r r r r a b b a a T a a a b r ',
-  ' r r r r r r r b b a a a a b a b ',
-  ' r r r r r b b a a a a a a a b a ',
-  ' r r b b a a a a a a T a a a g H ',
-  ' r a a a a a a a T a g a T a a g ',
-  ' b b a a a a T a g a T g a g T a ',
-];
-
-var topoPlan = [
-  ' 0 0 1 2 3 3 3 3 3 3 3 4 5 5 5 5 ',
-  ' 0 1 2 3 3 3 3 3 3 3 3 3 4 5 5 5 ',
-  ' 1 2 3 3 3 3 3 3 3 3 3 3 4 5 5 5 ',
-  ' 2 3 3 3 3 3 3 3 3 3 3 3 4 4 5 5 ',
-  ' 3 3 3 3 3 3 3 3 4 4 4 4 5 5 5 6 ',
-  ' 3 3 3 3 3 3 3 4 5 5 5 5 5 6 6 6 ',
-  ' 3 3 3 3 3 3 3 3 4 4 4 5 5 5 6 6 ',
-  ' 4 3 3 3 3 3 3 3 3 3 3 4 4 5 5 6 ',
-  ' 5 4 3 3 3 3 3 3 3 3 3 3 3 4 5 5 ',
-  ' 5 5 4 4 4 3 3 3 3 3 3 3 3 3 4 5 ',
-  ' 6 5 5 5 5 4 4 3 3 3 3 3 3 3 4 5 ',
-  ' 6 6 6 5 5 5 5 4 3 3 3 3 3 3 3 4 ',
-  ' 6 5 5 5 5 4 4 3 3 3 3 3 3 3 3 3 ',
-  ' 5 5 4 4 4 3 3 3 3 3 3 3 3 3 3 3 ',
-  ' 5 4 3 3 3 3 3 3 3 3 3 3 3 3 3 3 ',
-  ' 4 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 ',
-];
+// -----------------------------{  Classes  }------------------------------
 
 class Terrain {
   constructor(type, cost, cover, effects, height, shape) {
@@ -289,23 +251,6 @@ class Salve extends Accessory {
   }
 }
 
-var stick1 = new Stick('stick1'),
-    stones1 = new Stones('stones1'),
-    stones2 = new Stones('stones2'),
-    slingshot1 = new Slingshot('slingshot1'),
-    shortbow1 = new ShortBow('shortbow1'),
-    tunic1 = new Tunic('tunic1'),
-    boots1 = new Boots('boots1'),
-    salve1 = new Salve('salve1');
-
-var itemPlan = [
-  {
-    posY: 15,
-    posX: 8,
-    items: [stick1]
-  }
-];
-
 class Unit {
   constructor(id, faction, name, strength, melee, throwing, ranged, agility, toughness, movement, items, posY, posX, friendly, control, behavior) {
     // basic info
@@ -449,29 +394,6 @@ class Unit {
   get attacksLeft() { return this.attacksPerTurn - this.attacksUsed }
 }
 
-var player0 = new Unit(
-      'player0', 'Player', 'Player Unit',
-      4, 4, 5, 6, 4, 7, 5, [],
-      14, 2, true, 'player'
-    ),
-    enemy0 = new Unit(
-      'enemy0', 'Enemy', 'Enemy Unit',
-      6, 4, 5, 3, 6, 4, 5, [stones2],
-      1, 14, false, 'ai', 'sentry'
-    );
-
-var unitPlan = [
-  {
-    faction: 'Player',
-    control: 'player',
-    units: [ player0, ]
-  }, {
-    faction: 'Enemy',
-    control: 'ai',
-    units: [ enemy0 ]
-  }
-];
-
 class DialogEvent {
   constructor(unit, message, alignLeft) {
     this.eventType = 'dialog';
@@ -527,20 +449,20 @@ class ItemEvent {
   }
 }
 
-var openingDialog = [
-  {
-    unit: player0,
-    message: "Ready..."
-  },
-  {
-    unit: enemy0,
-    message: "Set..."
-  },
-  {
-    unit: player0,
-    message: "Go!"
+class Script {
+  constructor(cause, effect, runsLeft) {
+    this.cause = cause;
+    this.effect = effect;
+    if (runsLeft) { this.runsLeft = runsLeft }
+    else { this.runsLeft = 1 }
+    this.runScript = function () {
+      if (this.runsLeft > 0 && this.cause()) {
+        this.effect();
+        this.runsLeft -= 1;
+      }
+    };
   }
-];
+}
 
 class Shadow {
   constructor(dist, hAng1, hAng2, vDist, hDist) {
@@ -558,6 +480,95 @@ class Shadow {
   }
   get vAngAdj() { return Math.atan2(this.vDist, this.hDistAdj) }
 }
+
+// --------------------------{  Level Design  }---------------------------
+
+var mapImage = { backgroundImage: 'none' };
+
+var mapPlan = [
+  ' L L L L t a a a a a a a p p p p ',
+  ' L L L t t t a a a a a a a p p p ',
+  ' L L t a t a a a a a a a a p p p ',
+  ' L t a t a a T a a a a a a a p r ',
+  ' s t T a a a a a a a a b r r r r ',
+  ' a a a a a a a b r r r r r r r r ',
+  ' b a T a a a a a a b a r r r r r ',
+  ' a a a a a a a a a a a b b r r r ',
+  ' r a b a a a a a a a a a a b r r ',
+  ' r r a a a a T T a a a a a b T r ',
+  ' r r r r r a b b a a T a a a b r ',
+  ' r r r r r r r b b a a a a b a b ',
+  ' r r r r r b b a a a a a a a b a ',
+  ' r r b b a a a a a a T a a a g H ',
+  ' r a a a a a a a T a g a T a a g ',
+  ' b b a a a a T a g a T g a g T a ',
+];
+
+var topoPlan = [
+  ' 0 0 1 2 3 3 3 3 3 3 3 4 5 5 5 5 ',
+  ' 0 1 2 3 3 3 3 3 3 3 3 3 4 5 5 5 ',
+  ' 1 2 3 3 3 3 3 3 3 3 3 3 4 5 5 5 ',
+  ' 2 3 3 3 3 3 3 3 3 3 3 3 4 4 5 5 ',
+  ' 3 3 3 3 3 3 3 3 4 4 4 4 5 5 5 6 ',
+  ' 3 3 3 3 3 3 3 4 5 5 5 5 5 6 6 6 ',
+  ' 3 3 3 3 3 3 3 3 4 4 4 5 5 5 6 6 ',
+  ' 4 3 3 3 3 3 3 3 3 3 3 4 4 5 5 6 ',
+  ' 5 4 3 3 3 3 3 3 3 3 3 3 3 4 5 5 ',
+  ' 5 5 4 4 4 3 3 3 3 3 3 3 3 3 4 5 ',
+  ' 6 5 5 5 5 4 4 3 3 3 3 3 3 3 4 5 ',
+  ' 6 6 6 5 5 5 5 4 3 3 3 3 3 3 3 4 ',
+  ' 6 5 5 5 5 4 4 3 3 3 3 3 3 3 3 3 ',
+  ' 5 5 4 4 4 3 3 3 3 3 3 3 3 3 3 3 ',
+  ' 5 4 3 3 3 3 3 3 3 3 3 3 3 3 3 3 ',
+  ' 4 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 ',
+];
+
+var stick1 = new Stick('stick1'),
+    stones1 = new Stones('stones1'),
+    stones2 = new Stones('stones2'),
+    slingshot1 = new Slingshot('slingshot1'),
+    shortbow1 = new ShortBow('shortbow1'),
+    tunic1 = new Tunic('tunic1'),
+    boots1 = new Boots('boots1'),
+    salve1 = new Salve('salve1');
+
+var itemPlan = [
+  {
+    posY: 15,
+    posX: 8,
+    items: [stick1]
+  }
+];
+
+var player0 = new Unit(
+      'player0', 'Player', 'Player Unit',
+      4, 4, 5, 6, 4, 7, 5, [],
+      14, 2, true, 'player'
+    ),
+    player1 = new Unit(
+      'player1', 'Player', 'Player Unit',
+      7, 4, 4, 3, 4, 8, 5, [],
+      null, null, true, 'player'
+    ),
+    enemy0 = new Unit(
+      'enemy0', 'Enemy', 'Enemy Unit',
+      6, 4, 5, 3, 6, 4, 5, [stones2],
+      1, 14, false, 'ai', 'sentry'
+    );
+
+var unitPlan = [
+  {
+    faction: 'Player',
+    control: 'player',
+    units: [ player0 ]
+  }, {
+    faction: 'Enemy',
+    control: 'ai',
+    units: [ enemy0 ]
+  }
+];
+
+// --------------------------{  Game Loading  }---------------------------
 
 function loadMap (mapPlan) {
   var y, x, row, string, mapData = [];
@@ -679,6 +690,8 @@ function capitalize (string) {
 }
 
 $( document ).ready( function () {
+
+// -------------------------{  Vue Components  }--------------------------
 
 var GroundIcon = {
   template: `
@@ -1494,7 +1507,7 @@ var TurnBanner = {
 };
 
 // ========================================================================
-//                         Vue Instance Starts Here
+//                               Vue Instance
 // ========================================================================
 
 var Game = new Vue ({
@@ -1510,17 +1523,18 @@ var Game = new Vue ({
     action: 'waiting',
     active: null,
     target: null,
-    itemtip: null,
-    events: [],
-    dialog: openingDialog,
-    scrolled: false,
     shadows: null,
-    topoView: false,
+    itemtip: null,
     itemActions: {
       canEquip: false,
       canUse: false,
       canDrop: false
-    }
+    },
+    events: [],
+    dialog: null,
+    scrolled: false,
+    scripts: null,
+    topoView: false
   },
   computed: {
     faction: function () {
@@ -1731,7 +1745,6 @@ var Game = new Vue ({
 // ------------------------------{  Combat  }------------------------------
     
     showAttackRange: function (posY, posX, range) {
-      console.log('Showing attack range for ' + posY + ', ' + posX);
       var inRange = this.findSpacesInAttackRange(posY, posX, range);
       this.shadows = [new Shadow(0, -Math.PI, Math.PI, -0.75, 0.5)];
       for (var r = 1; r <= range[1]; r++) {
@@ -2237,8 +2250,10 @@ var Game = new Vue ({
 // ---------------------{  Artificial Intelligence  }----------------------
     
     beginTurn: function () {
-      var space, effects, unit, oldHp;
-      if (this.units.length) {
+      this.scripts.forEach( function (s) { s.runScript() } );
+      if (this.dialog) { this.advanceDialog() }
+      else if (this.units.length) {
+        var space, effects, unit, oldHp;
         for (u of this.units) {
           space = this.map[u.posY][u.posX];
           effects = space.terrain.effects;
@@ -2256,9 +2271,8 @@ var Game = new Vue ({
         if (this.control === 'ai') {
           window.setTimeout(function(){ Game.aiFaction() }, 2000);
         }
-      } else {
-        this.endTurn();
       }
+      else { this.endTurn() }
     },
     getUnits: function (faction) {
       var y, x, space, units = [];
@@ -2358,12 +2372,18 @@ var Game = new Vue ({
       if (this.dialog) {
         if (this.dialog.length > 0) {
           next = this.dialog.splice(0, 1)[0];
-          if (this.events.length > 0) {
-            alignLeft = !this.events[this.events.length - 1].alignLeft;
-          } else {
-            alignLeft = true;
+          if (typeof(next) === 'object') {
+            if (this.events.length === 0 || next.alignLeft) {
+              alignLeft = true;
+            } else {
+              alignLeft = !this.events[this.events.length - 1].alignLeft;
+            }
+            this.events.push(new DialogEvent(next.unit, next.message, alignLeft));
+          } else
+          if (typeof(next) === 'function') {
+            this.moveTriangle();
+            window.setTimeout(function(){ next() }, 500);
           }
-          this.events.push(new DialogEvent(next.unit, next.message, alignLeft));
         } else {
           this.dialog = null;
           this.moveTriangle();
@@ -2434,6 +2454,55 @@ var Game = new Vue ({
   }
 });
 
+// ------------------------{  Dialog & Scripting  }------------------------
+
+var dialog0 = [
+      {
+        unit: player0,
+        message: "Ready..."
+      },
+      {
+        unit: enemy0,
+        message: "Set..."
+      },
+      {
+        unit: player0,
+        message: "Go!"
+      }
+    ],
+    dialog1 = [
+      {
+        unit: player0,
+        message: "Dad!",
+        alignLeft: true
+      },
+      {
+        unit: player1,
+        message: "Son!"
+      },
+      {
+        unit: player0,
+        message: "Help!"
+      },
+      function(){
+        player1.posY = 13;
+        player1.posX = 14;
+        player1.moving = 'west';
+        Game.map[13][14].unit = player1;
+        window.setTimeout(function(){ Game.advanceDialog() }, 1000);
+      }
+    ];
+
+var script0 = new Script(
+      function(){ return Game.map[14][15].unit && Game.map[14][15].unit.id === 'player0' },
+      function(){ Game.dialog = dialog1 }
+    );
+
+Game.dialog = dialog0;
+Game.scripts = [ script0 ];
+
+// -----------------------------{  Keyboard  }-----------------------------
+
 function keyHandler () {
   // console.log('keyCode: ' + event.keyCode); // Developer mode
   if (event.keyCode !== 86) {
@@ -2485,6 +2554,8 @@ function keyHandler () {
 
 $( document ).keyup( keyHandler );
 
-window.setTimeout(function(){ Game.advanceDialog() }, 1000);
+// ----------------------------{  Start Game  }----------------------------
+
+window.setTimeout(function(){ Game.beginTurn() }, 1000);
 
 });
