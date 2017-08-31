@@ -501,7 +501,7 @@ var mapPlan = [
   ' r r r r r b b a a a a a a a b a ',
   ' r r b b a a a a a a T a a a g H ',
   ' r a a a a a a a T a g a T a a g ',
-  ' b b a a a a T a g a T g a g T a ',
+  ' b a a a a a T a g a T g a g T a ',
 ];
 
 var topoPlan = [
@@ -524,6 +524,7 @@ var topoPlan = [
 ];
 
 var stick1 = new Stick('stick1'),
+    stick2 = new Stick('stick2'),
     stones1 = new Stones('stones1'),
     stones2 = new Stones('stones2'),
     slingshot1 = new Slingshot('slingshot1'),
@@ -535,15 +536,15 @@ var stick1 = new Stick('stick1'),
 var itemPlan = [
   {
     posY: 15,
-    posX: 8,
-    items: [stick1]
+    posX: 11,
+    items: [stones1]
   }
 ];
 
 var player0 = new Unit(
       'player0', 'Player', 'Player Unit',
-      4, 4, 5, 6, 4, 7, 5, [],
-      14, 2, true, 'player'
+      4, 4, 5, 6, 4, 7, 5, [salve1],
+      null, null, true, 'player'
     ),
     player1 = new Unit(
       'player1', 'Player', 'Player Unit',
@@ -552,15 +553,15 @@ var player0 = new Unit(
     ),
     enemy0 = new Unit(
       'enemy0', 'Enemy', 'Enemy Unit',
-      6, 4, 5, 3, 6, 4, 5, [stones2],
-      1, 14, false, 'ai', 'sentry'
+      6, 4, 5, 3, 6, 4, 5, [stick2],
+      14, 15, false, 'ai', 'sentry'
     );
 
 var unitPlan = [
   {
     faction: 'Player',
     control: 'player',
-    units: [ player0 ]
+    units: []
   }, {
     faction: 'Enemy',
     control: 'ai',
@@ -2432,7 +2433,7 @@ var Game = new Vue ({
       } else {
         triangle = $( '<img>', { id: 'triangle', src: 'sprites/advance-dialog.gif' } );
       }
-      if (events[events.length - 1].eventType === 'dialog' && replace) {
+      if (events.length && events[events.length - 1].eventType === 'dialog' && replace) {
         $( '.event' ).filter( ':last' ).find( '.message' ).append( triangle );
       }
     },
@@ -2457,20 +2458,25 @@ var Game = new Vue ({
 // ------------------------{  Dialog & Scripting  }------------------------
 
 var dialog0 = [
-      {
-        unit: player0,
-        message: "Ready..."
+      function(){
+        player0.posY = 15;
+        player0.posX = 2;
+        player0.moving = 'north';
+        Game.map[15][2].unit = player0;
+        window.setTimeout(function(){ Game.advanceDialog() }, 1000);
       },
       {
-        unit: enemy0,
-        message: "Set..."
+        unit: player0,
+        message: "It's getting late. I should probably head home."
       },
       {
         unit: player0,
-        message: "Go!"
+        message: "Something smells good! I wonder what Baba has cooked up this time...",
+        alignLeft: true
       }
-    ],
-    dialog1 = [
+    ];
+
+var dialog1 = [
       {
         unit: player0,
         message: "Dad!",
