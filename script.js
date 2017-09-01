@@ -2479,11 +2479,16 @@ var dialog0 = [
       },
       {
         unit: player0,
-        message: "It's getting late. I should probably head home."
+        message: "It's getting late. Time to look for somewhere to spend the night."
       },
       {
         unit: player0,
-        message: "Something smells good! I wonder what Baba has cooked up this time...",
+        message: "Something smells good! I wonder where that smell is coming from...",
+        alignLeft: true
+      },
+      {
+        unit: player0,
+        message: "Is that a house through those trees? Maybe they have a spare bed.",
         alignLeft: true
       }
     ];
