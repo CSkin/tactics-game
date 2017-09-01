@@ -456,7 +456,7 @@ class Script {
     if (runsLeft) { this.runsLeft = runsLeft }
     else { this.runsLeft = 1 }
     this.runScript = function () {
-      if (this.runsLeft > 0 && this.cause()) {
+      if (this.cause()) {
         this.effect();
         this.runsLeft -= 1;
       }
@@ -554,7 +554,7 @@ var player0 = new Unit(
     enemy0 = new Unit(
       'enemy0', 'Enemy', 'Enemy Unit',
       6, 4, 5, 3, 6, 4, 5, [stick2],
-      14, 15, false, 'ai', 'sentry'
+      null, null, false, 'ai', 'sentry'
     );
 
 var unitPlan = [
@@ -565,7 +565,7 @@ var unitPlan = [
   }, {
     faction: 'Enemy',
     control: 'ai',
-    units: [ enemy0 ]
+    units: []
   }
 ];
 
@@ -2250,21 +2250,22 @@ var Game = new Vue ({
     
 // ---------------------{  Artificial Intelligence  }----------------------
     
+    getUnits: function (faction) {
+      var y, x, space, units = [];
+      for (y = 0; y < 16; y++) {
+        for (x = 0; x < 16; x++) {
+          space = this.map[y][x];
+          if (space.unit && space.unit.faction === faction) { units.push(space.unit) }
+        }
+      }
+      return units;
+    },
     beginTurn: function () {
-      this.scripts.forEach( function (s) { s.runScript() } );
+      this.runScripts();
       if (this.dialog) { this.advanceDialog() }
       else if (this.units.length) {
-        var space, effects, unit, oldHp;
-        for (u of this.units) {
-          space = this.map[u.posY][u.posX];
-          effects = space.terrain.effects;
-          unit = space.unit; oldHp = unit.hp;
-          if (effects) {
-            for (var effect in effects) {
-              unit[effect](effects[effect]);
-            }
-          }
-          if (unit.hp !== oldHp) { Game.events.push(new ConditionEvent(unit, Game.faction)) }
+        for (unit of this.units) {
+          this.applyTerrainEffects(unit);
           unit.resetActionPoints();
         }
         this.banner = true;
@@ -2275,15 +2276,23 @@ var Game = new Vue ({
       }
       else { this.endTurn() }
     },
-    getUnits: function (faction) {
-      var y, x, space, units = [];
-      for (y = 0; y < 16; y++) {
-        for (x = 0; x < 16; x++) {
-          space = this.map[y][x];
-          if (space.unit && space.unit.faction === faction) { units.push(space.unit) }
+    runScripts: function () {
+      this.scripts.forEach( function (script, index, array) {
+        if (script.runsLeft > 0) { script.runScript() }
+        else { array.splice(index, 1) }
+      });
+    },
+    applyTerrainEffects: function (u) {
+      var space = this.map[u.posY][u.posX],
+          effects = space.terrain.effects,
+          unit = space.unit,
+          oldHp = unit.hp;
+      if (effects) {
+        for (var effect in effects) {
+          unit[effect](effects[effect]);
         }
       }
-      return units;
+      if (unit.hp !== oldHp) { Game.events.push(new ConditionEvent(unit, Game.faction)) }
     },
     aiFaction: function () {
       var unitFunc;
@@ -2364,6 +2373,13 @@ var Game = new Vue ({
       this.active = null;
       this.target = null;
       this.beginTurn();
+    },
+    spawnUnit: function (unit, posY, posX, moving) {
+      unit.posY = posY;
+      unit.posX = posX;
+      unit.moving = moving;
+      Game.map[posY][posX].unit = unit;
+      window.setTimeout(function(){ Game.advanceDialog() }, 1000);
     },
     
 // ----------------------------{  Event Log  }-----------------------------
@@ -2459,11 +2475,7 @@ var Game = new Vue ({
 
 var dialog0 = [
       function(){
-        player0.posY = 15;
-        player0.posX = 2;
-        player0.moving = 'north';
-        Game.map[15][2].unit = player0;
-        window.setTimeout(function(){ Game.advanceDialog() }, 1000);
+        Game.spawnUnit(player0, 15, 2, 'north');
       },
       {
         unit: player0,
@@ -2491,11 +2503,7 @@ var dialog1 = [
         message: "Help!"
       },
       function(){
-        player1.posY = 13;
-        player1.posX = 14;
-        player1.moving = 'west';
-        Game.map[13][14].unit = player1;
-        window.setTimeout(function(){ Game.advanceDialog() }, 1000);
+        Game.spawnUnit(player1, 13, 14, 'west');
       }
     ];
 
