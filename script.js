@@ -115,6 +115,7 @@ class Space {
     this.moves = null;
     this.path = null;
     this.distance = null;
+    this.goal = false;
     this.items = [];
     this.selected = false;
     this.hideEverything = function () {
@@ -124,6 +125,7 @@ class Space {
     };
   }
   get posZ() { return (this.terrain.elevation + this.terrain.height) / 2 }
+  get highlight() { return this.path || this.distance || this.goal }
 }
 
 class Item {
@@ -762,7 +764,7 @@ var Highlight = {
         <svg width='32' height='32' :style='cursorStyle'>
           <image x='-32' y='-32' width='64' height='64' :xlink:href='highlightHref'>
             <animateTransform attributeName="transform" attributeType="XML" type="translate"
-                              from="0 0" to="32 32" dur="1.5s" repeatCount="indefinite"/>
+                              from="0 0" to="32 32" :dur="animationSpeed" repeatCount="indefinite"/>
           </image>
         </svg>
       </div>
@@ -771,14 +773,15 @@ var Highlight = {
   props: ['space'],
   computed: {
     highlightHref: function () {
-      if (this.space.path) { return 'sprites/movable.png' }
+      if (this.space.path) { return 'sprites/highlight-blue.png' }
       if (this.space.distance) {
         if (this.space.unit && this.space.unit.friendly !== Game.active.unit.friendly) {
-          return 'sprites/targeted.png'
+          return 'sprites/highlight-solidred.png'
         } else {
-          return 'sprites/attackable.png'
+          return 'sprites/highlight-red.png'
         }
       }
+      if (this.space.goal) { return 'sprites/highlight-yellow.png' }
     },
     cursorStyle: function () {
       if (this.space.path && Game.active.unit.control === 'player') {
@@ -786,6 +789,9 @@ var Highlight = {
       } else {
         return { cursor: 'initial' }
       }
+    },
+    animationSpeed: function () {
+      if (this.space.goal) { return '3s' } else { return '1.5s' }
     }
   }
 };
@@ -831,7 +837,7 @@ var Space = {
   template: `
     <div class='space' @click='clickHandler'>
       <terrain :terrain='space.terrain' :items='space.items' :topo-view='status.topoView'></terrain>
-      <highlight v-if='space.path || space.distance' :space='space'></highlight>
+      <highlight v-if='space.highlight' :space='space'></highlight>
       <unit v-if='space.unit'  :unit='space.unit'></unit>
       <unit v-if='space.unit2' :unit='space.unit2'></unit>
       <transition name='fade'>
@@ -2374,11 +2380,15 @@ var Game = new Vue ({
       this.target = null;
       this.beginTurn();
     },
-    spawnUnit: function (unit, posY, posX, moving) {
-      unit.posY = posY;
-      unit.posX = posX;
+    spawnUnit: function (unit, y, x, moving) {
+      unit.posY = y;
+      unit.posX = x;
       unit.moving = moving;
-      Game.map[posY][posX].unit = unit;
+      Game.map[y][x].unit = unit;
+      window.setTimeout(function(){ Game.advanceDialog() }, 1000);
+    },
+    setGoal: function (y, x) {
+      Game.map[y][x].goal = true;
       window.setTimeout(function(){ Game.advanceDialog() }, 1000);
     },
     
@@ -2488,8 +2498,11 @@ var dialog0 = [
       },
       {
         unit: player0,
-        message: "Is that a house through those trees? Maybe they have a spare bed.",
+        message: "Is that a house through those trees? Maybe they have a spare bed. I'd better investigate.",
         alignLeft: true
+      },
+      function(){
+        Game.setGoal(14, 15);
       }
     ];
 
