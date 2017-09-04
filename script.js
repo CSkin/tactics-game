@@ -399,11 +399,14 @@ class Unit {
 class DialogEvent {
   constructor(unit, message, alignLeft) {
     this.eventType = 'dialog';
-    this.subject = unit.name;
-    this.portrait = 'sprites/' + unit.id.replace(/\d/, '') + '-portrait.png';
-    this.faction = unit.faction;
+    if (unit) {
+      this.subject = unit.name;
+      this.portrait = 'sprites/' + unit.id.replace(/\d/, '') + '-portrait.png';
+      this.faction = unit.faction;
+      this.alignLeft = alignLeft;
+    }
+    else { this.alignLeft = false }
     this.message = message;
-    this.alignLeft = alignLeft;
   }
 }
 
@@ -2533,7 +2536,7 @@ var script0 = new Script(
 Game.dialog = dialog0;
 Game.scripts = [ script0 ];
 
-// -----------------------------{  Keyboard  }-----------------------------
+// ----------------------------{  Interface  }-----------------------------
 
 function keyHandler () {
   // console.log('keyCode: ' + event.keyCode); // Developer mode
