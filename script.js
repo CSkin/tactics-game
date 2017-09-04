@@ -405,7 +405,7 @@ class DialogEvent {
       this.faction = unit.faction;
       this.alignLeft = alignLeft;
     }
-    else { this.alignLeft = false }
+    else { this.alignLeft = true }
     this.message = message;
   }
 }
@@ -1324,9 +1324,9 @@ var EventDialog = {
     <transition name='fade-long'>
       <div class='event dialog'>
         <div class='content' :class='alignment'>
-          <img v-if='event.alignLeft' class='portrait' :src='event.portrait' :title='event.subject'>
+          <img v-if='event.portrait && event.alignLeft' class='portrait' :src='event.portrait' :title='event.subject'>
           <div class='message' :style='messageColor'>{{ event.message }}</div>
-          <img v-if='!event.alignLeft' class='portrait' :src='event.portrait' :title='event.subject'>
+          <img v-if='event.portrait && !event.alignLeft' class='portrait' :src='event.portrait' :title='event.subject'>
         </div>
       </div>
     </transition>
