@@ -406,7 +406,7 @@ p {
 .message {
   position: relative;
   max-width: 344px;
-  margin: 0 20px;
+  margin-left: 20px;
   padding: 8px 10px;
 }
 
@@ -454,6 +454,19 @@ p {
 .align-right .message:after {
   left: 100%;
 }
+
+.tutorial {
+  position: relative;
+  max-width: 484px;
+  padding: 8px 10px;
+  background: #4080bf;
+  color: white;
+  border-radius: 8px;
+}
+
+.tutorial:before {}
+
+.tutorial:after {}
 
 #triangle {
   position: relative;

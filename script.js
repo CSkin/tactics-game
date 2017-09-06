@@ -830,7 +830,7 @@ var Unit = {
       }
       else {
         Game.map[unit.posY][unit.posX].unit.moving = null;
-        Game.action = null;
+        if (Game.action === 'moving') { Game.action = null }
       }
     }
   }
@@ -1325,7 +1325,7 @@ var EventDialog = {
       <div class='event dialog'>
         <div class='content' :class='alignment'>
           <img v-if='event.portrait && event.alignLeft' class='portrait' :src='event.portrait' :title='event.subject'>
-          <div class='message' :style='messageColor'>{{ event.message }}</div>
+          <div :class='messageClass' :style='messageColor'>{{ event.message }}</div>
           <img v-if='event.portrait && !event.alignLeft' class='portrait' :src='event.portrait' :title='event.subject'>
         </div>
       </div>
@@ -1335,6 +1335,9 @@ var EventDialog = {
   computed: {
     alignment: function () {
       if (this.event.alignLeft) { return 'align-left' } else { return 'align-right' }
+    },
+    messageClass: function () {
+      if (this.event.subject) { return 'message' } else { return 'tutorial' }
     },
     messageColor: function () {
       switch (this.event.faction) {
@@ -2463,7 +2466,7 @@ var Game = new Vue ({
         triangle = $( '<img>', { id: 'triangle', src: 'sprites/advance-dialog.gif' } );
       }
       if (events.length && events[events.length - 1].eventType === 'dialog' && replace) {
-        $( '.event' ).filter( ':last' ).find( '.message' ).append( triangle );
+        $( '.event' ).filter( ':last' ).find( '.message,.tutorial' ).append( triangle );
       }
     },
     scrollHandler: function () {
@@ -2506,6 +2509,10 @@ var dialog0 = [
       },
       function(){
         Game.setGoal(14, 15);
+      },
+      {
+        unit: null,
+        message: "Help Player Unit reach the highlighted space. To move: select a unit, press M, then click where you want to go."
       }
     ];
 
