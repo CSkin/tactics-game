@@ -863,6 +863,7 @@ var Space = {
       if (Game.control === 'player') {
         switch (Game.action) {
           case 'waiting':
+            Game.advanceDialog();
             break;
           case 'moving':
             if (path) { Game.moveUnit(Game.active.posY, Game.active.posX, path) }
@@ -2499,7 +2500,7 @@ var dialog0 = [
       },
       {
         unit: player0,
-        message: "Something smells good! I wonder where that smell is coming from...",
+        message: "Something smells good! I wonder where that delicious aroma is coming from...",
         alignLeft: true
       },
       {
@@ -2547,6 +2548,7 @@ Game.scripts = [ script0 ];
 
 function keyHandler () {
   // console.log('keyCode: ' + event.keyCode); // Developer mode
+  if (Game.action = 'waiting') { Game.advanceDialog() }
   if (event.keyCode !== 86) {
     if (Game.control === 'player' && Game.active && Game.active.unit) {
       switch (event.keyCode) {
