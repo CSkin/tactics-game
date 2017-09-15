@@ -39,7 +39,6 @@ p {
   height: 512px;
   align-items: center;
   justify-content: center;
-  overflow: hidden;
 }
 
 #top-right {
@@ -405,8 +404,6 @@ p {
 
 .message {
   position: relative;
-  max-width: 344px;
-  margin-left: 20px;
   padding: 8px 10px;
 }
 
@@ -430,6 +427,7 @@ p {
 }
 
 .align-left .message {
+  margin-left: 20px;
   border-radius: 8px 8px 8px 0;
 }
 
@@ -443,6 +441,7 @@ p {
 }
 
 .align-right .message {
+  margin-right: 20px;
   border-radius: 8px 8px 0 8px;
 }
 
@@ -457,16 +456,11 @@ p {
 
 .tutorial {
   position: relative;
-  max-width: 484px;
   padding: 8px 10px;
   background: #4080bf;
   color: white;
   border-radius: 8px;
 }
-
-.tutorial:before {}
-
-.tutorial:after {}
 
 #triangle {
   position: relative;

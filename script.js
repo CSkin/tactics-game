@@ -504,9 +504,9 @@ var mapPlan = [
   ' r r r r r a b b a a T a a a b r ',
   ' r r r r r r r b b a a a a b a b ',
   ' r r r r r b b a a a a a a a b a ',
-  ' r r b b a a a a a a T a a a g H ',
-  ' r a a a a a a a T a g a T a a g ',
-  ' b a a a a a T a g a T g a g T a ',
+  ' r r b b a a a a a T a a a a g H ',
+  ' r a a a a a a T a g a T a a a g ',
+  ' b a a a a T g a g T g a g T a a ',
 ];
 
 var topoPlan = [
@@ -540,19 +540,19 @@ var stick1 = new Stick('stick1'),
 
 var itemPlan = [
   {
-    posY: 15,
-    posX: 11,
-    items: [stones1]
+    posY: 14,
+    posX: 9,
+    items: [stick1]
   }
 ];
 
 var player0 = new Unit(
-      'player0', 'Player', 'Player Unit',
+      'player0', 'Player', 'Kellan',
       4, 4, 5, 6, 4, 7, 5, [salve1],
       null, null, true, 'player'
     ),
     player1 = new Unit(
-      'player1', 'Player', 'Player Unit',
+      'player1', 'Player', 'Lizza',
       7, 4, 4, 3, 4, 8, 5, [],
       null, null, true, 'player'
     ),
@@ -2513,23 +2513,53 @@ var dialog0 = [
       },
       {
         unit: null,
-        message: "Help Player Unit reach the highlighted space. To move: select a unit, press M, then click where you want to go."
+        message: "Help Kellan reach the highlighted space. To move: select a unit, press M, then click where you want to go."
+      },
+      {
+        unit: null,
+        message: "Once you've moved all your units, end your turn by clicking End Turn."
       }
     ];
 
 var dialog1 = [
+      function(){
+        Game.spawnUnit(enemy0, 14, 15, 'west');
+      },
       {
-        unit: player0,
-        message: "Dad!",
-        alignLeft: true
+        unit: enemy0,
+        message: "*knock* *knock*"
       },
       {
         unit: player1,
-        message: "Son!"
+        message: "Who's there?"
       },
       {
+        unit: enemy0,
+        message: "A.. A soldier of the Imperial Army!"
+      },
+      {
+        unit: player1,
+        message: "Oh really? I wasn't aware Imperial forces had made it this far west."
+      },
+      {
+        unit: enemy0,
+        message: "Well.. we have! By martial law, I order you to let me in."
+      },
+      {
+        unit: player1,
+        message: "I don't think so. Go harass someone else."
+      },
+      {
+        unit: enemy0,
+        message: "Hah! Fine, I'll just break down the door. *BANG* Oww.."
+      },
+    ];
+
+var dialog2 = [
+      {
         unit: player0,
-        message: "Help!"
+        message: "Is anyone there?",
+        alignLeft: true
       },
       function(){
         Game.spawnUnit(player1, 13, 14, 'west');
@@ -2537,8 +2567,13 @@ var dialog1 = [
     ];
 
 var script0 = new Script(
-      function(){ return Game.map[14][15].unit && Game.map[14][15].unit.id === 'player0' },
+      function(){ return Game.turn === 1 && Game.faction === "Enemy" },
       function(){ Game.dialog = dialog1 }
+    );
+
+var script1 = new Script(
+      function(){ return Game.map[14][15].unit && Game.map[14][15].unit.id === 'player0' },
+      function(){ Game.dialog = dialog2 }
     );
 
 Game.dialog = dialog0;
@@ -2548,7 +2583,7 @@ Game.scripts = [ script0 ];
 
 function keyHandler () {
   // console.log('keyCode: ' + event.keyCode); // Developer mode
-  if (Game.action = 'waiting') { Game.advanceDialog() }
+  if (Game.action === 'waiting') { Game.advanceDialog() }
   if (event.keyCode !== 86) {
     if (Game.control === 'player' && Game.active && Game.active.unit) {
       switch (event.keyCode) {
