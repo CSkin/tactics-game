@@ -547,17 +547,17 @@ var itemPlan = [
 ];
 
 var player0 = new Unit(
-      'player0', 'Player', 'Kellan',
+      'player0', 'Player', 'Lizzie',
       4, 4, 5, 6, 4, 7, 5, [salve1],
       null, null, true, 'player'
     ),
     player1 = new Unit(
-      'player1', 'Player', 'Lizza',
+      'player1', 'Player', 'Corbin',
       7, 4, 4, 3, 4, 8, 5, [],
       null, null, true, 'player'
     ),
     enemy0 = new Unit(
-      'enemy0', 'Enemy', 'Enemy Unit',
+      'enemy0', 'Enemy', 'Ruffian',
       6, 4, 5, 3, 6, 4, 5, [stick2],
       null, null, false, 'ai', 'sentry'
     );
@@ -2513,11 +2513,7 @@ var dialog0 = [
       },
       {
         unit: null,
-        message: "Help Kellan reach the highlighted space. To move: select a unit, press M, then click where you want to go."
-      },
-      {
-        unit: null,
-        message: "Once you've moved all your units, end your turn by clicking End Turn."
+        message: "Help Lizzie reach the highlighted space. To move: select a unit, press M, then click where you want to go. Once you've moved all your units, end your turn by clicking End Turn."
       }
     ];
 
@@ -2535,7 +2531,7 @@ var dialog1 = [
       },
       {
         unit: enemy0,
-        message: "A.. A soldier of the Imperial Army!"
+        message: "A... an Imperial Army soldier!"
       },
       {
         unit: player1,
@@ -2543,7 +2539,7 @@ var dialog1 = [
       },
       {
         unit: enemy0,
-        message: "Well.. we have! By martial law, I order you to let me in."
+        message: "Well.. we have! And as you're now a subject of my Empire, I demand a ladle of whatever you've got cooking in there."
       },
       {
         unit: player1,
@@ -2551,7 +2547,7 @@ var dialog1 = [
       },
       {
         unit: enemy0,
-        message: "Hah! Fine, I'll just break down the door. *BANG* Oww.."
+        message: "Hah! You're going to regret that..."
       },
     ];
 
