@@ -504,9 +504,9 @@ var mapPlan = [
   ' r r r r r a b b a a T a a a b r ',
   ' r r r r r r r b b a a a a b a b ',
   ' r r r r r b b a a a a a a a b a ',
-  ' r r b b a a a a a T a a a a g H ',
-  ' r a a a a a a T a g a T a a a g ',
-  ' b a a a a T g a g T g a g T a a ',
+  ' r r b b a a a a a a T a a a g H ',
+  ' r a a a a a a a a T g g a a a g ',
+  ' b a a a a a T b g g g b T a a a ',
 ];
 
 var topoPlan = [
@@ -540,8 +540,8 @@ var stick1 = new Stick('stick1'),
 
 var itemPlan = [
   {
-    posY: 14,
-    posX: 9,
+    posY: 15,
+    posX: 10,
     items: [stick1]
   }
 ];
@@ -2402,15 +2402,17 @@ var Game = new Vue ({
 // ----------------------------{  Event Log  }-----------------------------
     
     advanceDialog: function () {
-      var next, alignLeft;
+      var prev, next, alignLeft;
       if (this.dialog) {
         if (this.dialog.length > 0) {
-          next = this.dialog.splice(0, 1)[0];
+          next = this.dialog.shift();
           if (typeof(next) === 'object') {
-            if (this.events.length === 0 || next.alignLeft) {
-              alignLeft = true;
-            } else {
-              alignLeft = !this.events[this.events.length - 1].alignLeft;
+            if (this.events.length === 0 || !next.unit) { alignLeft = true }
+            else if (typeof next.alignLeft !== 'undefined') { alignLeft = next.alignLeft }
+            else {
+              prev = this.events[this.events.length - 1];
+              if (next.unit.name === prev.subject) { alignLeft = prev.alignLeft }
+              else { alignLeft = !prev.alignLeft }
             }
             this.events.push(new DialogEvent(next.unit, next.message, alignLeft));
           } else
@@ -2496,17 +2498,15 @@ var dialog0 = [
       },
       {
         unit: player0,
-        message: "It's getting late. Time to look for somewhere to spend the night."
+        message: "Sun's almost down. Time to find somewhere to set up camp."
       },
       {
         unit: player0,
-        message: "Something smells good! I wonder where that delicious aroma is coming from...",
-        alignLeft: true
+        message: "Oooh, that smell... Someone's got a stew on. I wonder where it's coming from."
       },
       {
         unit: player0,
-        message: "Is that a house through those trees? Maybe they have a spare bed. I'd better investigate.",
-        alignLeft: true
+        message: "Is that a hut through those trees? It's been ages since I slept in a proper bed..."
       },
       function(){
         Game.setGoal(14, 15);
@@ -2523,32 +2523,29 @@ var dialog1 = [
       },
       {
         unit: enemy0,
-        message: "*knock* *knock*"
-      },
-      {
-        unit: player1,
-        message: "Who's there?"
+        message: "*knock* *knock*",
+        alignLeft: false
       },
       {
         unit: enemy0,
-        message: "A... an Imperial Army soldier!"
+        message: "Oi. What you got cookin' in there?"
       },
       {
         unit: player1,
-        message: "Oh really? I wasn't aware Imperial forces had made it this far west."
+        message: "Who's asking?"
       },
       {
         unit: enemy0,
-        message: "Well.. we have! And as you're now a subject of my Empire, I demand a ladle of whatever you've got cooking in there."
+        message: "Just a weary, hungry traveler. Nicest fella you ever met. Come on, open this door."
       },
       {
         unit: player1,
-        message: "I don't think so. Go harass someone else."
+        message: "Actual nice fellas don't need to convince anyone. Take your schtick somewhere else."
       },
       {
         unit: enemy0,
-        message: "Hah! You're going to regret that..."
-      },
+        message: "Fine, smart guy. I ain't that nice. But I am comin' in. So you best stand back or you're gonna get hurt."
+      }
     ];
 
 var dialog2 = [
