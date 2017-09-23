@@ -249,7 +249,7 @@ class Boots extends Clothing {
 
 class Salve extends Accessory {
   constructor(id, slot) {
-    super(8, id, 'salve', 'Salve', 'Heals most any wound.', true, { restoreHealth: 2 }, [0], slot);
+    super(8, id, 'salve', 'Salve', 'Kills pain and heals minor wounds.', true, { restoreHealth: 2 }, [0], slot);
   }
 }
 
@@ -304,6 +304,9 @@ class Unit {
     this.findItemIndex = function (id) {
       return this.items.indexOf(this.items.filter( i => i.id === id )[0]);
     };
+    this.hasItem = function (id) {
+      return this.items.filter( i => i.id === id ).length;
+    },
     this.equipWeapon = function (id) {
       for (var item of this.items) {
         if (item.itemType === 'weapon') { item.equipped = false }
@@ -505,7 +508,7 @@ var mapPlan = [
   ' r r r r r r r b b a a a a b a b ',
   ' r r r r r b b a a a a a a a b a ',
   ' r r b b a a a a a a T a a a g H ',
-  ' r a a a a a a a a T g g a a a g ',
+  ' r a a a a a a a a b g g a a a g ',
   ' b a a a a a T b g g g b T a a a ',
 ];
 
@@ -1627,13 +1630,13 @@ var Game = new Vue ({
         Game.makeGroundItemsDraggable('.ground');
       });
     },
-    checkRanges: function () {
+    checkRanges: function (unit) {
       if (this.action) { this.cancelAction() }
-      var unit = this.active.unit;
+      if (!unit) { unit = this.active.unit }
       this.action = 'checking';
       this.showMoveRange(unit.posY, unit.posX, unit.movesLeft, '');
       this.preventCollision();
-      this.findSpacesInMoveRange().forEach( function (s) {
+      this.findSpacesInMoveRange(unit).forEach( function (s) {
         Game.showAttackRange(s.posY, s.posX, s.range);
       });
       this.map[unit.posY][unit.posX].distance = null;
@@ -2239,12 +2242,12 @@ var Game = new Vue ({
     
 // --------------------------{  Range Checking  }--------------------------
     
-    findSpacesInMoveRange: function () {
+    findSpacesInMoveRange: function (unit) {
       var y, x,
-          posY = this.active.unit.posY,
-          posX = this.active.unit.posX,
-          moves = this.active.unit.movesLeft,
-          range = this.active.unit.range,
+          posY = unit.posY,
+          posX = unit.posX,
+          moves = unit.movesLeft,
+          range = unit.range,
           inRange = [{ posY: posY, posX: posX, range: range }];
       for (y = Math.max(posY - moves, 0); y <= Math.min(posY + moves, 15); y++) {
         for (x = Math.max(posX - moves, 0); x <= Math.min(posX + moves, 15); x++) {
@@ -2272,6 +2275,16 @@ var Game = new Vue ({
         }
       }
       return units;
+    },
+    getUnit: function (id) {
+      var y, x, space, units = [];
+      for (y = 0; y < 16; y++) {
+        for (x = 0; x < 16; x++) {
+          space = this.map[y][x];
+          if (space.unit && space.unit.id === id) { return space.unit }
+        }
+      }
+      return null;
     },
     beginTurn: function () {
       this.runScripts();
@@ -2391,13 +2404,13 @@ var Game = new Vue ({
       unit.posY = y;
       unit.posX = x;
       unit.moving = moving;
-      Game.map[y][x].unit = unit;
+      this.map[y][x].unit = unit;
       window.setTimeout(function(){ Game.advanceDialog() }, 1000);
     },
     setGoal: function (y, x) {
-      Game.map[y][x].goal = true;
+      this.map[y][x].goal = true;
       window.setTimeout(function(){ Game.advanceDialog() }, 1000);
-    },
+    }
     
 // ----------------------------{  Event Log  }-----------------------------
     
@@ -2492,6 +2505,8 @@ var Game = new Vue ({
 
 // ------------------------{  Dialog & Scripting  }------------------------
 
+// Player Turn 1
+
 var dialog0 = [
       function(){
         Game.spawnUnit(player0, 15, 2, 'north');
@@ -2517,18 +2532,25 @@ var dialog0 = [
       }
     ];
 
+var script0 = new Script(
+      function(){ return Game.turn === 1 && Game.faction === "Player" },
+      function(){ Game.dialog = dialog0 }
+    );
+
+// Enemy Turn 1
+
 var dialog1 = [
       function(){
         Game.spawnUnit(enemy0, 14, 15, 'west');
       },
       {
-        unit: enemy0,
-        message: "*knock* *knock*",
-        alignLeft: false
+        unit: null,
+        message: "*knock* *knock*"
       },
       {
         unit: enemy0,
-        message: "Oi. What you got cookin' in there?"
+        message: "Oi. What you got cookin' in there?",
+        alignLeft: false
       },
       {
         unit: player1,
@@ -2548,29 +2570,127 @@ var dialog1 = [
       }
     ];
 
+var script1 = new Script(
+      function(){ return Game.turn === 1 && Game.faction === "Enemy" },
+      function(){ Game.dialog = dialog1 }
+    );
+
+// Player Turn 2
+
 var dialog2 = [
       {
+        unit: null,
+        message: "*LOUD BANGING*"
+      },
+      {
         unit: player0,
-        message: "Is anyone there?",
-        alignLeft: true
+        message: "Oh, shit! That guy’s trying to break in! I have to stop him. There’s gotta be something around here I can use as a weapon..."
+      },
+      {
+        unit: null,
+        message: "To pick up an item: walk over to it, press E, then drag the item into your inventory. You can carry three types of items: weapons, clothing, and accessories. Be sure to drop each into its appropriate slot."
+      }
+    ];
+
+var script2 = new Script(
+      function(){ return Game.turn === 2 && Game.faction === "Player" },
+      function(){ Game.dialog = dialog2 }
+    );
+
+// Lizzie has picked up Heavy Stick but it's not equipped
+
+var dialog3 = [
+      {
+        unit: null,
+        message: "Weapons must be equipped before they can be used in combat. Equip the Heavy Stick: press E to open the Equipment panel, then drag the Heavy Stick upward until you see the word “Equip”."
+      },
+    ];
+
+var script3 = new Script(
+      function(){
+        var unit = Game.getUnit('player0')];
+        return unit.hasItem('stick0') && unit.equipped.id !== 'stick0';
+      },
+      function(){ Game.dialog = dialog3 }
+    );
+
+// Ruffian is in striking range of Lizzie
+
+var dialog4 = [
+      {
+        unit: player0,
+        message: "Heads up, idiot!"
+      },
+      {
+        unit: enemy0,
+        message: "Aw, did I ruin your door? Bring it on, girlie!"
+      },
+      {
+        unit: ,
+        message: "Time to show this ruffian what you’re made of. Move adjacent to the enemy, press A, then select the Ruffian. Press Enter to confirm."
+      }
+    ];
+
+var script4 = new Script(
+      function(){
+        Game.checkRanges(Game.getUnit('player0'));
+        var space = Game.map[14][15];
+        return space.path || space.distance;
+      },
+      function(){ Game.dialog = dialog4 }
+    );
+
+// Lizzie's condition is Critical
+
+var dialog5 = [
+      {
+        unit: player0,
+        message: "Ow, he got me. I should have a salve in my pack."
+      },
+      {
+        unit: null,
+        message: "Salves are used to treat wounds in the heat of battle. To use Lizzie’s Salve, open the Equipment panel, then drag the Salve upward."
+      }
+    ];
+
+var script5 = new Script(
+      function(){ return Game.getUnit('player0').hp === 1 },
+      function(){ Game.dialog = dialog5 }
+    );
+
+// Lizzie is at space 14, 15
+
+var dialog6 = [
+      {
+        unit: player0,
+        message: "Is anyone there?"
+      },
+      {
+        unit: player1,
+        message: "Wow, nice going. I was just going to let him tire himself out. Is he dead?"
+      },
+      {
+        unit: player0,
+        message: "Just knocked out, I think. I’m Lizzie, by the way."
+      },
+      {
+        unit: player1,
+        message: "Corbin. Nice to meet you."
       },
       function(){
         Game.spawnUnit(player1, 13, 14, 'west');
       }
     ];
 
-var script0 = new Script(
-      function(){ return Game.turn === 1 && Game.faction === "Enemy" },
-      function(){ Game.dialog = dialog1 }
+var script6 = new Script(
+      function(){
+        var unit = Game.getUnit('player0');
+        return unit.posY === 14 && unit.posX === 15;
+      },
+      function(){ Game.dialog = dialog6 }
     );
 
-var script1 = new Script(
-      function(){ return Game.map[14][15].unit && Game.map[14][15].unit.id === 'player0' },
-      function(){ Game.dialog = dialog2 }
-    );
-
-Game.dialog = dialog0;
-Game.scripts = [ script0 ];
+Game.scripts = [ script0, script1, script2, script3, script4, script5, script6 ];
 
 // ----------------------------{  Interface  }-----------------------------
 
