@@ -89,7 +89,7 @@ class Silversword extends Terrain {
 
 class Rocky extends Terrain {
   constructor() {
-    super('rocky', 4, 3, null);
+    super('rocky slope', 4, 3, null);
   }
 }
 
@@ -506,10 +506,10 @@ var mapPlan = [
   ' r r a a a a T T a a a a a b T r ',
   ' r r r r r a b b a a T a a a b r ',
   ' r r r r r r r b b a a a a b a b ',
-  ' r r r r r b b a a a a a a a b a ',
-  ' r r b b a a a a a a T a a a g H ',
-  ' r a a a a a a a a b g g a a a g ',
-  ' b a a a a a T b g g g b T a a a ',
+  ' r r r r r b b a a a a T a a b a ',
+  ' r r b b a a a a a T a a a a g H ',
+  ' r a a a a a a T a a a T a a a g ',
+  ' b a a a a T a a a T a a a T a a ',
 ];
 
 var topoPlan = [
@@ -543,25 +543,27 @@ var stick1 = new Stick('stick1'),
 
 var itemPlan = [
   {
-    posY: 15,
-    posX: 10,
+    posY: 14,
+    posX: 9,
     items: [stick1]
   }
 ];
 
+// Str, Mle, Thr, Rng, Agi, Tgh, Mov
+
 var player0 = new Unit(
       'player0', 'Player', 'Lizzie',
-      4, 4, 5, 6, 4, 7, 5, [salve1],
+      5, 5, 5, 4, 6, 5, 5, [salve1],
       null, null, true, 'player'
     ),
     player1 = new Unit(
       'player1', 'Player', 'Corbin',
-      7, 4, 4, 3, 4, 8, 5, [],
+      5, 3, 4, 6, 4, 8, 5, [shortbow1],
       null, null, true, 'player'
     ),
     enemy0 = new Unit(
       'enemy0', 'Enemy', 'Ruffian',
-      6, 4, 5, 3, 6, 4, 5, [stick2],
+      6, 4, 3, 2, 3, 5, 5, [stick2],
       null, null, false, 'ai', 'sentry'
     );
 
@@ -695,7 +697,7 @@ function shuffle (array) {
 }
 
 function capitalize (string) {
-  return string.charAt(0).toUpperCase() + string.slice(1);
+  return string.split(' ').map( s => s.charAt(0).toUpperCase() + s.slice(1) ).join(' ');
 }
 
 $( document ).ready( function () {
@@ -2408,9 +2410,9 @@ var Game = new Vue ({
       window.setTimeout(function(){ Game.advanceDialog() }, 1000);
     },
     setGoal: function (y, x) {
-      this.map[y][x].goal = true;
+      this.map[y][x].goal = !this.map[y][x].goal;
       window.setTimeout(function(){ Game.advanceDialog() }, 1000);
-    }
+    },
     
 // ----------------------------{  Event Log  }-----------------------------
     
@@ -2544,13 +2546,13 @@ var dialog1 = [
         Game.spawnUnit(enemy0, 14, 15, 'west');
       },
       {
-        unit: null,
-        message: "*knock* *knock*"
+        unit: enemy0,
+        message: "*knock* *knock*",
+        alignLeft: false
       },
       {
         unit: enemy0,
-        message: "Oi. What you got cookin' in there?",
-        alignLeft: false
+        message: "Oi. What you got cookin' in there?"
       },
       {
         unit: player1,
@@ -2579,16 +2581,17 @@ var script1 = new Script(
 
 var dialog2 = [
       {
-        unit: null,
-        message: "*LOUD BANGING*"
+        unit: enemy0,
+        message: "*BANG* *BANG*",
+        alignLeft: false
       },
       {
         unit: player0,
-        message: "Oh, shit! That guy’s trying to break in! I have to stop him. There’s gotta be something around here I can use as a weapon..."
+        message: "Someone's trying to break into that hut! I have to stop him. There’s gotta be something around here I can use as a weapon..."
       },
       {
         unit: null,
-        message: "To pick up an item: walk over to it, press E, then drag the item into your inventory. You can carry three types of items: weapons, clothing, and accessories. Be sure to drop each into its appropriate slot."
+        message: "You can carry three types of items: weapons, clothing, and accessories. To pick up an item: walk over to it, press E, then drag the item into the appropriate section of your inventory."
       }
     ];
 
@@ -2602,40 +2605,42 @@ var script2 = new Script(
 var dialog3 = [
       {
         unit: null,
-        message: "Weapons must be equipped before they can be used in combat. Equip the Heavy Stick: press E to open the Equipment panel, then drag the Heavy Stick upward until you see the word “Equip”."
+        message: "Weapons must be equipped before they can be used in combat. Equip the Heavy Stick: press E to open the Equipment panel, then drag the Heavy Stick upward to the indicated area."
       },
     ];
 
 var script3 = new Script(
       function(){
-        var unit = Game.getUnit('player0')];
-        return unit.hasItem('stick0') && unit.equipped.id !== 'stick0';
+        var unit = Game.getUnit('player0');
+        return unit && unit.hasItem('stick1') && unit.equipped.id !== 'stick1' && Game.faction === "Player";
       },
       function(){ Game.dialog = dialog3 }
     );
 
-// Ruffian is in striking range of Lizzie
+// Lizzie has equipped the Heavy Stick and the Ruffian is within striking distance
 
 var dialog4 = [
       {
         unit: player0,
-        message: "Heads up, idiot!"
+        message: "Heads up, idiot!",
+        alignLeft: true
       },
       {
         unit: enemy0,
         message: "Aw, did I ruin your door? Bring it on, girlie!"
       },
       {
-        unit: ,
-        message: "Time to show this ruffian what you’re made of. Move adjacent to the enemy, press A, then select the Ruffian. Press Enter to confirm."
+        unit: null,
+        message: "Time to show this fool what you’re made of. Move adjacent to the enemy, press A, then select the Ruffian. Press Enter to confirm the attack."
       }
     ];
 
 var script4 = new Script(
       function(){
-        Game.checkRanges(Game.getUnit('player0'));
-        var space = Game.map[14][15];
-        return space.path || space.distance;
+        var unit = Game.getUnit('player0'), distance;
+        if (unit) { distance = Math.abs(unit.posY - 14) + Math.abs(unit.posX - 15) }
+        else { return false }
+        return unit.equipped.id === 'stick1' && distance <= 4 && Game.faction === "Player";
       },
       function(){ Game.dialog = dialog4 }
     );
@@ -2645,7 +2650,8 @@ var script4 = new Script(
 var dialog5 = [
       {
         unit: player0,
-        message: "Ow, he got me. I should have a salve in my pack."
+        message: "Ow, he got me. I should have a salve in my pack.",
+        alignLeft: true
       },
       {
         unit: null,
@@ -2654,16 +2660,23 @@ var dialog5 = [
     ];
 
 var script5 = new Script(
-      function(){ return Game.getUnit('player0').hp === 1 },
+      function(){
+        var unit = Game.getUnit('player0');
+        return unit && unit.hp === 1 && Game.faction === "Player";
+      },
       function(){ Game.dialog = dialog5 }
     );
 
 // Lizzie is at space 14, 15
 
 var dialog6 = [
+      function(){
+        Game.setGoal(14, 15);
+      },
       {
         unit: player0,
-        message: "Is anyone there?"
+        message: "Is anyone there?",
+        alignLeft: true
       },
       {
         unit: player1,
@@ -2685,7 +2698,7 @@ var dialog6 = [
 var script6 = new Script(
       function(){
         var unit = Game.getUnit('player0');
-        return unit.posY === 14 && unit.posX === 15;
+        return unit && unit.posY === 14 && unit.posX === 15;
       },
       function(){ Game.dialog = dialog6 }
     );
