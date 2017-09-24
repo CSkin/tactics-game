@@ -552,12 +552,12 @@ var itemPlan = [
 // Str, Mle, Thr, Rng, Agi, Tgh, Mov
 
 var player0 = new Unit(
-      'player0', 'Player', 'Lizzie',
+      'lizzie', 'Player', 'Lizzie',
       5, 5, 5, 4, 6, 5, 5, [salve1],
       null, null, true, 'player'
     ),
     player1 = new Unit(
-      'player1', 'Player', 'Corbin',
+      'corbin', 'Player', 'Corbin',
       5, 3, 4, 6, 4, 8, 5, [shortbow1],
       null, null, true, 'player'
     ),
@@ -865,11 +865,9 @@ var Space = {
           x = this.space.posX,
           unit = this.space.unit,
           path = this.space.path;
-      if (Game.control === 'player') {
+      if (Game.action === 'waiting') { Game.advanceDialog() }
+      else if (Game.control === 'player') {
         switch (Game.action) {
-          case 'waiting':
-            Game.advanceDialog();
-            break;
           case 'moving':
             if (path) { Game.moveUnit(Game.active.posY, Game.active.posX, path) }
             else {
@@ -1071,7 +1069,7 @@ var UnitInfo = {
   props: ['unit'],
   computed: {
     iconSrc: function () {
-      return 'sprites/' + this.unit.faction.toLowerCase() + '-icon.png';
+      return 'sprites/' + this.unit.id.replace(/\d/, '') + '-icon.png';
     }
   },
   components: {
@@ -1969,7 +1967,7 @@ var Game = new Vue ({
       spacesX = defender.posX - attacker.posX;
       pixelsY = Math.round(16 * Math.sin(Math.atan2(spacesY, spacesX)));
       pixelsX = Math.round(16 * Math.cos(Math.atan2(spacesY, spacesX)));
-      evadeSprite = "url('" + defender.sprite.slice(0, -4) + "-evade.png')";
+      evadeSprite = "url('sprites/" + defender.id.replace(/\d/, '') + "-evade.png')";
       attack = {
         zIndex: [ 70, 70 ],
         top: [0, (pixelsY + 'px'), 0 ],
@@ -2435,6 +2433,7 @@ var Game = new Vue ({
             this.moveTriangle();
             window.setTimeout(function(){ next() }, 500);
           }
+          this.action = 'waiting';
         } else {
           this.dialog = null;
           this.moveTriangle();
@@ -2587,7 +2586,7 @@ var dialog2 = [
       },
       {
         unit: player0,
-        message: "Someone's trying to break into that hut! I have to stop him. There’s gotta be something around here I can use as a weapon..."
+        message: "Someone's trying to break into the hut! I have to stop him. There’s gotta be something around here I can use as a weapon..."
       },
       {
         unit: null,
@@ -2611,7 +2610,7 @@ var dialog3 = [
 
 var script3 = new Script(
       function(){
-        var unit = Game.getUnit('player0');
+        var unit = Game.getUnit('lizzie');
         return unit && unit.hasItem('stick1') && unit.equipped.id !== 'stick1' && Game.faction === "Player";
       },
       function(){ Game.dialog = dialog3 }
@@ -2637,7 +2636,7 @@ var dialog4 = [
 
 var script4 = new Script(
       function(){
-        var unit = Game.getUnit('player0'), distance;
+        var unit = Game.getUnit('lizzie'), distance;
         if (unit) { distance = Math.abs(unit.posY - 14) + Math.abs(unit.posX - 15) }
         else { return false }
         return unit.equipped.id === 'stick1' && distance <= 4 && Game.faction === "Player";
@@ -2661,7 +2660,7 @@ var dialog5 = [
 
 var script5 = new Script(
       function(){
-        var unit = Game.getUnit('player0');
+        var unit = Game.getUnit('lizzie');
         return unit && unit.hp === 1 && Game.faction === "Player";
       },
       function(){ Game.dialog = dialog5 }
@@ -2697,7 +2696,7 @@ var dialog6 = [
 
 var script6 = new Script(
       function(){
-        var unit = Game.getUnit('player0');
+        var unit = Game.getUnit('lizzie');
         return unit && unit.posY === 14 && unit.posX === 15;
       },
       function(){ Game.dialog = dialog6 }
