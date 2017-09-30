@@ -254,7 +254,7 @@ class Salve extends Accessory {
 }
 
 class Unit {
-  constructor(id, faction, name, strength, melee, throwing, ranged, agility, toughness, movement, items, posY, posX, friendly, control, behavior) {
+  constructor(id, faction, name, strength, melee, throwing, ranged, agility, toughness, movement, items, posY, posX, friendly, control, behavior, goodbye) {
     // basic info
     this.id = id;
     this.faction = faction;
@@ -283,7 +283,8 @@ class Unit {
     this.path = null;
     this.friendly = friendly;
     this.control = control;
-    if (behavior) { this.behavior = behavior }
+    this.behavior = behavior;
+    this.goodbye = goodbye;
     // methods
     this.getFx = function (attr) {
       return this.items
@@ -327,6 +328,15 @@ class Unit {
         }
       }
     };
+    this.restoreHealth = function (hp) {
+      while (hp > 0) {
+        if (this.hp < 3) {
+          this.hp++;
+          this.impaired.shift();
+        }
+        hp--;
+      }
+    };
     this.sustainDamage = function (damage) {
       while (damage > 0) {
         if (this.hp > 0) {
@@ -335,15 +345,6 @@ class Unit {
           this.impaired.push(shuffle(attributes).pop());
         }
         damage--;
-      }
-    };
-    this.restoreHealth = function (hp) {
-      while (hp > 0) {
-        if (this.hp < 3) {
-          this.hp++;
-          this.impaired.shift();
-        }
-        hp--;
       }
     };
   }
@@ -553,18 +554,39 @@ var itemPlan = [
 
 var player0 = new Unit(
       'lizzie', 'Player', 'Lizzie',
-      5, 5, 5, 4, 6, 5, 5, [salve1],
-      null, null, true, 'player'
+      5, 5, 5, 4, 6, 5, 10, [salve1],
+      null, null, true, 'player', null,
+      [{
+        unit: player0,
+        message: "Darn, I died."
+      },
+      function(){
+        Game.terminateUnit(this.posY, this.posX);
+      }]
     ),
     player1 = new Unit(
       'corbin', 'Player', 'Corbin',
       5, 3, 4, 6, 4, 8, 5, [shortbow1],
-      null, null, true, 'player'
+      null, null, true, 'player', null,
+      [{
+        unit: player1,
+        message: "Darn, I died."
+      },
+      function(){
+        Game.terminateUnit(this.posY, this.posX);
+      }]
     ),
     enemy0 = new Unit(
       'enemy0', 'Enemy', 'Ruffian',
       6, 4, 3, 2, 3, 5, 5, [stick2],
-      null, null, false, 'ai', 'sentry'
+      null, null, false, 'ai', 'sentry',
+      [{
+        unit: enemy0,
+        message: "Darn, I died."
+      },
+      function(){
+        Game.terminateUnit(this.posY, this.posX);
+      }]
     );
 
 var unitPlan = [
@@ -1999,11 +2021,14 @@ var Game = new Vue ({
       this.map[y][x].unit.sustainDamage(damage);
       Vue.nextTick(function(){
         if (Game.map[y][x].unit.hp === 0) {
-          window.setTimeout(function(){ Game.sayGoodbye(y, x) }, 500);
+          window.setTimeout(function(){
+            Game.dialog = Game.map[y][x].unit.goodbye;
+            Game.advanceDialog();
+          }, 500);
         }
       });
     },
-    sayGoodbye: function (y, x) {
+    terminateUnit: function (y, x) {
       var space = this.map[y][x], item;
       space.unit.unequipWeapon();
       while (space.unit.items.length) {
