@@ -555,38 +555,17 @@ var itemPlan = [
 var player0 = new Unit(
       'lizzie', 'Player', 'Lizzie',
       5, 5, 5, 4, 6, 5, 10, [salve1],
-      null, null, true, 'player', null,
-      [{
-        unit: player0,
-        message: "Darn, I died."
-      },
-      function(){
-        Game.terminateUnit(this.posY, this.posX);
-      }]
+      null, null, true, 'player', null, null
     ),
     player1 = new Unit(
       'corbin', 'Player', 'Corbin',
       5, 3, 4, 6, 4, 8, 5, [shortbow1],
-      null, null, true, 'player', null,
-      [{
-        unit: player1,
-        message: "Darn, I died."
-      },
-      function(){
-        Game.terminateUnit(this.posY, this.posX);
-      }]
+      null, null, true, 'player', null, null
     ),
     enemy0 = new Unit(
       'enemy0', 'Enemy', 'Ruffian',
       6, 4, 3, 2, 3, 5, 5, [stick2],
-      null, null, false, 'ai', 'sentry',
-      [{
-        unit: enemy0,
-        message: "Darn, I died."
-      },
-      function(){
-        Game.terminateUnit(this.posY, this.posX);
-      }]
+      null, null, false, 'ai', 'sentry', null
     );
 
 var unitPlan = [
@@ -1991,30 +1970,44 @@ var Game = new Vue ({
       pixelsX = Math.round(16 * Math.cos(Math.atan2(spacesY, spacesX)));
       evadeSprite = "url('sprites/" + defender.id.replace(/\d/, '') + "-evade.png')";
       attack = {
-        zIndex: [ 70, 70 ],
-        top: [0, (pixelsY + 'px'), 0 ],
-        left: [0, (pixelsX + 'px'), 0 ],
-        easing: 'ease-in-out'
+        keyframes: {
+          zIndex: [ 70, 70 ],
+          top: [0, (pixelsY + 'px'), 0 ],
+          left: [0, (pixelsX + 'px'), 0 ]
+        },
+        options: {
+          duration: 500,
+          easing: 'ease-in-out'
+        }
       };
       hit = {
-        top: [0, (pixelsY / 3 + 'px'), 0 ],
-        left: [0, (pixelsX / 3 + 'px'), 0 ],
-        boxSizing: ['border-box', 'border-box'],
-        backgroundImage: ["url('sprites/attack-hit.png')", "url('sprites/attack-hit.png')"],
-        paddingLeft: ['32px', '32px'],
-        easing: 'ease-in-out'
+        keyframes: {
+          top: [0, (pixelsY / 3 + 'px'), 0 ],
+          left: [0, (pixelsX / 3 + 'px'), 0 ],
+          boxSizing: ['border-box', 'border-box'],
+          backgroundImage: ["url('sprites/attack-hit.png')", "url('sprites/attack-hit.png')"],
+          paddingLeft: ['32px', '32px']
+        },
+        options: {
+          duration: 250,
+          easing: 'ease-in-out'
+        }
       };
       miss = {
-        boxSizing: ['border-box', 'border-box'],
-        backgroundImage: [evadeSprite, evadeSprite],
-        paddingLeft: ['32px', '32px'],
-        easing: 'ease-in-out'
+        keyframes: {
+          boxSizing: ['border-box', 'border-box'],
+          backgroundImage: [evadeSprite, evadeSprite],
+          paddingLeft: ['32px', '32px']
+        },
+        options: {
+          duration: 350
+        }
       };
-      document.getElementById(attacker.id).animate(attack, 500);
+      document.getElementById(attacker.id).animate(attack.keyframes, attack.options);
       if (damage > 0) {
-        window.setTimeout(function(){ document.getElementById(defender.id).animate(hit, 250) }, 250);
+        window.setTimeout(function(){ document.getElementById(defender.id).animate(hit.keyframes, hit.options) }, 250);
       } else {
-        window.setTimeout(function(){ document.getElementById(defender.id).animate(miss, 350) }, 150);
+        window.setTimeout(function(){ document.getElementById(defender.id).animate(miss.keyframes, miss.options) }, 150);
       }
     },
     dealDamage: function (y, x, damage) {
@@ -2449,8 +2442,11 @@ var Game = new Vue ({
             else if (typeof next.alignLeft !== 'undefined') { alignLeft = next.alignLeft }
             else {
               prev = this.events[this.events.length - 1];
-              if (next.unit.name === prev.subject) { alignLeft = prev.alignLeft }
-              else { alignLeft = !prev.alignLeft }
+              if (prev.eventType === 'dialog') {
+                if (next.unit.name === prev.subject) { alignLeft = prev.alignLeft }
+                else { alignLeft = !prev.alignLeft }
+              }
+              else { alignLeft = true }
             }
             this.events.push(new DialogEvent(next.unit, next.message, alignLeft));
           } else
@@ -2470,6 +2466,7 @@ var Game = new Vue ({
       var events = this.events, index, scrollTo, posY;
       if (events[events.length - 1].eventType === 'dialog') {
         if (events.length === 1) { index = 0 }
+        else if (events[events.length - 2].eventType !== 'dialog') { index = events.length - 1 }
         else { index = events.length - 2 }
       } else {
         var i = 1;
@@ -2669,7 +2666,7 @@ var script4 = new Script(
       function(){ Game.dialog = dialog4 }
     );
 
-// Lizzie's condition is Critical
+// Lizzie's condition is Critical and she has a Salve
 
 var dialog5 = [
       {
@@ -2686,7 +2683,7 @@ var dialog5 = [
 var script5 = new Script(
       function(){
         var unit = Game.getUnit('lizzie');
-        return unit && unit.hp === 1 && Game.faction === "Player";
+        return unit && unit.hp === 1 && unit.hasItem('salve1') && Game.faction === "Player";
       },
       function(){ Game.dialog = dialog5 }
     );
@@ -2728,6 +2725,42 @@ var script6 = new Script(
     );
 
 Game.scripts = [ script0, script1, script2, script3, script4, script5, script6 ];
+
+// Death Quotes
+
+player0.goodbye = [
+  {
+    unit: player0,
+    message: "Darn, I died."
+  },
+  function(){
+    var unit = Game.getUnit('lizzie');
+    Game.terminateUnit(unit.posY, unit.posX);
+  }
+];
+
+player1.goodbye = [
+  {
+    unit: player1,
+    message: "Darn, I died."
+  },
+  function(){
+    var unit = Game.getUnit('corbin');
+    Game.terminateUnit(unit.posY, unit.posX);
+  }
+];
+
+enemy0.goodbye = [
+  {
+    unit: enemy0,
+    message: "Darn, I died."
+  },
+  function(){
+    var unit = Game.getUnit('enemy0');
+    document.getElementById('enemy0').animate({ left: [0, '32px'] }, { duration: 200, fill: 'forwards' });
+    window.setTimeout(function(){ Game.terminateUnit(unit.posY, unit.posX) }, 200);
+  }
+];
 
 // ----------------------------{  Interface  }-----------------------------
 
