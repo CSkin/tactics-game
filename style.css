@@ -39,6 +39,7 @@ p {
   height: 512px;
   align-items: center;
   justify-content: center;
+  overflow: hidden;
 }
 
 #top-right {

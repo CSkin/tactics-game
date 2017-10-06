@@ -2031,6 +2031,7 @@ var Game = new Vue ({
       }
       space.items.sort(this.compareItems);
       this.map[y][x].unit = null;
+      this.action = null;
     },
     endAttack: function () {
       var unit = this.active.unit;
@@ -2169,9 +2170,11 @@ var Game = new Vue ({
           start: function (event, ui) {
             Game.itemtip = null;
             Game.findDroppableSlots(item.classList[1], item.classList[2], item.id);
+            $( '#top-center' ).css( 'overflow', 'visible' );
           },
           stop: function (event, ui) {
             $( '.ui-droppable' ).droppable( 'destroy' );
+            $( '#top-center' ).css( 'overflow', 'hidden' );
           }
         });
       });
@@ -2306,7 +2309,7 @@ var Game = new Vue ({
     },
     beginTurn: function () {
       this.runScripts();
-      if (this.dialog) { this.advanceDialog() }
+      if (this.dialog && this.dialog.length > 0) { this.advanceDialog() }
       else if (this.units.length) {
         for (unit of this.units) {
           this.applyTerrainEffects(unit);
@@ -2434,31 +2437,25 @@ var Game = new Vue ({
     
     advanceDialog: function () {
       var prev, next, alignLeft;
-      if (this.dialog) {
-        if (this.dialog.length > 0) {
-          next = this.dialog.shift();
-          if (typeof(next) === 'object') {
-            if (this.events.length === 0 || !next.unit) { alignLeft = true }
-            else if (typeof next.alignLeft !== 'undefined') { alignLeft = next.alignLeft }
-            else {
-              prev = this.events[this.events.length - 1];
-              if (prev.eventType === 'dialog') {
-                if (next.unit.name === prev.subject) { alignLeft = prev.alignLeft }
-                else { alignLeft = !prev.alignLeft }
-              }
-              else { alignLeft = true }
+      if (this.dialog && this.dialog.length > 0) {
+        next = this.dialog.shift();
+        if (typeof(next) === 'object') {
+          if (this.events.length === 0 || !next.unit) { alignLeft = true }
+          else if (typeof next.alignLeft !== 'undefined') { alignLeft = next.alignLeft }
+          else {
+            prev = this.events[this.events.length - 1];
+            if (prev.eventType === 'dialog') {
+              if (next.unit.name === prev.subject) { alignLeft = prev.alignLeft }
+              else { alignLeft = !prev.alignLeft }
             }
-            this.events.push(new DialogEvent(next.unit, next.message, alignLeft));
-          } else
-          if (typeof(next) === 'function') {
-            this.moveTriangle();
-            window.setTimeout(function(){ next() }, 500);
+            else { alignLeft = true }
           }
+          this.events.push(new DialogEvent(next.unit, next.message, alignLeft));
           this.action = 'waiting';
-        } else {
-          this.dialog = null;
+        } else
+        if (typeof(next) === 'function') {
           this.moveTriangle();
-          this.beginTurn();
+          window.setTimeout(function(){ next() }, 500);
         }
       }
     },
@@ -2531,9 +2528,7 @@ var Game = new Vue ({
 // Player Turn 1
 
 var dialog0 = [
-      function(){
-        Game.spawnUnit(player0, 15, 2, 'north');
-      },
+      function(){ Game.spawnUnit(player0, 15, 2, 'north') },
       {
         unit: player0,
         message: "Sun's almost down. Time to find somewhere to set up camp."
@@ -2546,13 +2541,12 @@ var dialog0 = [
         unit: player0,
         message: "Is that a hut through those trees? It's been ages since I slept in a proper bed..."
       },
-      function(){
-        Game.setGoal(14, 15);
-      },
+      function(){ Game.setGoal(14, 15) },
       {
         unit: null,
         message: "Help Lizzie reach the highlighted space. To move: select a unit, press M, then click where you want to go. Once you've moved all your units, end your turn by clicking End Turn."
-      }
+      },
+      function(){ Game.beginTurn() }
     ];
 
 var script0 = new Script(
@@ -2563,9 +2557,7 @@ var script0 = new Script(
 // Enemy Turn 1
 
 var dialog1 = [
-      function(){
-        Game.spawnUnit(enemy0, 14, 15, 'west');
-      },
+      function(){ Game.spawnUnit(enemy0, 14, 15, 'west') },
       {
         unit: enemy0,
         message: "*knock* *knock*",
@@ -2590,7 +2582,8 @@ var dialog1 = [
       {
         unit: enemy0,
         message: "Fine, smart guy. I ain't that nice. But I am comin' in. So you best stand back or you're gonna get hurt."
-      }
+      },
+      function(){ Game.beginTurn() }
     ];
 
 var script1 = new Script(
@@ -2613,7 +2606,8 @@ var dialog2 = [
       {
         unit: null,
         message: "You can carry three types of items: weapons, clothing, and accessories. To pick up an item: walk over to it, press E, then drag the item into the appropriate section of your inventory."
-      }
+      },
+      function(){ Game.beginTurn() }
     ];
 
 var script2 = new Script(
@@ -2628,6 +2622,7 @@ var dialog3 = [
         unit: null,
         message: "Weapons must be equipped before they can be used in combat. Equip the Heavy Stick: press E to open the Equipment panel, then drag the Heavy Stick upward to the indicated area."
       },
+      function(){ Game.beginTurn() }
     ];
 
 var script3 = new Script(
@@ -2653,7 +2648,8 @@ var dialog4 = [
       {
         unit: null,
         message: "Time to show this fool what you’re made of. Move adjacent to the enemy, press A, then select the Ruffian. Press Enter to confirm the attack."
-      }
+      },
+      function(){ Game.beginTurn() }
     ];
 
 var script4 = new Script(
@@ -2677,7 +2673,8 @@ var dialog5 = [
       {
         unit: null,
         message: "Salves are used to treat wounds in the heat of battle. To use Lizzie’s Salve, open the Equipment panel, then drag the Salve upward."
-      }
+      },
+      function(){ Game.beginTurn() }
     ];
 
 var script5 = new Script(
@@ -2691,9 +2688,7 @@ var script5 = new Script(
 // Lizzie is at space 14, 15
 
 var dialog6 = [
-      function(){
-        Game.setGoal(14, 15);
-      },
+      function(){ Game.setGoal(14, 15) },
       {
         unit: player0,
         message: "Is anyone there?",
@@ -2701,19 +2696,38 @@ var dialog6 = [
       },
       {
         unit: player1,
-        message: "Wow, nice going. I was just going to let him tire himself out. Is he dead?"
+        message: "Um, hi. I saw what you did... why are you helping me?"
       },
       {
         unit: player0,
-        message: "Just knocked out, I think. I’m Lizzie, by the way."
+        message: "I was just walking by. It seemed like the right thing to do."
       },
       {
         unit: player1,
-        message: "Corbin. Nice to meet you."
+        message: "Well... thanks. I could have taken him, by the way."
       },
-      function(){
-        Game.spawnUnit(player1, 13, 14, 'west');
-      }
+      {
+        unit: player0,
+        message: "You might get another chance. He said something funny before he left. I think he's coming back."
+      },
+      {
+        unit: player1,
+        message: "Is that so? In that case... here, take this. It's not much, but it's better than a stick."
+      },
+      {
+        unit: player0,
+        message: "Much better. Thanks! What will you do?"
+      },
+      {
+        unit: player0,
+        message: "Help you fight. It's me he was after anyway. I'm alright with a bow. Just don't let 'em get too close."
+      },
+      function(){ Game.spawnUnit(player1, 13, 14, 'west') },
+      {
+        unit: null,
+        message: "You can drop items by dragging them to the right and dropping them onto the map. Have Corbin drop the weapon he's carrying for Lizzie. Then move him out of the way so she can pick it up."
+      },
+      function(){ Game.beginTurn() }
     ];
 
 var script6 = new Script(
@@ -2731,7 +2745,7 @@ Game.scripts = [ script0, script1, script2, script3, script4, script5, script6 ]
 player0.goodbye = [
   {
     unit: player0,
-    message: "Darn, I died."
+    message: "Beaten by a bunch of ruffians..."
   },
   function(){
     var unit = Game.getUnit('lizzie');
@@ -2742,7 +2756,7 @@ player0.goodbye = [
 player1.goodbye = [
   {
     unit: player1,
-    message: "Darn, I died."
+    message: "...."
   },
   function(){
     var unit = Game.getUnit('corbin');
@@ -2753,11 +2767,12 @@ player1.goodbye = [
 enemy0.goodbye = [
   {
     unit: enemy0,
-    message: "Darn, I died."
+    message: "You... won't win... this easily..."
   },
   function(){
     var unit = Game.getUnit('enemy0');
     document.getElementById('enemy0').animate({ left: [0, '32px'] }, { duration: 200, fill: 'forwards' });
+    Game.map[unit.posY][unit.posX].unit.items = [];
     window.setTimeout(function(){ Game.terminateUnit(unit.posY, unit.posX) }, 200);
   }
 ];
