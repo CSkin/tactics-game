@@ -217,39 +217,51 @@ class Stick extends Melee {
   }
 }
 
+class Club extends Melee {
+  constructor(id, slot) {
+    super(3, id, 'club', 'Wooden Club', 'Slightly thicker on one end.', 2, null, [0, 2], slot);
+  }
+}
+
+class Ladle extends Melee {
+  constructor(id, slot) {
+    super(4, id, 'club', 'Ladle', 'As useful on the battlefield as in the kitchen.', 3, null, [0, 2], slot);
+  }
+}
+
 class Stones extends Throwing {
   constructor(id, slot) {
-    super(3, id, 'stones', 'Stones', 'The original projectile weapon.', 1, 1, null, [0], slot);
+    super(5, id, 'stones', 'Stones', 'The original projectile weapon.', 1, 1, null, [0], slot);
   }
 }
 
 class Slingshot extends Ranged {
   constructor(id, slot) {
-    super(4, id, 'bow', 'Slingshot', 'Packs a sting, fits in a pocket.', 1, 3, null, [0], slot);
+    super(6, id, 'bow', 'Slingshot', 'Packs a sting, fits in a pocket.', 1, 3, null, [0], slot);
   }
 }
 
 class ShortBow extends Ranged {
   constructor(id, slot) {
-    super(5, id, 'bow', 'Short Bow', 'This compact bow is powerful for its size.', 2, 4, null, [0, 2], slot);
+    super(7, id, 'bow', 'Short Bow', 'This compact bow is powerful for its size.', 2, 4, null, [0, 2], slot);
   }
 }
 
 class Tunic extends Clothing {
   constructor(id, slot) {
-    super(6, id, 'shirt', 'Tunic', 'Comfy and easy to wear.', 1, null, [0], slot);
+    super(8, id, 'shirt', 'Tunic', 'Comfy and easy to wear.', 1, null, [0], slot);
   }
 }
 
 class Boots extends Clothing {
   constructor(id, slot) {
-    super(7, id, 'footwear', 'Boots', "Made for walking.", 0, { movement: 1 }, [0], slot);
+    super(9, id, 'footwear', 'Boots', "Made for walking.", 0, { movement: 1 }, [0], slot);
   }
 }
 
 class Salve extends Accessory {
   constructor(id, slot) {
-    super(8, id, 'salve', 'Salve', 'Kills pain and heals minor wounds.', true, { restoreHealth: 2 }, [0], slot);
+    super(10, id, 'salve', 'Salve', 'Kills pain and heals minor wounds.', true, { restoreHealth: 2 }, [0], slot);
   }
 }
 
@@ -533,7 +545,8 @@ var topoPlan = [
 ];
 
 var stick1 = new Stick('stick1'),
-    stick2 = new Stick('stick2'),
+    club1 = new Club('club1'),
+    ladle1 = new Ladle('ladle1', 1),
     stones1 = new Stones('stones1'),
     stones2 = new Stones('stones2'),
     slingshot1 = new Slingshot('slingshot1'),
@@ -554,17 +567,17 @@ var itemPlan = [
 
 var player0 = new Unit(
       'lizzie', 'Player', 'Lizzie',
-      5, 5, 5, 4, 6, 5, 10, [salve1],
+      5, 5, 5, 4, 6, 5, 5, [salve1],
       null, null, true, 'player', null, null
     ),
     player1 = new Unit(
       'corbin', 'Player', 'Corbin',
-      5, 3, 4, 6, 4, 8, 5, [shortbow1],
+      5, 3, 4, 6, 4, 8, 5, [shortbow1, ladle1],
       null, null, true, 'player', null, null
     ),
     enemy0 = new Unit(
       'enemy0', 'Enemy', 'Ruffian',
-      6, 4, 3, 2, 3, 5, 5, [stick2],
+      6, 4, 3, 2, 3, 5, 5, [club1],
       null, null, false, 'ai', 'sentry', null
     );
 
@@ -2638,7 +2651,7 @@ var script3 = new Script(
 var dialog4 = [
       {
         unit: player0,
-        message: "Heads up, idiot!",
+        message: "Hey! What do you think you're doing?",
         alignLeft: true
       },
       {
