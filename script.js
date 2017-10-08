@@ -470,21 +470,6 @@ class ItemEvent {
   }
 }
 
-class Script {
-  constructor(cause, effect, runsLeft) {
-    this.cause = cause;
-    this.effect = effect;
-    if (runsLeft) { this.runsLeft = runsLeft }
-    else { this.runsLeft = 1 }
-    this.runScript = function () {
-      if (this.cause()) {
-        this.effect();
-        this.runsLeft -= 1;
-      }
-    };
-  }
-}
-
 class Shadow {
   constructor(dist, hAng1, hAng2, vDist, hDist) {
     this.dist = dist;
@@ -2329,10 +2314,19 @@ var Game = new Vue ({
       }
       return null;
     },
-    beginTurn: function () {
-      this.runScripts();
+    runScripts: function () {
+      this.scripts.forEach( function (script) {
+        if (script.trigger()) {
+          script.effect();
+          script.runsLeft -= 1;
+        }
+      });
+      this.scripts = this.scripts.filter( s => s.runsLeft > 0 );
       if (this.dialog && this.dialog.length > 0) { this.advanceDialog() }
-      else if (this.units.length) {
+      else { this.beginTurn() }
+    },
+    beginTurn: function () {
+      if (this.units.length) {
         for (unit of this.units) {
           this.applyTerrainEffects(unit);
           unit.resetActionPoints();
@@ -2344,12 +2338,6 @@ var Game = new Vue ({
         }
       }
       else { this.endTurn() }
-    },
-    runScripts: function () {
-      this.scripts.forEach( function (script, index, array) {
-        if (script.runsLeft > 0) { script.runScript() }
-        else { array.splice(index, 1) }
-      });
     },
     applyTerrainEffects: function (u) {
       var space = this.map[u.posY][u.posX],
@@ -2441,7 +2429,7 @@ var Game = new Vue ({
       this.action = null;
       this.active = null;
       this.target = null;
-      this.beginTurn();
+      this.runScripts();
     },
     spawnUnit: function (unit, y, x, moving) {
       unit.posY = y;
@@ -2547,132 +2535,121 @@ var Game = new Vue ({
 
 // ------------------------{  Dialog & Scripting  }------------------------
 
-// Player Turn 1
+class Script {
+  constructor(trigger, dialog, effect, runsLeft) {
+    this.trigger = trigger;
+    this.dialog = dialog;
+    if (this.dialog) {
+      this.effect = function(){ Game.dialog = this.dialog };
+    } else {
+      this.effect = effect;
+    }
+    if (runsLeft) { this.runsLeft = runsLeft }
+    else { this.runsLeft = 1 }
+  }
+}
 
-var dialog0 = [
-      function(){ Game.spawnUnit(player0, 15, 2, 'north') },
-      {
-        unit: player0,
-        message: "Sun's almost down. Time to find somewhere to set up camp."
-      },
-      {
-        unit: player0,
-        message: "Oooh, that smell... Someone's got a stew on. I wonder where it's coming from."
-      },
-      {
-        unit: player0,
-        message: "Is that a hut through those trees? It's been ages since I slept in a proper bed..."
-      },
-      function(){ Game.setGoal(14, 15) },
-      {
-        unit: null,
-        message: "Help Lizzie reach the highlighted space. To move: select a unit, press M, then click where you want to go. Once you've moved all your units, end your turn by clicking End Turn."
-      },
-      function(){ Game.beginTurn() }
-    ];
+// Player Turn 1
 
 var script0 = new Script(
       function(){ return Game.turn === 1 && Game.faction === "Player" },
-      function(){ Game.dialog = dialog0 }
+      [
+        function(){ Game.spawnUnit(player0, 15, 2, 'north') },
+        {
+          unit: player0,
+          message: "Sun's almost down. Time to find somewhere to set up camp."
+        },
+        {
+          unit: player0,
+          message: "Oooh, that smell... Someone's got a stew on. I wonder where it's coming from."
+        },
+        {
+          unit: player0,
+          message: "Is that a hut through those trees? It's been ages since I slept in a proper bed..."
+        },
+        function(){ Game.setGoal(14, 15) },
+        {
+          unit: null,
+          message: "Help Lizzie reach the highlighted space. To move: select a unit, press M, then click where you want to go. Once you've moved all your units, end your turn by clicking End Turn."
+        },
+        function(){ Game.beginTurn() }
+      ]
     );
 
 // Enemy Turn 1
 
-var dialog1 = [
-      function(){ Game.spawnUnit(enemy0, 14, 15, 'west') },
-      {
-        unit: enemy0,
-        message: "*knock* *knock*",
-        alignLeft: false
-      },
-      {
-        unit: enemy0,
-        message: "Oi. What you got cookin' in there?"
-      },
-      {
-        unit: player1,
-        message: "Who's asking?"
-      },
-      {
-        unit: enemy0,
-        message: "Just a weary, hungry traveler. Nicest fella you ever met. Come on, open this door."
-      },
-      {
-        unit: player1,
-        message: "Actual nice fellas don't need to convince anyone. Take your schtick somewhere else."
-      },
-      {
-        unit: enemy0,
-        message: "Fine, smart guy. I ain't that nice. But I am comin' in. So you best stand back or you're gonna get hurt."
-      },
-      function(){ Game.beginTurn() }
-    ];
-
 var script1 = new Script(
       function(){ return Game.turn === 1 && Game.faction === "Enemy" },
-      function(){ Game.dialog = dialog1 }
+      [
+        function(){ Game.spawnUnit(enemy0, 14, 15, 'west') },
+        {
+          unit: enemy0,
+          message: "*knock* *knock*",
+          alignLeft: false
+        },
+        {
+          unit: enemy0,
+          message: "Oi. What you got cookin' in there?"
+        },
+        {
+          unit: player1,
+          message: "Who's asking?"
+        },
+        {
+          unit: enemy0,
+          message: "Just a weary, hungry traveler. Nicest fella you ever met. Come on, open this door."
+        },
+        {
+          unit: player1,
+          message: "Actual nice fellas don't need to convince anyone. Take your schtick somewhere else."
+        },
+        {
+          unit: enemy0,
+          message: "Fine, smart guy. I ain't that nice. But I am comin' in. So you best stand back or you're gonna get hurt."
+        },
+        function(){ Game.beginTurn() }
+      ]
     );
 
 // Player Turn 2
 
-var dialog2 = [
-      {
-        unit: enemy0,
-        message: "*BANG* *BANG*",
-        alignLeft: false
-      },
-      {
-        unit: player0,
-        message: "Someone's trying to break into the hut! I have to stop him. There’s gotta be something around here I can use as a weapon..."
-      },
-      {
-        unit: null,
-        message: "You can carry three types of items: weapons, clothing, and accessories. To pick up an item: walk over to it, press E, then drag the item into the appropriate section of your inventory."
-      },
-      function(){ Game.beginTurn() }
-    ];
-
 var script2 = new Script(
       function(){ return Game.turn === 2 && Game.faction === "Player" },
-      function(){ Game.dialog = dialog2 }
+      [
+        {
+          unit: enemy0,
+          message: "*BANG* *BANG*",
+          alignLeft: false
+        },
+        {
+          unit: player0,
+          message: "Someone's trying to break into the hut! I have to stop him. There’s gotta be something around here I can use as a weapon..."
+        },
+        {
+          unit: null,
+          message: "You can carry three types of items: weapons, clothing, and accessories. To pick up an item: walk over to it, press E, then drag the item into the appropriate section of your inventory."
+        },
+        function(){ Game.beginTurn() }
+      ]
     );
 
 // Lizzie has picked up Heavy Stick but it's not equipped
-
-var dialog3 = [
-      {
-        unit: null,
-        message: "Weapons must be equipped before they can be used in combat. Equip the Heavy Stick: press E to open the Equipment panel, then drag the Heavy Stick upward to the indicated area."
-      },
-      function(){ Game.beginTurn() }
-    ];
 
 var script3 = new Script(
       function(){
         var unit = Game.getUnit('lizzie');
         return unit && unit.hasItem('stick1') && unit.equipped.id !== 'stick1' && Game.faction === "Player";
       },
-      function(){ Game.dialog = dialog3 }
+      [
+        {
+          unit: null,
+          message: "Weapons must be equipped before they can be used in combat. Equip the Heavy Stick: press E to open the Equipment panel, then drag the Heavy Stick upward to the indicated area."
+        },
+        function(){ Game.beginTurn() }
+      ]
     );
 
 // Lizzie has equipped the Heavy Stick and the Ruffian is within striking distance
-
-var dialog4 = [
-      {
-        unit: player0,
-        message: "Hey! What do you think you're doing?",
-        alignLeft: true
-      },
-      {
-        unit: enemy0,
-        message: "Aw, did I ruin your door? Bring it on, girlie!"
-      },
-      {
-        unit: null,
-        message: "Time to show this fool what you’re made of. Move adjacent to the enemy, press A, then select the Ruffian. Press Enter to confirm the attack."
-      },
-      function(){ Game.beginTurn() }
-    ];
 
 var script4 = new Script(
       function(){
@@ -2681,107 +2658,116 @@ var script4 = new Script(
         else { return false }
         return unit.equipped.id === 'stick1' && distance <= 4 && Game.faction === "Player";
       },
-      function(){ Game.dialog = dialog4 }
+      [
+        {
+          unit: player0,
+          message: "Hey! What do you think you're doing?",
+          alignLeft: true
+        },
+        {
+          unit: enemy0,
+          message: "Aw, did I ruin your door? Bring it on, girlie!"
+        },
+        {
+          unit: null,
+          message: "Time to show this fool what you’re made of. Move adjacent to the enemy, press A, then select the Ruffian. Press Enter to confirm the attack."
+        },
+        function(){ Game.beginTurn() }
+      ]
     );
 
 // Lizzie's condition is Critical and she has a Salve
-
-var dialog5 = [
-      {
-        unit: player0,
-        message: "Ow, he got me. I should have a salve in my pack.",
-        alignLeft: true
-      },
-      {
-        unit: null,
-        message: "Salves are used to treat wounds in the heat of battle. To use Lizzie’s Salve, open the Equipment panel, then drag the Salve upward."
-      },
-      function(){ Game.beginTurn() }
-    ];
 
 var script5 = new Script(
       function(){
         var unit = Game.getUnit('lizzie');
         return unit && unit.hp === 1 && unit.hasItem('salve1') && Game.faction === "Player";
       },
-      function(){ Game.dialog = dialog5 }
+      [
+        {
+          unit: player0,
+          message: "Ow, he got me. I should have a salve in my pack.",
+          alignLeft: true
+        },
+        {
+          unit: null,
+          message: "Salves are used to treat wounds in the heat of battle. To use Lizzie’s Salve, open the Equipment panel, then drag the Salve upward."
+        },
+        function(){ Game.beginTurn() }
+      ]
     );
 
 // Lizzie is at space 14, 15
-
-var dialog6 = [
-      function(){ Game.setGoal(14, 15) },
-      {
-        unit: player0,
-        message: "Is anyone there?",
-        alignLeft: true
-      },
-      {
-        unit: player1,
-        message: "Um, hi. I saw what you did... why are you helping me?"
-      },
-      {
-        unit: player0,
-        message: "I was just walking by. It seemed like the right thing to do."
-      },
-      {
-        unit: player1,
-        message: "Well... thanks. I could have taken him, by the way."
-      },
-      {
-        unit: player0,
-        message: "You might get another chance. He said something funny before he left. I think he's coming back."
-      },
-      {
-        unit: player1,
-        message: "Is that so? In that case... here, take this. It's not much, but it's better than a stick."
-      },
-      {
-        unit: player0,
-        message: "Much better. Thanks! What will you do?"
-      },
-      {
-        unit: player0,
-        message: "Help you fight. It's me he was after anyway. I'm alright with a bow. Just don't let 'em get too close."
-      },
-      function(){ Game.spawnUnit(player1, 13, 14, 'west') },
-      {
-        unit: null,
-        message: "You can drop items by dragging them to the right and dropping them onto the map. Have Corbin drop the weapon he's carrying for Lizzie. Then move him out of the way so she can pick it up."
-      },
-      function(){ Game.beginTurn() }
-    ];
 
 var script6 = new Script(
       function(){
         var unit = Game.getUnit('lizzie');
         return unit && unit.posY === 14 && unit.posX === 15;
       },
-      function(){ Game.dialog = dialog6 }
+      [
+        function(){ Game.setGoal(14, 15) },
+        {
+          unit: player0,
+          message: "Is anyone there?",
+          alignLeft: true
+        },
+        {
+          unit: player1,
+          message: "Um, hi. I saw what you did... why are you helping me?"
+        },
+        {
+          unit: player0,
+          message: "I was just walking by. It seemed like the right thing to do."
+        },
+        {
+          unit: player1,
+          message: "Well... thanks. I could have taken him, by the way."
+        },
+        {
+          unit: player0,
+          message: "You might get another chance. He said something funny before he left. I think he's coming back."
+        },
+        {
+          unit: player1,
+          message: "Is that so? In that case... here, take this. It's not much, but it's better than a stick."
+        },
+        {
+          unit: player0,
+          message: "Much better. Thanks! What will you do?"
+        },
+        {
+          unit: player0,
+          message: "Help you fight. It's me he was after anyway. I'm alright with a bow. Just don't let 'em get too close."
+        },
+        function(){ Game.spawnUnit(player1, 13, 14, 'west') },
+        {
+          unit: null,
+          message: "You can drop items by dragging them to the right and dropping them onto the map. Have Corbin drop the weapon he's carrying for Lizzie. Then move him out of the way so she can pick it up."
+        },
+        function(){ Game.beginTurn() }
+      ]
     );
 
 // Corbin is in the game
 
-var dialog7 = [
-      function(){
-        Game.spawnUnit(enemy1, 0, 14, 'south');
-        Game.spawnUnit(enemy0, 1, 15, 'west');
-      },
-      {
-        unit: enemy1,
-        message: "Are we close?",
-        alignLeft: true
-      },
-      {
-        unit: enemy0,
-        message: "Just over this ridge."
-      },
-      function(){ Game.beginTurn() }
-    ];
-
 var script7 = new Script(
       function(){ return Game.getUnit('corbin') },
-      function(){ Game.dialog = dialog7 }
+      [
+        function(){
+          Game.spawnUnit(enemy1, 0, 14, 'south');
+          Game.spawnUnit(enemy0, 1, 15, 'west');
+        },
+        {
+          unit: enemy1,
+          message: "Are we close?",
+          alignLeft: true
+        },
+        {
+          unit: enemy0,
+          message: "Just over this ridge."
+        },
+        function(){ Game.beginTurn() }
+      ]
     );
 
 Game.scripts = [ script0, script1, script2, script3, script4, script5, script6, script7 ];
@@ -2879,6 +2865,6 @@ $( document ).keyup( keyHandler );
 
 // ----------------------------{  Start Game  }----------------------------
 
-window.setTimeout(function(){ Game.beginTurn() }, 1000);
+window.setTimeout(function(){ Game.runScripts() }, 1000);
 
 });
