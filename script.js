@@ -266,7 +266,7 @@ class Salve extends Accessory {
 }
 
 class Unit {
-  constructor(id, faction, name, strength, melee, throwing, ranged, agility, toughness, movement, items, posY, posX, friendly, control, behavior, goodbye) {
+  constructor(id, faction, name, strength, melee, throwing, ranged, agility, toughness, movement, items, posY, posX, friendly, control, behavior) {
     // basic info
     this.id = id;
     this.faction = faction;
@@ -295,8 +295,8 @@ class Unit {
     this.path = null;
     this.friendly = friendly;
     this.control = control;
-    this.behavior = behavior;
-    this.goodbye = goodbye;
+    if (control === 'ai') { this.behavior = behavior } else { this.behavior = null }
+    this.goodbye = null;
     // methods
     this.getFx = function (attr) {
       return this.items
@@ -546,14 +546,16 @@ var topoPlan = [
 
 var stick1 = new Stick('stick1'),
     club1 = new Club('club1'),
+    club2 = new Club('club2'),
     ladle1 = new Ladle('ladle1', 1),
-    stones1 = new Stones('stones1'),
+    stones1 = new Stones('stones1', 1),
     stones2 = new Stones('stones2'),
     slingshot1 = new Slingshot('slingshot1'),
     shortbow1 = new ShortBow('shortbow1'),
     tunic1 = new Tunic('tunic1'),
     boots1 = new Boots('boots1'),
     salve1 = new Salve('salve1');
+    salve2 = new Salve('salve2');
 
 var itemPlan = [
   {
@@ -563,22 +565,29 @@ var itemPlan = [
   }
 ];
 
+// id, faction, name
 // Str, Mle, Thr, Rng, Agi, Tgh, Mov
+// posY, posX, friendly, control, behavior
 
 var player0 = new Unit(
       'lizzie', 'Player', 'Lizzie',
       5, 5, 5, 4, 6, 5, 5, [salve1],
-      null, null, true, 'player', null, null
+      null, null, true, 'player'
     ),
     player1 = new Unit(
       'corbin', 'Player', 'Corbin',
-      5, 3, 4, 6, 4, 8, 5, [shortbow1, ladle1],
-      null, null, true, 'player', null, null
+      5, 3, 4, 6, 4, 8, 5, [shortbow1, ladle1, salve2],
+      null, null, true, 'player'
     ),
     enemy0 = new Unit(
       'enemy0', 'Enemy', 'Ruffian',
       6, 4, 3, 2, 3, 5, 5, [club1],
-      null, null, false, 'ai', 'sentry', null
+      null, null, false, 'ai', 'sentry'
+    ),
+    enemy1 = new Unit(
+      'enemy1', 'Enemy', 'Ruffian Leader',
+      8, 5, 4, 2, 4, 4, 5, [club2, stones1],
+      null, null, false, 'ai', 'sentry'
     );
 
 var unitPlan = [
@@ -2751,7 +2760,31 @@ var script6 = new Script(
       function(){ Game.dialog = dialog6 }
     );
 
-Game.scripts = [ script0, script1, script2, script3, script4, script5, script6 ];
+// Corbin is in the game
+
+var dialog7 = [
+      function(){
+        Game.spawnUnit(enemy1, 0, 14, 'south');
+        Game.spawnUnit(enemy0, 1, 15, 'west');
+      },
+      {
+        unit: enemy1,
+        message: "Are we close?",
+        alignLeft: true
+      },
+      {
+        unit: enemy0,
+        message: "Just over this ridge."
+      },
+      function(){ Game.beginTurn() }
+    ];
+
+var script7 = new Script(
+      function(){ return Game.getUnit('corbin') },
+      function(){ Game.dialog = dialog7 }
+    );
+
+Game.scripts = [ script0, script1, script2, script3, script4, script5, script6, script7 ];
 
 // Death Quotes
 
