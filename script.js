@@ -571,7 +571,17 @@ var player0 = new Unit(
     ),
     enemy1 = new Unit(
       'enemy1', 'Enemy', 'Ruffian Leader',
-      8, 5, 4, 2, 4, 4, 5, [club2, stones1],
+      8, 5, 4, 2, 4, 4, 5, [club2, stones1, boots1],
+      null, null, false, 'ai', 'sentry'
+    ),
+    enemy2 = new Unit(
+      'enemy2', 'Enemy', 'Ruffian',
+      5, 4, 5, 2, 3, 5, 5, [stones2, tunic1],
+      null, null, false, 'ai', 'sentry'
+    ),
+    enemy3 = new Unit(
+      'enemy3', 'Enemy', 'Ruffian',
+      4, 4, 3, 5, 5, 3, 5, [slingshot1],
       null, null, false, 'ai', 'sentry'
     );
 
@@ -1728,9 +1738,10 @@ var Game = new Vue ({
     moveUnit: function (y, x, path) {
       var from = this.map[y][x], unit,
           moveData = { y: y, x: x, moving: null, changePos: null },
+          active = this.active ? true : false,
           to, unitData;
       if (path) {
-        this.hideMoveRange();
+        if (active) { this.hideMoveRange() }
         this.map[y][x].unit.path = path;
       }
       if (from.unit2) { unit = from.unit2 } else { unit = from.unit }
@@ -1761,10 +1772,10 @@ var Game = new Vue ({
       else { unitData = from.unit; from.unit = null; }
       unitData.path = unitData.path.substr(1);
       unitData.moving = moveData.moving;
-      unitData.movesUsed += to.terrain.cost;
+      if (active) { unitData.movesUsed += to.terrain.cost }
       moveData.changePos();
       if (!to.unit) { to.unit = unitData } else { to.unit2 = unitData }
-      this.active = to;
+      if (active) { this.active = to }
     },
     
 // ------------------------------{  Combat  }------------------------------
@@ -2552,12 +2563,12 @@ class Script {
 // Player Turn 1
 
 var script0 = new Script(
-      function(){ return Game.turn === 1 && Game.faction === "Player" },
+      function(){ return Game.turn === 1 && Game.faction === 'Player' },
       [
         function(){ Game.spawnUnit(player0, 15, 2, 'north') },
         {
           unit: player0,
-          message: "Sun's almost down. Time to find somewhere to set up camp."
+          message: "Sun's getting low. Time to find somewhere to set up camp."
         },
         {
           unit: player0,
@@ -2579,7 +2590,7 @@ var script0 = new Script(
 // Enemy Turn 1
 
 var script1 = new Script(
-      function(){ return Game.turn === 1 && Game.faction === "Enemy" },
+      function(){ return Game.turn === 1 && Game.faction === 'Enemy' },
       [
         function(){ Game.spawnUnit(enemy0, 14, 15, 'west') },
         {
@@ -2614,7 +2625,7 @@ var script1 = new Script(
 // Player Turn 2
 
 var script2 = new Script(
-      function(){ return Game.turn === 2 && Game.faction === "Player" },
+      function(){ return Game.turn === 2 && Game.faction === 'Player' },
       [
         {
           unit: enemy0,
@@ -2638,7 +2649,7 @@ var script2 = new Script(
 var script3 = new Script(
       function(){
         var unit = Game.getUnit('lizzie');
-        return unit && unit.hasItem('stick1') && unit.equipped.id !== 'stick1' && Game.faction === "Player";
+        return unit && unit.hasItem('stick1') && unit.equipped.id !== 'stick1' && Game.faction === 'Player';
       },
       [
         {
@@ -2656,7 +2667,7 @@ var script4 = new Script(
         var unit = Game.getUnit('lizzie'), distance;
         if (unit) { distance = Math.abs(unit.posY - 14) + Math.abs(unit.posX - 15) }
         else { return false }
-        return unit.equipped.id === 'stick1' && distance <= 4 && Game.faction === "Player";
+        return unit.equipped.id === 'stick1' && distance <= 4 && Game.faction === 'Player';
       },
       [
         {
@@ -2681,7 +2692,7 @@ var script4 = new Script(
 var script5 = new Script(
       function(){
         var unit = Game.getUnit('lizzie');
-        return unit && unit.hp === 1 && unit.hasItem('salve1') && Game.faction === "Player";
+        return unit && unit.hp === 1 && unit.hasItem('salve1') && Game.faction === 'Player';
       },
       [
         {
@@ -2702,7 +2713,7 @@ var script5 = new Script(
 var script6 = new Script(
       function(){
         var unit = Game.getUnit('lizzie');
-        return unit && unit.posY === 14 && unit.posX === 15;
+        return unit && unit.posY === 14 && unit.posX === 15 && Game.faction === 'Player';
       },
       [
         function(){ Game.setGoal(14, 15) },
@@ -2751,9 +2762,15 @@ var script6 = new Script(
 // Corbin is in the game
 
 var script7 = new Script(
-      function(){ return Game.getUnit('corbin') },
+      function(){ return Game.getUnit('corbin') && Game.faction === 'Enemy' },
       [
         function(){
+          enemy0.restoreHealth(2);
+          enemy0.items.push(club1);
+          enemy0.goodbye = [function(){
+            var unit = Game.getUnit('enemy0');
+            Game.terminateUnit(unit.posY, unit.posX);
+          }];
           Game.spawnUnit(enemy1, 0, 14, 'south');
           Game.spawnUnit(enemy0, 1, 15, 'west');
         },
@@ -2766,13 +2783,35 @@ var script7 = new Script(
           unit: enemy0,
           message: "Just over this ridge."
         },
-        function(){ Game.beginTurn() }
+        {
+          unit: enemy1,
+          message: "How many of 'em are there?"
+        },
+        {
+          unit: enemy0,
+          message: "Two, I think. Could be more in the hut."
+        },
+        {
+          unit: enemy1,
+          message: "Alright, boys. I know you're all sick of eating rats. Let's finish this while it's still light out. See you around the stew pot!"
+        },
+        function(){
+          Game.moveUnit(0, 14, 's');
+          Game.moveUnit(1, 15, 'wwwwwww');
+          window.setTimeout(function(){
+            Game.spawnUnit(enemy2, 0, 14, 'south');
+            Game.spawnUnit(enemy3, 1, 15, 'west');
+            Game.moveUnit(0, 14, 'wwwwwwwwswswsw');
+            Game.moveUnit(1, 15, 'wwswwswwwswwwswswsws');
+          }, 500);
+          window.setTimeout(function(){ Game.beginTurn() }, 5000);
+        }
       ]
     );
 
 Game.scripts = [ script0, script1, script2, script3, script4, script5, script6, script7 ];
 
-// Death Quotes
+// Defeat Quotes
 
 player0.goodbye = [
   {
@@ -2808,6 +2847,26 @@ enemy0.goodbye = [
     window.setTimeout(function(){ Game.terminateUnit(unit.posY, unit.posX) }, 200);
   }
 ];
+
+enemy1.goodbye = [
+  {
+    unit: enemy1,
+    message: "Looks like we bit off more than we could chew..."
+  },
+  function(){
+    var unit = Game.getUnit('enemy1');
+    Game.terminateUnit(unit.posY, unit.posX);
+  }
+];
+
+// These units won't have defeat quotes
+
+[enemy2, enemy3].forEach(function(unit){
+  unit.goodbye = [function(){
+    var u = Game.getUnit(unit.id);
+    Game.terminateUnit(u.posY, u.posX);
+  }];
+});
 
 // ----------------------------{  Interface  }-----------------------------
 
