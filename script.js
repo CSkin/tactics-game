@@ -389,7 +389,10 @@ class Unit {
   get tghSum() { return this.toughness + this.tghMod }
   // movement-derived
   get movMod() { return this.getFx('movement') + this.getImp('movement') }
-  get movesLeft() { return this.movement + this.movMod - this.movesUsed }
+  get movesLeft() {
+    if (this.control === 'ai' && this.behavior === 'sentry') { return 0 }
+    else { return this.movement + this.movMod - this.movesUsed }
+  }
   // item-derived
   get weapons() { return this.items.filter( i => i.itemType === 'weapon' ) }
   get clothing() { return this.items.filter( i => i.itemType === 'clothing' ) }
@@ -1912,6 +1915,7 @@ var Game = new Vue ({
     },
     inRange: function (distance, range) {
       if (distance >= range[0] && distance <= range[1]) { return true }
+      else { return false }
     },
     calculateAttack: function (atkSpace) {
       // attack = strength + skill + power - distance
@@ -2747,7 +2751,7 @@ var script6 = new Script(
           message: "Much better. Thanks! What will you do?"
         },
         {
-          unit: player0,
+          unit: player1,
           message: "Help you fight. It's me he was after anyway. I'm alright with a bow. Just don't let 'em get too close."
         },
         function(){ Game.spawnUnit(player1, 13, 14, 'west') },
