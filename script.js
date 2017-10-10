@@ -307,7 +307,7 @@ class Unit {
       var attr1 = attr, attr2 = attr;
       if (attr === 'melee' || attr === 'throwing' || attr === 'ranged') { attr1 = 'skill' }
       return Math.floor(this.impaired
-        .map(function(i){ i === attr1 ? this[attr2] / 2 : 0 }, this)
+        .map(function(i){ if (i === attr1) { return this[attr2] / 2 } else { return 0 } }, this)
         .reduce( (a, b) => a - b , 0 ));
     };
     this.resetActionPoints = function () {
@@ -408,11 +408,20 @@ class Unit {
     else { return new Unarmed() }
   }
   get skill() { return this[this.equipped.type] }
-  get range() {
-    if (this.equipped.type === 'throwing') { return [1, Math.floor(this.strSum / this.equipped.range[1])]}
-    else { return this.equipped.range }
+  get range() { return this.findWeaponRange(this.equipped.id) }
+  get maxRange() {
+    if (this.weapons.length > 0) {
+      var min = this.weapons
+        .map( w => w = this.findWeaponRange(w.id)[0] )
+        .reduce( (a, b) => Math.min(a, b) );
+      var max = this.weapons
+        .map( w => w = this.findWeaponRange(w.id)[1] )
+        .reduce( (a, b) => Math.max(a, b) );
+      return [min, max];
+    }
+    else { return [1, 1] }
   }
-  get armor() { return this.clothing.reduce( (a, b) => a + b.armor , 0) }
+  get armor() { return this.clothing.reduce( (a, b) => a + b.armor , 0 ) }
   // skill-derived
   get sklMod() { return this.getFx(this.equipped.type) + this.getImp(this.equipped.type) }
   get sklSum() { return this.skill + this.sklMod }
@@ -1867,6 +1876,7 @@ var Game = new Vue ({
     },
     findLineOfSight: function (aY, aX, y, x, d) {
       var from = this.map[aY][aX], to = this.map[y][x],
+          range = this.action === 'attacking' ? this.active.unit.range : this.active.unit.maxRange,
           yDist = y - aY, xDist = x - aX,
           hDist = Math.sqrt(yDist * yDist + xDist * xDist),
           vDist = to.terrain.elevation / 2 - from.terrain.elevation / 2,
@@ -1882,7 +1892,7 @@ var Game = new Vue ({
             else { vAngCheck = vAng < s.vAngAdj }
             return s.dist < d && hAngCheck && vAngCheck;
           });
-      if (shadows.length === 0 && this.canAttack(from, to, this.active.unit.range)) {
+      if (shadows.length === 0 && this.canAttack(from, to, range)) {
         this.map[y][x].distance = Math.abs(yDist) + Math.abs(xDist);
       }
     },
@@ -2297,7 +2307,7 @@ var Game = new Vue ({
           posY = unit.posY,
           posX = unit.posX,
           moves = unit.movesLeft,
-          range = unit.range,
+          range = unit.maxRange,
           inRange = [{ posY: posY, posX: posX, range: range }];
       for (y = Math.max(posY - moves, 0); y <= Math.min(posY + moves, 15); y++) {
         for (x = Math.max(posX - moves, 0); x <= Math.min(posX + moves, 15); x++) {
@@ -2317,20 +2327,17 @@ var Game = new Vue ({
 // ---------------------{  Artificial Intelligence  }----------------------
     
     getUnits: function (faction) {
-      var y, x, space, units = [];
-      for (y = 0; y < 16; y++) {
-        for (x = 0; x < 16; x++) {
-          space = this.map[y][x];
+      var units = [];
+      for (var row of this.map) {
+        for (var space of row) {
           if (space.unit && space.unit.faction === faction) { units.push(space.unit) }
         }
       }
       return units;
     },
     getUnit: function (id) {
-      var y, x, space, units = [];
-      for (y = 0; y < 16; y++) {
-        for (x = 0; x < 16; x++) {
-          space = this.map[y][x];
+      for (var row of this.map) {
+        for (var space of row) {
           if (space.unit && space.unit.id === id) { return space.unit }
         }
       }
