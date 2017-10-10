@@ -307,7 +307,7 @@ class Unit {
       var attr1 = attr, attr2 = attr;
       if (attr === 'melee' || attr === 'throwing' || attr === 'ranged') { attr1 = 'skill' }
       return Math.floor(this.impaired
-        .map(function(i){ if (i === attr1) { return this[attr2] / 2 } else { return 0 } }, this)
+        .map(function(i){ i === attr1 ? this[attr2] / 2 : 0 }, this)
         .reduce( (a, b) => a - b , 0 ));
     };
     this.resetActionPoints = function () {
@@ -319,6 +319,11 @@ class Unit {
     };
     this.hasItem = function (id) {
       return this.items.filter( i => i.id === id ).length;
+    },
+    this.findWeaponRange = function (id) {
+      var weapon = this.items[this.findItemIndex(id)];
+      if (weapon.type === 'throwing') { return [ 1, Math.floor(this.strSum / weapon.range[1]) ] }
+      else { return weapon.range }
     },
     this.equipWeapon = function (id) {
       for (var item of this.items) {
@@ -538,7 +543,9 @@ var stick1 = new Stick('stick1'),
     ladle1 = new Ladle('ladle1', 1),
     stones1 = new Stones('stones1', 1),
     stones2 = new Stones('stones2'),
+    stones3 = new Stones('stones3', 1),
     slingshot1 = new Slingshot('slingshot1'),
+    slingshot2 = new Slingshot('slingshot2'),
     shortbow1 = new ShortBow('shortbow1'),
     tunic1 = new Tunic('tunic1'),
     boots1 = new Boots('boots1'),
@@ -559,7 +566,7 @@ var itemPlan = [
 
 var player0 = new Unit(
       'lizzie', 'Player', 'Lizzie',
-      5, 5, 5, 4, 6, 5, 5, [salve1],
+      5, 5, 5, 4, 6, 5, 10, [slingshot2, salve1],
       null, null, true, 'player'
     ),
     player1 = new Unit(
@@ -569,7 +576,7 @@ var player0 = new Unit(
     ),
     enemy0 = new Unit(
       'enemy0', 'Enemy', 'Ruffian',
-      6, 4, 3, 2, 3, 5, 5, [club1],
+      6, 4, 3, 2, 3, 5, 5, [club1, stones3],
       null, null, false, 'ai', 'sentry'
     ),
     enemy1 = new Unit(
@@ -1905,7 +1912,7 @@ var Game = new Vue ({
       var target = this.map[y][x];
       if (!this.inRange(target.distance, target.unit.range)) {
         for (var weapon of target.unit.weapons) {
-          if (this.inRange(target.distance, weapon.range)) {
+          if (this.inRange(target.distance, target.unit.findWeaponRange(weapon.id))) {
             this.map[y][x].unit.equipWeapon(weapon.id);
             break;
           }
@@ -2620,7 +2627,7 @@ var script1 = new Script(
         },
         {
           unit: enemy0,
-          message: "Fine, smart guy. I ain't that nice. But I am comin' in. So you best stand back or you're gonna get hurt."
+          message: "Fine, smart guy. I aren't that nice. But I am comin' in. So you best stand back or you're gonna get hurt."
         },
         function(){ Game.beginTurn() }
       ]
