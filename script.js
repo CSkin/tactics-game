@@ -2461,16 +2461,16 @@ var Game = new Vue ({
       this.target = null;
       this.runScripts();
     },
-    spawnUnit: function (unit, y, x, moving) {
+    spawnUnit: function (unit, y, x, moving, prevent) {
       unit.posY = y;
       unit.posX = x;
       unit.moving = moving;
       this.map[y][x].unit = unit;
-      window.setTimeout(function(){ Game.advanceDialog() }, 1000);
+      if (!prevent) { window.setTimeout(function(){ Game.advanceDialog() }, 1000) }
     },
-    setGoal: function (y, x) {
+    setGoal: function (y, x, prevent) {
       this.map[y][x].goal = !this.map[y][x].goal;
-      window.setTimeout(function(){ Game.advanceDialog() }, 1000);
+      if (!prevent) { window.setTimeout(function(){ Game.advanceDialog() }, 1000) }
     },
     
 // ----------------------------{  Event Log  }-----------------------------
@@ -2778,7 +2778,7 @@ var script6 = new Script(
       ]
     );
 
-// Corbin is in the game
+// Corbin is in the game and it's the enemy's turn
 
 var script7 = new Script(
       function(){ return Game.getUnit('corbin') && Game.faction === 'Enemy' },
@@ -2790,7 +2790,7 @@ var script7 = new Script(
             var unit = Game.getUnit('enemy0');
             Game.terminateUnit(unit.posY, unit.posX);
           }];
-          Game.spawnUnit(enemy1, 0, 14, 'south');
+          Game.spawnUnit(enemy1, 0, 14, 'south', true);
           Game.spawnUnit(enemy0, 1, 15, 'west');
         },
         {
@@ -2828,7 +2828,68 @@ var script7 = new Script(
       ]
     );
 
-Game.scripts = [ script0, script1, script2, script3, script4, script5, script6, script7 ];
+// Corbin is in the game and it's the player's turn
+
+var script8 = new Script(
+      function(){ return Game.getUnit('corbin') && Game.faction === 'Player' },
+      [
+        {
+          unit: null,
+          message: "Sun Tzu once said that the key to victory is knowing your enemy. Select an enemy, then press A to see where it can attack, or press E to see what it's carrying. Click an item to learn more. Try it now!"
+        },
+        {
+          unit: null,
+          message: "Defeat all enemy units to win. Good luck!"
+        },
+        function(){ Game.beginTurn() }
+      ]
+    );
+
+// Corbin's condition is Critical and he has a Salve
+
+var script9 = new Script(
+      function(){
+        var unit = Game.getUnit('corbin');
+        return unit && unit.hp === 1 && unit.hasItem('salve1') && Game.faction === 'Player';
+      },
+      [
+        {
+          unit: player1,
+          message: "Huh? Oh, I'm bleeding.",
+          alignLeft: true
+        },
+        {
+          unit: null,
+          message: "To use Corbin’s Salve, open the Equipment panel, then drag the Salve upward."
+        },
+        function(){ Game.beginTurn() }
+      ]
+    );
+
+// Only one enemy unit remains
+
+var script10 = new Script(
+      function(){
+        var enemyUnits = Game.getUnits('Enemy');
+        return enemyUnits.length === 1 && enemyUnits[0].posY < 8;
+      },
+      null,
+      function(){
+        var unit = Game.getUnits('Enemy')[0];
+        Game.map[unit.posY][unit.posX].unit.goodbye = [
+          {
+            unit: unit,
+            message: "We bit off... more than we could chew..."
+          },
+          function(){
+            var u = Game.getUnit(unit.id);
+            Game.terminateUnit(u.posY, u.posX);
+          }
+        ];
+      }
+    );
+
+Game.scripts = [ script0, script1, script2, script3, script4, script5, script6, script7, script8, script9, script10 ];
 
 // Defeat Quotes
 
@@ -2838,8 +2899,8 @@ player0.goodbye = [
     message: "Beaten by a bunch of ruffians..."
   },
   function(){
-    var unit = Game.getUnit('lizzie');
-    Game.terminateUnit(unit.posY, unit.posX);
+    var u = Game.getUnit('lizzie');
+    Game.terminateUnit(u.posY, u.posX);
   }
 ];
 
@@ -2849,8 +2910,8 @@ player1.goodbye = [
     message: "...."
   },
   function(){
-    var unit = Game.getUnit('corbin');
-    Game.terminateUnit(unit.posY, unit.posX);
+    var u = Game.getUnit('corbin');
+    Game.terminateUnit(u.posY, u.posX);
   }
 ];
 
@@ -2860,27 +2921,16 @@ enemy0.goodbye = [
     message: "You... won't win... this easily..."
   },
   function(){
-    var unit = Game.getUnit('enemy0');
+    var u = Game.getUnit('enemy0');
     document.getElementById('enemy0').animate({ left: [0, '32px'] }, { duration: 200, fill: 'forwards' });
-    Game.map[unit.posY][unit.posX].unit.items = [];
-    window.setTimeout(function(){ Game.terminateUnit(unit.posY, unit.posX) }, 200);
-  }
-];
-
-enemy1.goodbye = [
-  {
-    unit: enemy1,
-    message: "Looks like we bit off more than we could chew..."
-  },
-  function(){
-    var unit = Game.getUnit('enemy1');
-    Game.terminateUnit(unit.posY, unit.posX);
+    Game.map[u.posY][u.posX].unit.items = [];
+    window.setTimeout(function(){ Game.terminateUnit(u.posY, u.posX) }, 200);
   }
 ];
 
 // These units won't have defeat quotes
 
-[enemy2, enemy3].forEach(function(unit){
+[enemy1, enemy2, enemy3].forEach(function(unit){
   unit.goodbye = [function(){
     var u = Game.getUnit(unit.id);
     Game.terminateUnit(u.posY, u.posX);
