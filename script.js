@@ -327,9 +327,11 @@ class Unit {
     },
     this.equipWeapon = function (id) {
       for (var item of this.items) {
-        if (item.itemType === 'weapon') { item.equipped = false }
+        if (item.itemType === 'weapon') {
+          if (item.id === id) { item.equipped = true }
+          else { item.equipped = false }
+        }
       }
-      this.items[this.findItemIndex(id)].equipped = true;
     };
     this.unequipWeapon = function () {
       if (this.equipped.id !== 'unarmed') {
@@ -552,9 +554,7 @@ var stick1 = new Stick('stick1'),
     ladle1 = new Ladle('ladle1', 1),
     stones1 = new Stones('stones1', 1),
     stones2 = new Stones('stones2'),
-    stones3 = new Stones('stones3', 1),
     slingshot1 = new Slingshot('slingshot1'),
-    slingshot2 = new Slingshot('slingshot2'),
     shortbow1 = new ShortBow('shortbow1'),
     tunic1 = new Tunic('tunic1'),
     boots1 = new Boots('boots1'),
@@ -575,7 +575,7 @@ var itemPlan = [
 
 var player0 = new Unit(
       'lizzie', 'Player', 'Lizzie',
-      5, 5, 5, 4, 6, 5, 10, [slingshot2, salve1],
+      5, 5, 5, 4, 6, 5, 5, [salve1],
       null, null, true, 'player'
     ),
     player1 = new Unit(
@@ -585,7 +585,7 @@ var player0 = new Unit(
     ),
     enemy0 = new Unit(
       'enemy0', 'Enemy', 'Ruffian',
-      6, 4, 3, 2, 3, 5, 5, [club1, stones3],
+      6, 4, 3, 2, 3, 5, 5, [club1],
       null, null, false, 'ai', 'sentry'
     ),
     enemy1 = new Unit(
@@ -600,7 +600,7 @@ var player0 = new Unit(
     ),
     enemy3 = new Unit(
       'enemy3', 'Enemy', 'Ruffian',
-      4, 4, 3, 5, 5, 3, 5, [slingshot1],
+      4, 4, 3, 5, 4, 2, 5, [slingshot1],
       null, null, false, 'ai', 'sentry'
     );
 
@@ -914,7 +914,7 @@ var Space = {
           case 'attacking':
             if (this.space.distance && unit && !unit.friendly) {
               if (!Game.target || unit !== Game.target.unit) {
-                Game.hideAttackRange(y, x);
+                Game.hideAttackRange();
                 Game.targetUnit(y, x);
               } else {
                 $( '#btn-confatk' ).trigger( 'click' );
@@ -1876,7 +1876,7 @@ var Game = new Vue ({
     },
     findLineOfSight: function (aY, aX, y, x, d) {
       var from = this.map[aY][aX], to = this.map[y][x],
-          range = this.action === 'attacking' ? this.active.unit.range : this.active.unit.maxRange,
+          range = this.action === 'checking' ? this.active.unit.maxRange : this.active.unit.range,
           yDist = y - aY, xDist = x - aX,
           hDist = Math.sqrt(yDist * yDist + xDist * xDist),
           vDist = to.terrain.elevation / 2 - from.terrain.elevation / 2,
@@ -1906,20 +1906,22 @@ var Game = new Vue ({
       }
     },
     hideAttackRange: function (targetY, targetX) {
-      var y, x, distance, targetDistance,
+      var y, x,
           posY = this.active.unit.posY,
           posX = this.active.unit.posX,
           range = this.active.unit.range;
-      if (targetY && targetX) { targetDistance = this.map[targetY][targetX].distance }
       for (y = Math.max(posY - range[1], 0); y <= Math.min(posY + range[1], 15); y++) {
         for (x = Math.max(posX - range[1], 0); x <= Math.min(posX + range[1], 15); x++) {
           this.map[y][x].distance = null;
         }
       }
-      if (targetY && targetX) { this.map[targetY][targetX].distance = targetDistance }
     },
     targetUnit: function (y, x) {
-      var target = this.map[y][x];
+      var active = this.active.unit,
+          target = this.map[y][x];
+      if (!target.distance) {
+        target.distance = Math.abs(y - active.posY) + Math.abs(x - active.posX);
+      }
       if (!this.inRange(target.distance, target.unit.range)) {
         for (var weapon of target.unit.weapons) {
           if (this.inRange(target.distance, target.unit.findWeaponRange(weapon.id))) {
@@ -2399,48 +2401,47 @@ var Game = new Vue ({
     aiUnitSentry: function () {
       var unit = this.units[this.unitIndex];
       this.active = this.map[unit.posY][unit.posX];
-      unit = this.active.unit;
-      window.setTimeout(function(){
-        Game.action = 'attacking';
-        Game.showAttackRange(unit.posY, unit.posX, unit.range);
-        Game.aiChooseTarget();
-      }, 500);
+      window.setTimeout(function(){ Game.aiChooseTarget(unit.posY, unit.posX) }, 500);
       window.setTimeout(function(){
         if (Game.target) {
+          Game.action = 'attacking';
           Game.attackUnit();
           window.setTimeout(function(){
-            if (Game.active.unit && Game.target.unit && Game.active.unit.hp !== 0 && Game.target.unit.hp !== 0) {
-              window.setTimeout(function(){ Game.aiPassControl() }, 500);
-            }
-            else {
-              window.setTimeout(function(){ Game.aiPassControl() }, 2000);
-            }
+            var delay;
+            if (Game.active.unit && Game.target.unit && Game.active.unit.hp !== 0 && Game.target.unit.hp !== 0) { delay = 500 }
+            else { delay = 2000 }
+            window.setTimeout(function(){ Game.aiPassControl() }, delay);
           }, 1000);
         } else {
           Game.aiPassControl();
         }
       }, 1000);
     },
-    aiChooseTarget: function () {
-      var y, x, space, targets = [], bestAttack = 0,
-          posY = this.active.unit.posY,
-          posX = this.active.unit.posX,
-          range = this.active.unit.range;
-      for (y = Math.max(posY - range[1], 0); y <= Math.min(posY + range[1], 15); y++) {
-        for (x = Math.max(posX - range[1], 0); x <= Math.min(posX + range[1], 15); x++) {
-          space = this.map[y][x];
-          if (space.distance && space.unit && space.unit.friendly !== this.active.unit.friendly) {
-            this.targetUnit(y, x);
-            targets.push({ posY: y, posX: x, attack: this.combat.activeAtk });
+    aiChooseTarget: function (posY, posX) {
+      var y, x, range, targets = [],
+          unit = this.map[posY][posX].unit,
+          equipped = unit.equipped.id;
+      for (var weapon of unit.weapons) {
+        unit.equipWeapon(weapon.id);
+        range = unit.range;
+        this.showAttackRange(posY, posX, range);
+        for (y = Math.max(posY - range[1], 0); y <= Math.min(posY + range[1], 15); y++) {
+          for (x = Math.max(posX - range[1], 0); x <= Math.min(posX + range[1], 15); x++) {
+            space = this.map[y][x];
+            if (space.distance && space.unit && space.unit.friendly !== this.active.unit.friendly) {
+              this.targetUnit(y, x);
+              targets.push({ weapon: weapon.id, posY: y, posX: x, attack: this.combat.activeAtk });
+            }
           }
         }
+        this.hideAttackRange();
       }
       if (targets.length) {
-        targets.forEach( function (target) { if (target.attack > bestAttack) { bestAttack = target.attack } });
-        target = shuffle(targets.filter(target => target.attack === bestAttack))[0];
-        this.hideAttackRange(target.posY, target.posX);
+        target = targets.reduce(function(a, b){ if (b.attack > a.attack) { return b } else { return a } });
+        unit.equipWeapon(target.weapon);
         this.targetUnit(target.posY, target.posX);
       } else {
+        unit.equipWeapon(equipped);
         this.cancelAttack();
       }
     },
