@@ -296,7 +296,6 @@ class Unit {
     this.friendly = friendly;
     this.control = control;
     if (control === 'ai') { this.behavior = behavior } else { this.behavior = null }
-    this.goodbye = null;
     // methods
     this.getFx = function (attr) {
       return this.items
@@ -429,6 +428,13 @@ class Unit {
   get sklSum() { return this.skill + this.sklMod }
   // attack-derived
   get attacksLeft() { return this.attacksPerTurn - this.attacksUsed }
+  get goodbye() {
+    var id = this.id;
+    return [function(){
+      var u = Game.getUnit(id);
+      Game.terminateUnit(u.posY, u.posX);
+    }];
+  }
 }
 
 class DialogEvent {
@@ -524,7 +530,7 @@ var mapPlan = [
   ' r r r r r a b b a a T a a a b r ',
   ' r r r r r r r b b a a a a b a b ',
   ' r r r r r b b a a a a T a a b a ',
-  ' r r b b a a a a a T a a a a g H ',
+  ' r r b b a a a a a T a a a a a H ',
   ' r a a a a a a T a a a T a a a g ',
   ' b a a a a T a a a T a a a T a a ',
 ];
@@ -1588,7 +1594,8 @@ var Game = new Vue ({
     dialog: null,
     scrolled: false,
     scripts: null,
-    topoView: false
+    topoView: false,
+    factorials: []
   },
   computed: {
     faction: function () {
@@ -1612,8 +1619,8 @@ var Game = new Vue ({
           activeDef: this.calculateDefense(this.active, this.target),
           targetAtk: this.calculateAttack(this.target),
           targetDef: this.calculateDefense(this.target, this.active),
-          get activeHit() { return Math.round(this.activeAtk / (this.activeAtk + this.targetDef) * 100) },
-          get targetHit() { return Math.round(this.targetAtk / (this.targetAtk + this.activeDef) * 100) },
+          get activeHit() { return Math.round(Game.calculateHitChance(this.activeAtk, this.targetDef) * 100) },
+          get targetHit() { return Math.round(Game.calculateHitChance(this.targetAtk, this.activeDef) * 100) },
           get activeCrt() { return Game.active.unit.sklSum },
           get targetCrt() { return Game.target.unit.sklSum },
           canCounter: this.inRange(this.distance, this.target.unit.range)
@@ -1966,6 +1973,33 @@ var Game = new Vue ({
       }
       defense += Math.max(defSpace.terrain.elevation - atkSpace.terrain.elevation, 0);
       return defense;
+    },
+    factorial: function (n) {
+      if (typeof(this.factorials[n]) !== 'undefined') { return this.factorials[n] }
+      var ans = 1;
+      for (var i = 2; i <= n; i++) {
+        ans *= i;
+      }
+      return this.factorials[n] = ans;
+    },
+    calculateHitChance: function (atk, def) {
+      if (atk <= 0) { return 0 }
+      if (def < 0) { def = 0 }
+      let x = 0, sum = 0,
+          headsInFlips = (x, n) => this.factorial(n) / ( Math.pow(2,n) * this.factorial(x) * this.factorial(n - x) ),
+          successRate = function (x, atk) {
+            let sum = 0;
+            while (x + 1 <= atk) {
+              sum += headsInFlips(x + 1, atk);
+              x++;
+            }
+            return sum;
+          };
+      while (x <= def) {
+        sum += headsInFlips(x, def) * successRate(x, atk);
+        x++;
+      }
+      return sum;
     },
     attackUnit: function (counter) {
       var attacker, defender, hitChance, crtChance, damage = 0;
@@ -2587,7 +2621,7 @@ var script0 = new Script(
         function(){ Game.spawnUnit(player0, 15, 2, 'north') },
         {
           unit: player0,
-          message: "Sun's getting low. Time to find somewhere to set up camp."
+          message: "Sun's getting low. Time to start looking for somewhere to spend the night."
         },
         {
           unit: player0,
@@ -2835,7 +2869,7 @@ var script8 = new Script(
       [
         {
           unit: null,
-          message: "Sun Tzu once said that the key to victory is knowing your enemy. Select an enemy, then press A to see where it can attack, or press E to see what it's carrying. Click an item to learn more. Try it now!"
+          message: "Sun Tzu said that the key to victory is knowing your enemy. Select an enemy, then press A to see where it can attack, or press E to see what it's carrying. Click an item to learn more. Try it now!"
         },
         {
           unit: null,
@@ -2927,15 +2961,6 @@ enemy0.goodbye = [
     window.setTimeout(function(){ Game.terminateUnit(u.posY, u.posX) }, 200);
   }
 ];
-
-// These units won't have defeat quotes
-
-[enemy1, enemy2, enemy3].forEach(function(unit){
-  unit.goodbye = [function(){
-    var u = Game.getUnit(unit.id);
-    Game.terminateUnit(u.posY, u.posX);
-  }];
-});
 
 // ----------------------------{  Interface  }-----------------------------
 
