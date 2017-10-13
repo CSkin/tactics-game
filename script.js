@@ -296,6 +296,7 @@ class Unit {
     this.friendly = friendly;
     this.control = control;
     if (control === 'ai') { this.behavior = behavior } else { this.behavior = null }
+    this.goodbye = null;
     // methods
     this.getFx = function (attr) {
       return this.items
@@ -428,13 +429,6 @@ class Unit {
   get sklSum() { return this.skill + this.sklMod }
   // attack-derived
   get attacksLeft() { return this.attacksPerTurn - this.attacksUsed }
-  get goodbye() {
-    var id = this.id;
-    return [function(){
-      var u = Game.getUnit(id);
-      Game.terminateUnit(u.posY, u.posX);
-    }];
-  }
 }
 
 class DialogEvent {
@@ -789,6 +783,7 @@ var Terrain = {
   },
   computed: {
     terrainStyle: function () {
+      if (this.terrain.type === 'hut') { return { backgroundImage: "url('sprites/hut.gif')" } }
       return { backgroundImage: "url('sprites/" + this.terrain.type.replace(/\s/g, '') + ".png')" }
     },
     elevationShow: function () {
@@ -1090,12 +1085,12 @@ var Modifier = {
 var UnitInfo = {
   template: `
     <div class='ui unit-info'>
-      <p class='heading'><img class='icon' :src='iconSrc'>{{ unit.name }}</p>
+      <p class='heading'><img class='icon' :src='unitIcon'>{{ unit.name }}</p>
       <p>Condition: <b :class='unit.condition.toLowerCase()'>{{ unit.condition }}</b></p>
       <div class='flex'>
         <div class='col60'>
           <p>Strength: <b>{{ unit.strength }}</b> <modifier :mod='unit.strMod'></modifier></p>
-          <p>Skill: <b>{{ unit.skill }}</b> <modifier :mod='unit.sklMod'></modifier></p>
+          <p>Skill <img class='icon tiny' :src='skillIcon'>: <b>{{ unit.skill }}</b> <modifier :mod='unit.sklMod'></modifier></p>
           <p>Agility: <b>{{ unit.agility }}</b> <modifier :mod='unit.agiMod'></modifier></p>
           <p>Toughness: <b>{{ unit.toughness }}</b> <modifier :mod='unit.tghMod'></modifier></p>
           <p>Movement: <b>{{ unit.movement }}</b> <modifier :mod='unit.movMod'></modifier></p>
@@ -1111,8 +1106,11 @@ var UnitInfo = {
   `,
   props: ['unit'],
   computed: {
-    iconSrc: function () {
+    unitIcon: function () {
       return 'sprites/' + this.unit.id.replace(/\d/, '') + '-icon.png';
+    },
+    skillIcon: function () {
+      return 'sprites/skill-' + this.unit.equipped.type + '.png';
     }
   },
   components: {
@@ -2961,6 +2959,15 @@ enemy0.goodbye = [
     window.setTimeout(function(){ Game.terminateUnit(u.posY, u.posX) }, 200);
   }
 ];
+
+// These units won't have defeat quotes
+
+[enemy1, enemy2, enemy3].forEach(function(unit){
+  unit.goodbye = [function(){
+    var u = Game.getUnit(unit.id);
+    Game.terminateUnit(u.posY, u.posX);
+  }];
+});
 
 // ----------------------------{  Interface  }-----------------------------
 

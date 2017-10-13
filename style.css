@@ -183,6 +183,12 @@ p {
   margin-right: 5px;
 }
 
+.tiny {
+  width: 14px;
+  height: 14px;
+  margin: 0;
+}
+
 .columns {
   width: 50%;
 }
