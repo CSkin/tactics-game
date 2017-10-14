@@ -2156,8 +2156,8 @@ var Game = new Vue ({
       } else { return { top: 16, left: 16 } }
     },
     makePanelsDroppable: function () {
-      var dragover = function (html, style, id) {
-            $( '#helper' ).prepend($( '<span>', { html: html, style: style } ));
+      var dragover = function (src, style, id) {
+            $( '#helper' ).prepend($( '<img>', { src: src, style: style } ));
             $( '#helper' ).css( 'cursor', 'none' );
             var cursorAt = $( '#' + id ).draggable( 'option', 'cursorAt' ),
                 helperAt = {
@@ -2169,7 +2169,7 @@ var Game = new Vue ({
             $( '#helper *' ).css({ 'top': y + 'px', 'left': x + 'px' });
           },
           dragout = function () {
-            $( '#helper span' ).remove();
+            $( '#helper img:first-child' ).remove();
             $( '#helper' ).css( 'cursor', '' );
             $( '#helper *' ).css({ 'top': '', 'left': '' });
           }
@@ -2182,10 +2182,10 @@ var Game = new Vue ({
         tolerance: 'pointer',
         over: function (event, ui) {
           var itemType = ui.draggable[0].classList[2],
-              html, style = 'background-color:#dfefff;';
-          if (itemType === 'weapon') { html = 'Equip'; style += ' color:#800000' }
-          else if (itemType === 'accessory') { html = 'Use'; style += ' color:#005900' }
-          Vue.nextTick(function(){ dragover(html, style, ui.draggable[0].id) });
+              src, style = 'margin-right: 5px';
+          if (itemType === 'weapon') { src = 'sprites/equip-button.png' }
+          else if (itemType === 'accessory') { src = 'sprites/use-button.png' }
+          Vue.nextTick(function(){ dragover(src, style, ui.draggable[0].id) });
         },
         out: function (event, ui) { dragout() },
         drop: function (event, ui) {
@@ -2207,7 +2207,7 @@ var Game = new Vue ({
       });
       $( '#top-center' ).droppable({
         tolerance: 'pointer',
-        over: function (event, ui) { dragover('Drop', 'color:#654321', ui.draggable[0].id) },
+        over: function (event, ui) { dragover('sprites/drop-button.png', 'margin-right: 5px', ui.draggable[0].id) },
         out: function (event, ui) { dragout() },
         drop: function (event, ui) {
           dragout();
