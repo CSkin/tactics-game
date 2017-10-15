@@ -270,8 +270,9 @@ class Unit {
     // basic info
     this.id = id;
     this.faction = faction;
-    this.sprite = 'sprites/' + id.replace(/\d/, '') + '.png';
     this.name = name;
+    this.sprite = 'sprites/' + id.replace(/\d/, '') + '.png';
+    this.portrait = 'sprites/' + name.split(' ').map( s => s.charAt(0).toLowerCase() + s.slice(1) ).join('-') + '-portrait.png';
     // core attributes
     this.hp = 3;
     this.strength = strength;
@@ -321,6 +322,7 @@ class Unit {
       return this.items.filter( i => i.id === id ).length;
     },
     this.findWeaponRange = function (id) {
+      if (id === 'unarmed') { return [1, 1] }
       var weapon = this.items[this.findItemIndex(id)];
       if (weapon.type === 'throwing') { return [ 1, Math.floor(this.strSum / weapon.range[1]) ] }
       else { return weapon.range }
@@ -436,7 +438,7 @@ class DialogEvent {
     this.eventType = 'dialog';
     if (unit) {
       this.subject = unit.name;
-      this.portrait = 'sprites/' + unit.id.replace(/\d/, '') + '-portrait.png';
+      this.portrait = unit.portrait;
       this.faction = unit.faction;
       this.alignLeft = alignLeft;
     }
@@ -584,22 +586,22 @@ var player0 = new Unit(
       null, null, true, 'player'
     ),
     enemy0 = new Unit(
-      'enemy0', 'Enemy', 'Ruffian',
+      'ruffian0', 'Enemy', 'Ruffian',
       6, 4, 3, 2, 3, 5, 5, [club1],
       null, null, false, 'ai', 'sentry'
     ),
     enemy1 = new Unit(
-      'enemy1', 'Enemy', 'Ruffian Leader',
+      'ruffian1', 'Enemy', 'Ruffian Leader',
       8, 5, 4, 2, 4, 4, 5, [club2, stones1, boots1],
       null, null, false, 'ai', 'sentry'
     ),
     enemy2 = new Unit(
-      'enemy2', 'Enemy', 'Ruffian',
+      'ruffian2', 'Enemy', 'Ruffian',
       5, 4, 5, 2, 3, 5, 5, [stones2, tunic1],
       null, null, false, 'ai', 'sentry'
     ),
     enemy3 = new Unit(
-      'enemy3', 'Enemy', 'Ruffian',
+      'ruffian3', 'Enemy', 'Ruffian',
       4, 4, 3, 5, 4, 2, 5, [slingshot1],
       null, null, false, 'ai', 'sentry'
     );
@@ -1371,7 +1373,7 @@ var EventDialog = {
         <div class='content' :class='alignment'>
           <img v-if='event.portrait && event.alignLeft' class='portrait' :src='event.portrait' :title='event.subject'>
           <div :class='messageClass' :style='messageColor'>{{ event.message }}</div>
-          <img v-if='event.portrait && !event.alignLeft' class='portrait' :src='event.portrait' :title='event.subject'>
+          <img v-if='event.portrait && !event.alignLeft' class='portrait flip' :src='event.portrait' :title='event.subject'>
         </div>
       </div>
     </transition>
@@ -2819,7 +2821,7 @@ var script7 = new Script(
           enemy0.restoreHealth(2);
           enemy0.items.push(club1);
           enemy0.goodbye = [function(){
-            var unit = Game.getUnit('enemy0');
+            var unit = Game.getUnit('ruffian0');
             Game.terminateUnit(unit.posY, unit.posX);
           }];
           Game.spawnUnit(enemy1, 0, 14, 'south', true);
@@ -2953,8 +2955,8 @@ enemy0.goodbye = [
     message: "You... won't win... this easily..."
   },
   function(){
-    var u = Game.getUnit('enemy0');
-    document.getElementById('enemy0').animate({ left: [0, '32px'] }, { duration: 200, fill: 'forwards' });
+    var u = Game.getUnit('ruffian0');
+    document.getElementById('ruffian0').animate({ left: [0, '32px'] }, { duration: 200, fill: 'forwards' });
     Game.map[u.posY][u.posX].unit.items = [];
     window.setTimeout(function(){ Game.terminateUnit(u.posY, u.posX) }, 200);
   }

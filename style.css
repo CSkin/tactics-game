@@ -409,6 +409,10 @@ p {
   height: 96px;
 }
 
+.flip {
+  transform: scaleX(-1);
+}
+
 .message {
   position: relative;
   padding: 8px 10px;
