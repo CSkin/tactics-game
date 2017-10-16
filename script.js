@@ -269,10 +269,11 @@ class Unit {
   constructor(id, faction, name, strength, melee, throwing, ranged, agility, toughness, movement, items, posY, posX, friendly, control, behavior) {
     // basic info
     this.id = id;
-    this.faction = faction;
     this.name = name;
+    this.faction = faction;
     this.sprite = 'sprites/' + id.replace(/\d/, '') + '.png';
     this.portrait = 'sprites/' + name.split(' ').map( s => s.charAt(0).toLowerCase() + s.slice(1) ).join('-') + '-portrait.png';
+    this.icon = this.portrait.replace('portrait', 'icon');
     // core attributes
     this.hp = 3;
     this.strength = strength;
@@ -451,11 +452,11 @@ class CombatEvent {
   constructor(unit, target, damage, activeTurn, counter) {
     this.eventType = 'combat';
     this.subject = unit.name;
-    this.subjectIcon = 'sprites/' + unit.id.replace(/\d/, '') + '-icon.png';
+    this.subjectIcon = unit.icon;
     if (!counter) { this.verb = 'attacked' } else { this.verb = 'countered' }
     this.verbIcon = unit.equipped.icon;
     this.object = target.name;
-    this.objectIcon = 'sprites/' + target.id.replace(/\d/, '') + '-icon.png';
+    this.objectIcon = target.icon;
     switch (damage) {
       case 0: this.result = 'Attack missed.'; break;
       case 1: this.result = 'Attack hit.'; break;
@@ -469,7 +470,7 @@ class ConditionEvent {
   constructor(unit, activeTurn) {
     this.eventType = 'condition';
     this.subject = unit.name;
-    this.subjectIcon = 'sprites/' + unit.id.replace(/\d/, '') + '-icon.png';
+    this.subjectIcon = unit.icon;
     if (unit.hp > 0) { this.verb = 'is' } else { this.verb = 'was' }
     this.object = unit.condition.toLowerCase();
     if (this.object === 'wounded' || this.object === 'critical') {
@@ -483,7 +484,7 @@ class ItemEvent {
   constructor(unit, verb, item, activeTurn) {
     this.eventType = 'item';
     this.subject = unit.name;
-    this.subjectIcon = 'sprites/' + unit.id.replace(/\d/, '') + '-icon.png';
+    this.subjectIcon = unit.icon;
     this.verb = verb;
     this.object = item.name;
     this.objectIcon = item.icon;
@@ -1087,7 +1088,7 @@ var Modifier = {
 var UnitInfo = {
   template: `
     <div class='ui unit-info'>
-      <p class='heading'><img class='icon' :src='unitIcon'>{{ unit.name }}</p>
+      <p class='heading'><img class='icon' :src='unit.icon'>{{ unit.name }}</p>
       <p>Condition: <b :class='unit.condition.toLowerCase()'>{{ unit.condition }}</b></p>
       <div class='flex'>
         <div class='col60'>
@@ -1108,9 +1109,6 @@ var UnitInfo = {
   `,
   props: ['unit'],
   computed: {
-    unitIcon: function () {
-      return 'sprites/' + this.unit.id.replace(/\d/, '') + '-icon.png';
-    },
     skillIcon: function () {
       return 'sprites/skill-' + this.unit.equipped.type + '.png';
     }
