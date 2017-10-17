@@ -1386,7 +1386,7 @@ var EventDialog = {
     },
     messageColor: function () {
       switch (this.event.faction) {
-        case 'Player': return { background: '#f2d791' };
+        case 'Player': return { background: '#ffe28c' };
         case 'Enemy': return { background: '#7acca4' };
       }
     }
@@ -1413,7 +1413,7 @@ var EventAction = {
   computed: {
     contentStyle: function () {
       switch (this.event.activeTurn) {
-        case 'Player': return { background: '#f9ebc8' };
+        case 'Player': return { background: '#ffefbf' };
         case 'Enemy': return { background: '#bde6d2' };
       }
     },
