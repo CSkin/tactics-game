@@ -592,17 +592,17 @@ var player0 = new Unit(
       null, null, false, 'ai', 'sentry'
     ),
     enemy1 = new Unit(
-      'ruffian1', 'Enemy', 'Ruffian Leader',
+      'ruffian-leader0', 'Enemy', 'Ruffian Leader',
       8, 5, 4, 2, 4, 4, 5, [club2, stones1, boots1],
       null, null, false, 'ai', 'sentry'
     ),
     enemy2 = new Unit(
-      'ruffian2', 'Enemy', 'Ruffian',
+      'ruffian1', 'Enemy', 'Ruffian',
       5, 4, 5, 2, 3, 5, 5, [stones2, tunic1],
       null, null, false, 'ai', 'sentry'
     ),
     enemy3 = new Unit(
-      'ruffian3', 'Enemy', 'Ruffian',
+      'ruffian2', 'Enemy', 'Ruffian',
       4, 4, 3, 5, 4, 2, 5, [slingshot1],
       null, null, false, 'ai', 'sentry'
     );
@@ -1387,7 +1387,7 @@ var EventDialog = {
     messageColor: function () {
       switch (this.event.faction) {
         case 'Player': return { background: '#ffe28c' };
-        case 'Enemy': return { background: '#7acca4' };
+        case 'Enemy': return { background: '#54c48c' };
       }
     }
   }
@@ -1414,7 +1414,7 @@ var EventAction = {
     contentStyle: function () {
       switch (this.event.activeTurn) {
         case 'Player': return { background: '#ffefbf' };
-        case 'Enemy': return { background: '#bde6d2' };
+        case 'Enemy': return { background: '#a1e6c3' };
       }
     },
     objectClass: function () {
