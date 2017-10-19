@@ -87,7 +87,7 @@ p {
   z-index: 30;
   box-sizing: border-box;
   border: 8px solid transparent;
-  border-image-source: url('sprites/active.png');
+  border-image-source: url('img/active.png');
   border-image-slice: 8;
   border-image-width: 8px;
   border-image-outset: 7px;
@@ -262,7 +262,7 @@ p {
   width: 180px;
   height: 35px;
   margin-top: 5px;
-  background-image: url('sprites/btn-end-disabled.png');
+  background-image: url('img/btn-end-disabled.png');
 }
 
 .button {

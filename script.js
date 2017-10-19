@@ -132,8 +132,8 @@ class Item {
   constructor(index, id, icon, name, descrip, effects, footprint, slot) {
     this.index = index;
     this.id = id;
-    this.sprite = 'sprites/' + id.replace(/\d/, '') + '.png';
-    this.icon = 'sprites/' + icon + '-icon.png';
+    this.sprite = 'img/' + id.replace(/\d/, '') + '.png';
+    this.icon = 'img/' + icon + '-icon.png';
     this.name = name;
     this.descrip = descrip;
     this.effects = effects;
@@ -143,7 +143,7 @@ class Item {
     } else {
       var n, sprites = [];
       for (n = 0; n < footprint.length; n++) {
-        sprites.push('sprites/' + id.replace(/\d/, '') + footprint[n] + '.png');
+        sprites.push('img/' + id.replace(/\d/, '') + footprint[n] + '.png');
       }
       this.sprites = sprites;
     }
@@ -271,9 +271,7 @@ class Unit {
     this.id = id;
     this.name = name;
     this.faction = faction;
-    this.sprite = 'sprites/' + id.replace(/\d/, '') + '.png';
-    this.portrait = 'sprites/' + name.split(' ').map( s => s.charAt(0).toLowerCase() + s.slice(1) ).join('-') + '-portrait.png';
-    this.icon = this.portrait.replace('portrait', 'icon');
+    this.sprites = 'img/' + id.replace(/\d/, '') + '.png';
     // core attributes
     this.hp = 3;
     this.strength = strength;
@@ -285,7 +283,7 @@ class Unit {
     this.movement = movement;
     // items
     this.items = items;
-    if (items.length && items[0].itemType === 'weapon') { this.items[0].equipped = true; }
+    if (items.length && items[0].itemType === 'weapon') { this.items[0].equipped = true }
     // inner workings
     this.impaired = [];
     this.movesUsed = 0;
@@ -296,6 +294,7 @@ class Unit {
     this.moving = null;
     this.path = null;
     this.friendly = friendly;
+    if (friendly) { this.facing = 'east' } else { this.facing = 'west' }
     this.control = control;
     if (control === 'ai') { this.behavior = behavior } else { this.behavior = null }
     this.goodbye = null;
@@ -587,22 +586,22 @@ var player0 = new Unit(
       null, null, true, 'player'
     ),
     enemy0 = new Unit(
-      'ruffian0', 'Enemy', 'Ruffian',
-      6, 4, 3, 2, 3, 5, 5, [club1],
-      null, null, false, 'ai', 'sentry'
-    ),
-    enemy1 = new Unit(
-      'ruffian-leader0', 'Enemy', 'Ruffian Leader',
+      'ruffian-leader', 'Enemy', 'Ruffian Leader',
       8, 5, 4, 2, 4, 4, 5, [club2, stones1, boots1],
       null, null, false, 'ai', 'sentry'
     ),
-    enemy2 = new Unit(
+    enemy1 = new Unit(
       'ruffian1', 'Enemy', 'Ruffian',
+      6, 4, 3, 2, 3, 5, 5, [club1],
+      null, null, false, 'ai', 'sentry'
+    ),
+    enemy2 = new Unit(
+      'ruffian2', 'Enemy', 'Ruffian',
       5, 4, 5, 2, 3, 5, 5, [stones2, tunic1],
       null, null, false, 'ai', 'sentry'
     ),
     enemy3 = new Unit(
-      'ruffian2', 'Enemy', 'Ruffian',
+      'ruffian3', 'Enemy', 'Ruffian',
       4, 4, 3, 5, 4, 2, 5, [slingshot1],
       null, null, false, 'ai', 'sentry'
     );
@@ -756,7 +755,7 @@ var GroundIcon = {
       return { '-webkit-transform': this.transform }
     },
     iconSrc: function () {
-      return 'sprites/ground-' + this.itemType + '.png';
+      return 'img/ground-' + this.itemType + '.png';
     }
   }
 };
@@ -786,14 +785,14 @@ var Terrain = {
   },
   computed: {
     terrainStyle: function () {
-      if (this.terrain.type === 'hut') { return { backgroundImage: "url('sprites/hut.gif')" } }
-      return { backgroundImage: "url('sprites/" + this.terrain.type.replace(/\s/g, '') + ".png')" }
+      if (this.terrain.type === 'hut') { return { backgroundImage: "url('img/hut.gif')" } }
+      return { backgroundImage: "url('img/" + this.terrain.type.replace(/\s/g, '') + ".png')" }
     },
     elevationShow: function () {
       return this.terrain.type !== 'barren' && this.topoView;
     },
     elevationSrc: function () {
-      return 'sprites/elevation' + this.terrain.elevation + '.png';
+      return 'img/elevation' + this.terrain.elevation + '.png';
     }
   },
   methods: {
@@ -809,28 +808,25 @@ var Terrain = {
 var Highlight = {
   template: `
     <transition name='fade'>
-      <div class='space highlight'>
-        <svg width='32' height='32' :style='cursorStyle'>
-          <image x='-32' y='-32' width='64' height='64' :xlink:href='highlightHref'>
-            <animateTransform attributeName="transform" attributeType="XML" type="translate"
-                              from="0 0" to="32 32" :dur="animationSpeed" repeatCount="indefinite"/>
-          </image>
-        </svg>
-      </div>
+      <svg class='space highlight' :style='cursorStyle' width='32' height='32'>
+        <image x='-32' y='-32' width='64' height='64' :xlink:href='highlightHref'>
+          <animateTransform attributeName="transform" attributeType="XML" type="translate"
+                            from="0 0" to="32 32" :dur="animationSpeed" repeatCount="indefinite"/>
+        </image>
+      </svg>
     </transition>
   `,
   props: ['space'],
   computed: {
     highlightHref: function () {
-      if (this.space.path) { return 'sprites/highlight-blue.png' }
+      var color;
+      if (this.space.path) { color = 'blue' }
       if (this.space.distance) {
-        if (this.space.unit && this.space.unit.friendly !== Game.active.unit.friendly) {
-          return 'sprites/highlight-solidred.png'
-        } else {
-          return 'sprites/highlight-red.png'
-        }
+        if (this.space.unit && this.space.unit.friendly !== Game.active.unit.friendly) { color = 'solidred' }
+        else { color = 'red' }
       }
-      if (this.space.goal) { return 'sprites/highlight-yellow.png' }
+      if (this.space.goal) { color = 'yellow' }
+      return 'img/highlight-' + color + '.png';
     },
     cursorStyle: function () {
       if (this.space.path && Game.active.unit.control === 'player') {
@@ -848,23 +844,30 @@ var Highlight = {
 var Unit = {
   template: `
     <transition :name='dynamicTransition' @after-enter='moveHandler'>
-      <img :id='unit.id' class='space unit' :src='unit.sprite' :title='unit.name'>
+      <svg :id='unit.id' class='space unit' :title='unit.name' width='32' height='32'>
+          <image :xlink:href='unit.sprites' width='96' height='178' :y='facing'></image>
+      </svg>
     </transition>
   `,
   props: ['unit'],
   computed: {
     dynamicTransition: function () {
-      if (this.unit) {
-        if (this.unit.moving) {
-          switch (this.unit.moving) {
-            case 'east': return 'moveEast';
-            case 'south': return 'moveSouth';
-            case 'west': return 'moveWest';
-            case 'north': return 'moveNorth';
-          }
-        } else if (this.unit.condition === 'Defeated') {
-          return 'sayGoodbye';
+      if (this.unit.moving) {
+        switch (this.unit.moving) {
+          case 'east': return 'moveEast';
+          case 'south': return 'moveSouth';
+          case 'west': return 'moveWest';
+          case 'north': return 'moveNorth';
         }
+      } else if (this.unit.condition === 'Defeated') {
+        return 'sayGoodbye';
+      }
+    },
+    facing: function () {
+      switch (this.unit.facing) {
+        case 'east': return '-96';
+        case 'west': return '-128';
+        default: return '-96';
       }
     }
   },
@@ -1053,7 +1056,7 @@ var TerrainInfo = {
   props: ['terrain'],
   computed: {
     iconSrc: function () {
-      return 'sprites/' + this.terrain.type.replace(/\s/g, '') + '.png';
+      return 'img/' + this.terrain.type.replace(/\s/g, '') + '.png';
     }
   }
 };
@@ -1061,7 +1064,7 @@ var TerrainInfo = {
 var GroundInfo = {
   template: `
     <div class='ui ground-info'>
-      <p class='heading'><img class='icon' src='sprites/equipment-icon.png'>Items</p>
+      <p class='heading'><img class='icon' src='img/equipment-icon.png'>Items</p>
       <p v-for='item in items' :key='item.id'>
         <img class='icon' :src='item.icon'>{{ item.name }}
       </p>
@@ -1110,7 +1113,7 @@ var UnitInfo = {
   props: ['unit'],
   computed: {
     skillIcon: function () {
-      return 'sprites/skill-' + this.unit.equipped.type + '.png';
+      return 'img/skill-' + this.unit.equipped.type + '.png';
     }
   },
   components: {
@@ -1127,13 +1130,13 @@ var ActionButton = {
   props: ['type', 'title', 'onclick', 'enabled'],
   computed: {
     holderStyle: function () {
-      return { backgroundImage: "url('sprites/btn-" + this.type + "-disabled.png')" }
+      return { backgroundImage: "url('img/btn-" + this.type + "-disabled.png')" }
     },
     buttonId: function () {
       return 'btn-' + this.type;
     },
     buttonSrc: function () {
-      return 'sprites/btn-' + this.type + '.png';
+      return 'img/btn-' + this.type + '.png';
     }
   }
 };
@@ -1141,7 +1144,7 @@ var ActionButton = {
 var UnitActions = {
   template: `
     <div class='ui'>
-      <p class='heading'><img class='icon' src='sprites/actions-icon.png'>Actions</p>
+      <p class='heading'><img class='icon' src='img/actions-icon.png'>Actions</p>
       <div id='action-buttons'>
         <template v-if="unit.control === 'player'">
           <action-button type='move' title='Move (M)' :onclick='beginMove' :enabled="action !== 'moving' && unit.movesLeft > 0"></action-button>
@@ -1174,9 +1177,9 @@ var UnitActions = {
 var TargetActions = {
   template: `
     <div class='ui'>
-      <p class='heading'><img class='icon' src='sprites/actions-icon.png'>Actions</p>
+      <p class='heading'><img class='icon' src='img/actions-icon.png'>Actions</p>
       <div id='confatk-holder' class='btn-holder'>
-        <img v-if='btnEnabled' id='btn-confatk' class='button' src='sprites/btn-confatk.png' title='Confirm Attack (A)' @click='confirmAttack'>
+        <img v-if='btnEnabled' id='btn-confatk' class='button' src='img/btn-confatk.png' title='Confirm Attack (A)' @click='confirmAttack'>
       </div>
     </div>
   `,
@@ -1194,7 +1197,7 @@ var TargetActions = {
 var CombatInfo = {
   template: `
     <div class='ui'>
-      <p class='heading'><img class='icon' src='sprites/combat-icon.png'>Combat</p>
+      <p class='heading'><img class='icon' src='img/combat-icon.png'>Combat</p>
       <div class='flex'>
         <div class='columns'>
           <template v-if="type === 'active'">
@@ -1247,7 +1250,7 @@ var ItemSlot = {
   props: ['type', 'n', 'item', 'itemtip'],
   computed: {
     slotBackground: function () {
-      return { backgroundImage: "url('sprites/" + this.type + "-slot.png')" }
+      return { backgroundImage: "url('img/" + this.type + "-slot.png')" }
     },
     itemSrc: function () {
       if (this.item) {
@@ -1274,7 +1277,7 @@ var ItemSlot = {
 var ItemHolder = {
   template: `
     <div class='item-holder'>
-      <img :src="'sprites/' + type + '-card.png'">
+      <img :src="'img/' + type + '-card.png'">
       <div class='slot-container' :style='borderColor'>
         <item-slot v-for='n in 6' :type='type' :n='n - 1' :item='itemData[n - 1]' :itemtip='itemtip' :key='n - 1'></item-slot>
       </div>
@@ -1307,7 +1310,7 @@ var ItemHolder = {
 var UnitItems = {
   template: `
     <div class='ui'>
-      <p class='heading'><img class='icon' src='sprites/equipment-icon.png'>Equipment</p>
+      <p class='heading'><img class='icon' src='img/equipment-icon.png'>Equipment</p>
       <div class='equipment'>
         <item-holder type='weapon' :items='unit.weapons' :itemtip='itemtip'></item-holder>
         <item-holder type='clothing' :items='unit.clothing' :itemtip='itemtip'></item-holder>
@@ -1470,7 +1473,7 @@ var EventLog = {
 var TopoControl = {
   template: `
     <div class='ui flex center'>
-      <img class='icon' src='sprites/elevation-icon.png'>
+      <img class='icon' src='img/elevation-icon.png'>
       <span class='bold sa'>Elevation View</span>
       <div id='tgl-topoview' class='tgl-switch' :title='title' @click='toggleTopoView'>
         <div class='tgl-holder' :class='tglOn' :title='title'>
@@ -1504,12 +1507,12 @@ var TopoControl = {
 var StatusPanel = {
   template: `
     <div class='ui'>
-      <p class='heading'><img class='icon' src='sprites/status-icon.png'>Status</p>
+      <p class='heading'><img class='icon' src='img/status-icon.png'>Status</p>
       <p>Turn: <b>{{ turn }}</b></p>
       <p>Faction: <b>{{ faction }}</b></p>
       <p>Units: <b>{{ units }}</b></p>
       <div v-if="control === 'player'" id='end-holder'>
-        <img v-if='!action' id='btn-end' class='button' src='sprites/btn-end.png' title='End Turn' @click='endTurn'>
+        <img v-if='!action' id='btn-end' class='button' src='img/btn-end.png' title='End Turn' @click='endTurn'>
       </div>
     </div>
   `,
@@ -1796,6 +1799,7 @@ var Game = new Vue ({
       else { unitData = from.unit; from.unit = null; }
       unitData.path = unitData.path.substr(1);
       unitData.moving = moveData.moving;
+      if (unitData.moving === 'east' || unitData.moving === 'west') { unitData.facing = unitData.moving }
       if (active) { unitData.movesUsed += to.terrain.cost }
       moveData.changePos();
       if (!to.unit) { to.unit = unitData } else { to.unit2 = unitData }
@@ -2041,7 +2045,7 @@ var Game = new Vue ({
       spacesX = defender.posX - attacker.posX;
       pixelsY = Math.round(16 * Math.sin(Math.atan2(spacesY, spacesX)));
       pixelsX = Math.round(16 * Math.cos(Math.atan2(spacesY, spacesX)));
-      evadeSprite = "url('sprites/" + defender.id.replace(/\d/, '') + "-evade.png')";
+      evadeSprite = "url('img/" + defender.id.replace(/\d/, '') + "-evade.png')";
       attack = {
         keyframes: {
           zIndex: [ 70, 70 ],
@@ -2058,7 +2062,7 @@ var Game = new Vue ({
           top: [0, (pixelsY / 3 + 'px'), 0 ],
           left: [0, (pixelsX / 3 + 'px'), 0 ],
           boxSizing: ['border-box', 'border-box'],
-          backgroundImage: ["url('sprites/attack-hit.png')", "url('sprites/attack-hit.png')"],
+          backgroundImage: ["url('img/attack-hit.png')", "url('img/attack-hit.png')"],
           paddingLeft: ['32px', '32px']
         },
         options: {
@@ -2117,7 +2121,7 @@ var Game = new Vue ({
     
     makeEquipItemsDraggable: function (draggables) {
       $( draggables ).toArray().forEach( function (item) {
-        var itemSrc = item.src.match(/sprites\/.*\.png/)[0],
+        var itemSrc = item.src.match(/img\/.*\.png/)[0],
             cursorOffset = Game.findCursorOffset(itemSrc),
             helperSrc = itemSrc.replace(/\d/, ''),
             helperImg = $( '<img>', { src: helperSrc } ),
@@ -2183,8 +2187,8 @@ var Game = new Vue ({
         over: function (event, ui) {
           var itemType = ui.draggable[0].classList[2],
               src, style = 'margin-right: 5px';
-          if (itemType === 'weapon') { src = 'sprites/equip-button.png' }
-          else if (itemType === 'accessory') { src = 'sprites/use-button.png' }
+          if (itemType === 'weapon') { src = 'img/equip-button.png' }
+          else if (itemType === 'accessory') { src = 'img/use-button.png' }
           Vue.nextTick(function(){ dragover(src, style, ui.draggable[0].id) });
         },
         out: function (event, ui) { dragout() },
@@ -2207,7 +2211,7 @@ var Game = new Vue ({
       });
       $( '#top-center' ).droppable({
         tolerance: 'pointer',
-        over: function (event, ui) { dragover('sprites/drop-button.png', 'margin-right: 5px', ui.draggable[0].id) },
+        over: function (event, ui) { dragover('img/drop-button.png', 'margin-right: 5px', ui.draggable[0].id) },
         out: function (event, ui) { dragout() },
         drop: function (event, ui) {
           dragout();
@@ -2497,6 +2501,7 @@ var Game = new Vue ({
       unit.posY = y;
       unit.posX = x;
       unit.moving = moving;
+      if (moving === 'east' || moving === 'west') { unit.facing = moving }
       this.map[y][x].unit = unit;
       if (!prevent) { window.setTimeout(function(){ Game.advanceDialog() }, 1000) }
     },
@@ -2571,7 +2576,7 @@ var Game = new Vue ({
       if ($( '#triangle' ).length) {
         triangle = $( '#triangle' ).detach();
       } else {
-        triangle = $( '<img>', { id: 'triangle', src: 'sprites/advance-dialog.gif' } );
+        triangle = $( '<img>', { id: 'triangle', src: 'img/advance-dialog.gif' } );
       }
       if (events.length && events[events.length - 1].eventType === 'dialog' && replace) {
         $( '.event' ).filter( ':last' ).find( '.message,.tutorial' ).append( triangle );
@@ -2627,7 +2632,7 @@ var script0 = new Script(
         },
         {
           unit: player0,
-          message: "Is that a hut through those trees? It's been ages since I slept in a proper bed..."
+          message: "Is that a hut through those trees? Maybe I could rent a room."
         },
         function(){ Game.setGoal(14, 15) },
         {
@@ -2643,14 +2648,14 @@ var script0 = new Script(
 var script1 = new Script(
       function(){ return Game.turn === 1 && Game.faction === 'Enemy' },
       [
-        function(){ Game.spawnUnit(enemy0, 14, 15, 'west') },
+        function(){ Game.spawnUnit(enemy1, 14, 15, 'west') },
         {
-          unit: enemy0,
+          unit: enemy1,
           message: "*knock* *knock*",
           alignLeft: false
         },
         {
-          unit: enemy0,
+          unit: enemy1,
           message: "Oi. What you got cookin' in there?"
         },
         {
@@ -2658,7 +2663,7 @@ var script1 = new Script(
           message: "Who's asking?"
         },
         {
-          unit: enemy0,
+          unit: enemy1,
           message: "Just a weary, hungry traveler. Nicest fella you ever met. Come on, open this door."
         },
         {
@@ -2666,7 +2671,7 @@ var script1 = new Script(
           message: "Actual nice fellas don't need to convince anyone. Take your schtick somewhere else."
         },
         {
-          unit: enemy0,
+          unit: enemy1,
           message: "Fine, smart guy. I aren't that nice. But I am comin' in. So you best stand back or you're gonna get hurt."
         },
         function(){ Game.beginTurn() }
@@ -2679,7 +2684,7 @@ var script2 = new Script(
       function(){ return Game.turn === 2 && Game.faction === 'Player' },
       [
         {
-          unit: enemy0,
+          unit: enemy1,
           message: "*BANG* *BANG*",
           alignLeft: false
         },
@@ -2727,7 +2732,7 @@ var script4 = new Script(
           alignLeft: true
         },
         {
-          unit: enemy0,
+          unit: enemy1,
           message: "Aw, did I ruin your door? Bring it on, girlie!"
         },
         {
@@ -2816,34 +2821,34 @@ var script7 = new Script(
       function(){ return Game.getUnit('corbin') && Game.faction === 'Enemy' },
       [
         function(){
-          enemy0.restoreHealth(2);
-          enemy0.items.push(club1);
-          enemy0.goodbye = [function(){
-            var unit = Game.getUnit('ruffian0');
+          enemy1.restoreHealth(2);
+          enemy1.items.push(club1);
+          enemy1.goodbye = [function(){
+            var unit = Game.getUnit('ruffian1');
             Game.terminateUnit(unit.posY, unit.posX);
           }];
-          Game.spawnUnit(enemy1, 0, 14, 'south', true);
-          Game.spawnUnit(enemy0, 1, 15, 'west');
+          Game.spawnUnit(enemy0, 0, 14, 'south', true);
+          Game.spawnUnit(enemy1, 1, 15, 'west');
         },
         {
-          unit: enemy1,
+          unit: enemy0,
           message: "Are we close?",
           alignLeft: true
         },
         {
-          unit: enemy0,
+          unit: enemy1,
           message: "Just over this ridge."
         },
         {
-          unit: enemy1,
+          unit: enemy0,
           message: "How many of 'em are there?"
         },
         {
-          unit: enemy0,
+          unit: enemy1,
           message: "Two, I think. Could be more in the hut."
         },
         {
-          unit: enemy1,
+          unit: enemy0,
           message: "Alright, boys. I know you're all sick of eating rats. Let's finish this while it's still light out. See you around the stew pot!"
         },
         function(){
@@ -2947,14 +2952,14 @@ player1.goodbye = [
   }
 ];
 
-enemy0.goodbye = [
+enemy1.goodbye = [
   {
-    unit: enemy0,
+    unit: enemy1,
     message: "You... won't win... this easily..."
   },
   function(){
-    var u = Game.getUnit('ruffian0');
-    document.getElementById('ruffian0').animate({ left: [0, '32px'] }, { duration: 200, fill: 'forwards' });
+    var u = Game.getUnit('ruffian1');
+    document.getElementById('ruffian1').animate({ left: [0, '32px'] }, { duration: 200, fill: 'forwards' });
     Game.map[u.posY][u.posX].unit.items = [];
     window.setTimeout(function(){ Game.terminateUnit(u.posY, u.posX) }, 200);
   }
@@ -2962,7 +2967,7 @@ enemy0.goodbye = [
 
 // These units won't have defeat quotes
 
-[enemy1, enemy2, enemy3].forEach(function(unit){
+[enemy0, enemy2, enemy3].forEach(function(unit){
   unit.goodbye = [function(){
     var u = Game.getUnit(unit.id);
     Game.terminateUnit(u.posY, u.posX);
