@@ -183,6 +183,11 @@ p {
   margin-right: 5px;
 }
 
+.sprite {
+  object-fit: none;
+  object-position: 0 -160px;
+}
+
 .tiny {
   width: 14px;
   height: 14px;
@@ -407,6 +412,8 @@ p {
 .portrait {
   width: 96px;
   height: 96px;
+  object-fit: none;
+  object-position: 0 0;
 }
 
 .flip {

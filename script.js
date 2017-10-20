@@ -89,7 +89,7 @@ class Silversword extends Terrain {
 
 class Rocky extends Terrain {
   constructor() {
-    super('rocky slope', 4, 3, null);
+    super('rocky slope', 3, 3, null);
   }
 }
 
@@ -438,7 +438,7 @@ class DialogEvent {
     this.eventType = 'dialog';
     if (unit) {
       this.subject = unit.name;
-      this.portrait = unit.portrait;
+      this.portrait = unit.sprites;
       this.faction = unit.faction;
       this.alignLeft = alignLeft;
     }
@@ -451,11 +451,11 @@ class CombatEvent {
   constructor(unit, target, damage, activeTurn, counter) {
     this.eventType = 'combat';
     this.subject = unit.name;
-    this.subjectIcon = unit.icon;
+    this.subjectIcon = unit.sprites;
     if (!counter) { this.verb = 'attacked' } else { this.verb = 'countered' }
     this.verbIcon = unit.equipped.icon;
     this.object = target.name;
-    this.objectIcon = target.icon;
+    this.objectIcon = target.sprites;
     switch (damage) {
       case 0: this.result = 'Attack missed.'; break;
       case 1: this.result = 'Attack hit.'; break;
@@ -469,7 +469,7 @@ class ConditionEvent {
   constructor(unit, activeTurn) {
     this.eventType = 'condition';
     this.subject = unit.name;
-    this.subjectIcon = unit.icon;
+    this.subjectIcon = unit.sprites;
     if (unit.hp > 0) { this.verb = 'is' } else { this.verb = 'was' }
     this.object = unit.condition.toLowerCase();
     if (this.object === 'wounded' || this.object === 'critical') {
@@ -483,7 +483,7 @@ class ItemEvent {
   constructor(unit, verb, item, activeTurn) {
     this.eventType = 'item';
     this.subject = unit.name;
-    this.subjectIcon = unit.icon;
+    this.subjectIcon = unit.sprites;
     this.verb = verb;
     this.object = item.name;
     this.objectIcon = item.icon;
@@ -821,11 +821,11 @@ var Highlight = {
     highlightHref: function () {
       var color;
       if (this.space.path) { color = 'blue' }
-      if (this.space.distance) {
+      else if (this.space.distance) {
         if (this.space.unit && this.space.unit.friendly !== Game.active.unit.friendly) { color = 'solidred' }
         else { color = 'red' }
       }
-      if (this.space.goal) { color = 'yellow' }
+      else if (this.space.goal) { color = 'yellow' }
       return 'img/highlight-' + color + '.png';
     },
     cursorStyle: function () {
@@ -836,7 +836,8 @@ var Highlight = {
       }
     },
     animationSpeed: function () {
-      if (this.space.goal) { return '3s' } else { return '1.5s' }
+      if (this.space.path || this.space.distance) { return '1.5s' }
+      else if (this.space.goal) { return '3s' }
     }
   }
 };
@@ -845,7 +846,7 @@ var Unit = {
   template: `
     <transition :name='dynamicTransition' @after-enter='moveHandler'>
       <svg :id='unit.id' class='space unit' :title='unit.name' width='32' height='32'>
-          <image :xlink:href='unit.sprites' width='96' height='178' :y='facing'></image>
+          <image :xlink:href='unit.sprites' width='96' height='178' :y='imageY'></image>
       </svg>
     </transition>
   `,
@@ -863,12 +864,10 @@ var Unit = {
         return 'sayGoodbye';
       }
     },
-    facing: function () {
-      switch (this.unit.facing) {
-        case 'east': return '-96';
-        case 'west': return '-128';
-        default: return '-96';
-      }
+    imageY: function () {
+      var y = -96;
+      if (this.unit.facing === 'west') { y -= 32 }
+      return String(y);
     }
   },
   methods: {
@@ -1091,7 +1090,7 @@ var Modifier = {
 var UnitInfo = {
   template: `
     <div class='ui unit-info'>
-      <p class='heading'><img class='icon' :src='unit.icon'>{{ unit.name }}</p>
+      <p class='heading'><img class='icon sprite' :src='unit.sprites'>{{ unit.name }}</p>
       <p>Condition: <b :class='unit.condition.toLowerCase()'>{{ unit.condition }}</b></p>
       <div class='flex'>
         <div class='col60'>
@@ -1401,11 +1400,11 @@ var EventAction = {
     <transition name='fade-long'>
       <div class='event action'>
         <div class='content' :style='contentStyle'>
-          <img class='icon' :src='event.subjectIcon'>
+          <img class='icon sprite' :src='event.subjectIcon'>
           <span class='bold sa'>{{ event.subject }}</span>
           <img v-if='event.verbIcon' class='icon' :src='event.verbIcon'>
           <span class='sa'>{{ event.verb }}</span>
-          <img v-if='event.objectIcon' class='icon' :src='event.objectIcon'>
+          <img v-if='event.objectIcon' :class='objectIconClass' :src='event.objectIcon'>
           <span class='bold' :class='objectClass'>{{ event.object }}</span><span class='sa'>.</span>
           <span v-if='event.result' :class='resultClass'>{{ event.result }}</span>
         </div>
@@ -1418,6 +1417,12 @@ var EventAction = {
       switch (this.event.activeTurn) {
         case 'Player': return { background: '#ffefbf' };
         case 'Enemy': return { background: '#a1e6c3' };
+      }
+    },
+    objectIconClass: function () {
+      return {
+        icon: true,
+        sprite: this.event.eventType === 'combat'
       }
     },
     objectClass: function () {
@@ -1539,7 +1544,7 @@ var TurnBanner = {
     bannerBack: function () {
       var r, g, b, transp, opaque;
       switch (this.faction) {
-        case 'Player': r = 140; g = 104; b = 21;  break;
+        case 'Player': r = 191; g = 120; b = 19;  break;
         case 'Enemy':  r = 0;   g = 63;  b = 31;  break;
       }
       transp = 'rgba(' + r + ', ' + g + ', ' + b + ', 0)';
@@ -1549,8 +1554,8 @@ var TurnBanner = {
     bannerFore: function () {
       var r, g, b, transp, opaque;
       switch (this.faction) {
-        case 'Player': r = 218; g = 165; b = 32;  break;
-        case 'Enemy':  r = 0;   g = 140; b = 70;  break;
+        case 'Player': r = 230; g = 153; b = 0;  break;
+        case 'Enemy':  r = 32;   g = 128; b = 80;  break;
       }
       transp = 'rgba(' + r + ', ' + g + ', ' + b + ', 0)';
       opaque = 'rgba(' + r + ', ' + g + ', ' + b + ', 1)';
@@ -2040,9 +2045,15 @@ var Game = new Vue ({
       }, 500);
     },
     animateCombat: function (attacker, defender, damage) {
-      var spacesY, spacesX, pixelsY, pixelsX, evadeSprite, attack, hit, miss;
+      var spacesY, spacesX, attackerFacing, defenderFacing, pixelsY, pixelsX, evadeSprite, attack, hit, defenderElement;
       spacesY = defender.posY - attacker.posY;
       spacesX = defender.posX - attacker.posX;
+      switch (Math.sign(spacesX)) {
+        case 1:  attackerFacing = 'east'; defenderFacing = 'west'; break;
+        case -1: attackerFacing = 'west'; defenderFacing = 'east'; break;
+      }
+      this.map[attacker.posY][attacker.posX].unit.facing = attackerFacing;
+      this.map[defender.posY][defender.posX].unit.facing = defenderFacing;
       pixelsY = Math.round(16 * Math.sin(Math.atan2(spacesY, spacesX)));
       pixelsX = Math.round(16 * Math.cos(Math.atan2(spacesY, spacesX)));
       evadeSprite = "url('img/" + defender.id.replace(/\d/, '') + "-evade.png')";
@@ -2060,31 +2071,24 @@ var Game = new Vue ({
       hit = {
         keyframes: {
           top: [0, (pixelsY / 3 + 'px'), 0 ],
-          left: [0, (pixelsX / 3 + 'px'), 0 ],
-          boxSizing: ['border-box', 'border-box'],
-          backgroundImage: ["url('img/attack-hit.png')", "url('img/attack-hit.png')"],
-          paddingLeft: ['32px', '32px']
+          left: [0, (pixelsX / 3 + 'px'), 0 ]
         },
         options: {
           duration: 250,
           easing: 'ease-in-out'
         }
       };
-      miss = {
-        keyframes: {
-          boxSizing: ['border-box', 'border-box'],
-          backgroundImage: [evadeSprite, evadeSprite],
-          paddingLeft: ['32px', '32px']
-        },
-        options: {
-          duration: 350
-        }
-      };
       document.getElementById(attacker.id).animate(attack.keyframes, attack.options);
+      defenderElement = document.getElementById(defender.id);
       if (damage > 0) {
-        window.setTimeout(function(){ document.getElementById(defender.id).animate(hit.keyframes, hit.options) }, 250);
+        window.setTimeout(function(){
+          defenderElement.animate(hit.keyframes, hit.options);
+          defenderElement.firstElementChild.animate({ x: ['-64', '-64'] }, 250);
+        }, 250);
       } else {
-        window.setTimeout(function(){ document.getElementById(defender.id).animate(miss.keyframes, miss.options) }, 150);
+        window.setTimeout(function(){
+          defenderElement.firstElementChild.animate({ x: ['-32', '-32'] }, 350);
+        }, 150);
       }
     },
     dealDamage: function (y, x, damage) {
@@ -2466,14 +2470,14 @@ var Game = new Vue ({
             space = this.map[y][x];
             if (space.distance && space.unit && space.unit.friendly !== this.active.unit.friendly) {
               this.targetUnit(y, x);
-              targets.push({ weapon: weapon.id, posY: y, posX: x, attack: this.combat.activeAtk });
+              targets.push({ weapon: weapon.id, posY: y, posX: x, hit: this.combat.activeHit });
             }
           }
         }
         this.hideAttackRange();
       }
       if (targets.length) {
-        target = targets.reduce(function(a, b){ if (b.attack > a.attack) { return b } else { return a } });
+        target = targets.reduce(function(a, b){ if (b.hit > a.hit) { return b } else { return a } });
         unit.equipWeapon(target.weapon);
         this.targetUnit(target.posY, target.posX);
       } else {
