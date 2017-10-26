@@ -2853,7 +2853,7 @@ var script7 = new Script(
         },
         {
           unit: enemy0,
-          message: "Alright, boys. I know you're all sick of eating rats. Let's finish this while it's still light out. See you around the stew pot!"
+          message: "Alright, boys. I know you're all sick of eating rats. Let's finish this while it's still light out. See you around the stew kettle!"
         },
         function(){
           Game.moveUnit(0, 14, 's');
