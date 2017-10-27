@@ -1544,8 +1544,8 @@ var TurnBanner = {
     bannerBack: function () {
       var r, g, b, transp, opaque;
       switch (this.faction) {
-        case 'Player': r = 191; g = 120; b = 19;  break;
-        case 'Enemy':  r = 0;   g = 63;  b = 31;  break;
+        case 'Player': r = 191; g = 120; b = 19; break;
+        case 'Enemy':  r = 0;   g = 63;  b = 31; break;
       }
       transp = 'rgba(' + r + ', ' + g + ', ' + b + ', 0)';
       opaque = 'rgba(' + r + ', ' + g + ', ' + b + ', 1)';
@@ -1555,7 +1555,7 @@ var TurnBanner = {
       var r, g, b, transp, opaque;
       switch (this.faction) {
         case 'Player': r = 230; g = 153; b = 0;  break;
-        case 'Enemy':  r = 32;   g = 128; b = 80;  break;
+        case 'Enemy':  r = 32;  g = 128; b = 80; break;
       }
       transp = 'rgba(' + r + ', ' + g + ', ' + b + ', 0)';
       opaque = 'rgba(' + r + ', ' + g + ', ' + b + ', 1)';
@@ -1569,6 +1569,20 @@ var TurnBanner = {
     bannerOut: function () {
       Game.action = null;
     }
+  }
+};
+
+var OutcomeBanner = {
+  template:`
+    <transition name='outcome'>
+      <div id='outcome'>
+        
+      </div>
+    </transition>
+  `,
+  props: ['outcome'],
+  computed: {
+    
   }
 };
 
@@ -1600,6 +1614,8 @@ var Game = new Vue ({
     dialog: null,
     scrolled: false,
     scripts: null,
+    progress: 0,
+    outcome: null,
     topoView: false,
     factorials: []
   },
@@ -2600,7 +2616,8 @@ var Game = new Vue ({
     'event-log': EventLog,
     'topo-control': TopoControl,
     'status-panel': StatusPanel,
-    'turn-banner': TurnBanner
+    'turn-banner': TurnBanner,
+    'outcome-banner': OutcomeBanner
   }
 });
 
@@ -2636,7 +2653,7 @@ var script0 = new Script(
         },
         {
           unit: player0,
-          message: "Is that a hut through those trees? Maybe I could rent a room."
+          message: "Is that a house through those trees? Maybe I could rent a room."
         },
         function(){ Game.setGoal(14, 15) },
         {
@@ -2737,7 +2754,7 @@ var script4 = new Script(
         },
         {
           unit: enemy1,
-          message: "Aw, did I ruin your door? Bring it on, girlie!"
+          message: "Aww, did I ruin your door? Bring it on, girlie!"
         },
         {
           unit: null,
@@ -2849,11 +2866,11 @@ var script7 = new Script(
         },
         {
           unit: enemy1,
-          message: "Two, I think. Could be more in the hut."
+          message: "Two, I think. Watch out for the lass&mdash;she knows her way around a fight."
         },
         {
           unit: enemy0,
-          message: "Alright, boys. I know you're all sick of eating rats. Let's finish this while it's still light out. See you around the stew kettle!"
+          message: "You heard him, boys. Rough 'em up if you need to, but try not to kill 'em, okay? They're worth a lot more when they're alive. Alright, let's finish this while it's still light out."
         },
         function(){
           Game.moveUnit(0, 14, 's');
@@ -2864,6 +2881,7 @@ var script7 = new Script(
             Game.moveUnit(0, 14, 'wwwwwwwwswswsw');
             Game.moveUnit(1, 15, 'wwswwswwwswwwswswsws');
           }, 500);
+          Game.progress += 1;
           window.setTimeout(function(){ Game.beginTurn() }, 5000);
         }
       ]
@@ -2910,10 +2928,7 @@ var script9 = new Script(
 // Only one enemy unit remains
 
 var script10 = new Script(
-      function(){
-        var enemyUnits = Game.getUnits('Enemy');
-        return enemyUnits.length === 1 && enemyUnits[0].posY < 8;
-      },
+      function(){ return Game.progress > 0 && Game.getUnits('Enemy').length === 1 },
       null,
       function(){
         var unit = Game.getUnits('Enemy')[0];
@@ -2930,7 +2945,42 @@ var script10 = new Script(
       }
     );
 
-Game.scripts = [ script0, script1, script2, script3, script4, script5, script6, script7, script8, script9, script10 ];
+var script11 = new Script(
+      function(){ return Game.progress > 0 && Game.getUnits('Enemy').length === 0 },
+      [
+        {
+          unit: player1,
+          message: "Whew. I think that's the last of them. Are you okay?"
+        },
+        {
+          unit: player0,
+          message: "Doing better than these guys. Who were they, anyway?"
+        },
+        {
+          unit: player1,
+          message: "They're part of a group known as the Brazza. They abduct villagers and hold them for ransom. The ones they can't ransom they send away to be sold as slaves."
+        },
+        {
+          unit: player0,
+          message: "That's terrible."
+        },
+        {
+          unit: player1,
+          message: "We did a good thing today.</br>...</br>I dunno about you, but I'm famished. Would you... care to stay for dinner?"
+        },
+        {
+          unit: player0,
+          message: "Thanks, I'd like that!"
+        },
+        {
+          unit: null,
+          message: "Victory is yours! Thanks for playing!"
+        },
+        function(){}
+      ]
+    );
+
+Game.scripts = [ script0, script1, script2, script3, script4, script5, script6, script7, script8, script9, script10, script11 ];
 
 // Defeat Quotes
 
