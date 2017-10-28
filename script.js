@@ -1575,15 +1575,15 @@ var TurnBanner = {
 var OutcomeBanner = {
   template:`
     <transition name='outcome'>
-      <div id='outcome'>
-        
+      <div class='screen'>
+        <div class='outcome-holder'>
+          <img class='outcome' :src="'img/' + outcome + '.png'">
+          <img v-if="outcome === 'victory'" class='scene' src='img/victory.gif'>
+        </div>
       </div>
     </transition>
   `,
-  props: ['outcome'],
-  computed: {
-    
-  }
+  props: ['outcome']
 };
 
 // ========================================================================
@@ -1614,7 +1614,7 @@ var Game = new Vue ({
     dialog: null,
     scrolled: false,
     scripts: null,
-    progress: 0,
+    checkpoint: 0,
     outcome: null,
     topoView: false,
     factorials: []
@@ -2881,7 +2881,7 @@ var script7 = new Script(
             Game.moveUnit(0, 14, 'wwwwwwwwswswsw');
             Game.moveUnit(1, 15, 'wwswwswwwswwwswswsws');
           }, 500);
-          Game.progress += 1;
+          Game.checkpoint += 1;
           window.setTimeout(function(){ Game.beginTurn() }, 5000);
         }
       ]
@@ -2928,7 +2928,7 @@ var script9 = new Script(
 // Only one enemy unit remains
 
 var script10 = new Script(
-      function(){ return Game.progress > 0 && Game.getUnits('Enemy').length === 1 },
+      function(){ return Game.checkpoint > 0 && Game.getUnits('Enemy').length === 1 },
       null,
       function(){
         var unit = Game.getUnits('Enemy')[0];
@@ -2946,7 +2946,7 @@ var script10 = new Script(
     );
 
 var script11 = new Script(
-      function(){ return Game.progress > 0 && Game.getUnits('Enemy').length === 0 },
+      function(){ return Game.checkpoint > 0 && Game.getUnits('Enemy').length === 0 },
       [
         {
           unit: player1,
@@ -2966,21 +2966,39 @@ var script11 = new Script(
         },
         {
           unit: player1,
-          message: "We did a good thing today.</br>...</br>I dunno about you, but I'm famished. Would you... care to stay for dinner?"
+          message: "We... did a good thing today."
+        },
+        {
+          unit: player1,
+          message: "I dunno about you, but I'm famished. Would you care to stay for dinner? It's the least I could do to repay you."
         },
         {
           unit: player0,
           message: "Thanks, I'd like that!"
         },
-        {
-          unit: null,
-          message: "Victory is yours! Thanks for playing!"
-        },
-        function(){}
+        function(){
+          Game.outcome = 'victory';
+          window.setTimeout(function(){
+            Game.events.push(new DialogEvent(null, "THE END. Thanks for playing!"));
+            window.setTimeout(function(){ $( '#triangle' ).remove() }, 1);
+          }, 3000);
+        }
       ]
     );
 
-Game.scripts = [ script0, script1, script2, script3, script4, script5, script6, script7, script8, script9, script10, script11 ];
+var script12 = new Script(
+      function(){ return Game.checkpoint > 0 && Game.getUnits('Player').length === 0 },
+      null,
+      function(){
+        Game.outcome = 'defeat';
+        window.setTimeout(function(){
+          Game.events.push(new DialogEvent(null, "You have been defeated. Reload this page to try again."));
+          window.setTimeout(function(){ $( '#triangle' ).remove() }, 1);
+        }, 3000);
+      }
+    );
+
+Game.scripts = [ script0, script1, script2, script3, script4, script5, script6, script7, script8, script9, script10, script11, script12 ];
 
 // Defeat Quotes
 

@@ -28,6 +28,7 @@
         <div id='top-center' class='panel' :style='mapImage'>
           <row v-for='(row, index) in map' :key='index' :row='row' :status='status'></row>
           <ground-panel v-if="action === 'equipping'" :items='active.items'></ground-panel>
+          <outcome-banner v-if='outcome' :outcome='outcome'></outcome-banner>
         </div>
         
         <div id='top-right' class='panel'>
@@ -41,8 +42,6 @@
         </div>
         
         <turn-banner v-if='banner' :faction='faction'></turn-banner>
-        
-        <outcome-banner v-if='outcome' :outcome='outcome'></outcome-banner>
       
       </div>
       
