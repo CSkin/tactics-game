@@ -743,6 +743,25 @@ $( document ).ready( function () {
 
 // -------------------------{  Vue Components  }--------------------------
 
+var TitleScreen = {
+  template: `
+    <transition name='fade-glacial'>
+      <div id='splash'>
+        <div class='title bit'>Tactics Game</div>
+        <div class='menu bit' style='cursor: pointer' @click='startGame'>Start Game</div>
+        <div class='menu bit'>Tutorial Hints</div>
+      </div>
+    </transition>
+  `,
+  props: [],
+  methods: {
+    startGame: function () {
+      Game.titleView = false;
+      window.setTimeout(function(){ Game.runScripts() }, 2000);
+    }
+  }
+}
+
 var GroundIcon = {
   template: `
     <transition name='fade'>
@@ -764,9 +783,9 @@ var Terrain = {
   // To use terrain sprites instead of map image, add :style='terrainStyle' to parent div.
   template: `
     <div class='space terrain' :style='terrainStyle'>
-      <ground-icon v-if="itemsOfType(weapon).length" :itemType='weapon' :transform='transform'></ground-icon>
-      <ground-icon v-if="itemsOfType(clothing).length" :itemType='clothing' :transform='transform'></ground-icon>
-      <ground-icon v-if="itemsOfType(accessory).length" :itemType='accessory' :transform='transform'></ground-icon>
+      <ground-icon v-if='itemsOfType(weapon).length' :itemType='weapon' :transform='transform'></ground-icon>
+      <ground-icon v-if='itemsOfType(clothing).length' :itemType='clothing' :transform='transform'></ground-icon>
+      <ground-icon v-if='itemsOfType(accessory).length' :itemType='accessory' :transform='transform'></ground-icon>
       <transition name='fade'>
         <img v-show='elevationShow' class='space terrain' :src='elevationSrc'>
       </transition>
@@ -1368,7 +1387,7 @@ var SidePanel = {
 
 var EventDialog = {
   template: `
-    <transition name='fade-long'>
+    <transition name='fade-slow'>
       <div class='event dialog'>
         <div class='content' :class='alignment'>
           <img v-if='event.portrait && event.alignLeft' class='portrait' :src='event.portrait' :title='event.subject'>
@@ -1397,7 +1416,7 @@ var EventDialog = {
 
 var EventAction = {
   template: `
-    <transition name='fade-long'>
+    <transition name='fade-slow'>
       <div class='event action'>
         <div class='content' :style='contentStyle'>
           <img class='icon sprite' :src='event.subjectIcon'>
@@ -1616,6 +1635,7 @@ var Game = new Vue ({
     scripts: null,
     checkpoint: 0,
     outcome: null,
+    titleView: true,
     topoView: false,
     factorials: []
   },
@@ -2610,6 +2630,7 @@ var Game = new Vue ({
     }
   },
   components: {
+    'title-screen': TitleScreen,
     'row': Row,
     'side-panel': SidePanel,
     'ground-panel': GroundPanel,
@@ -2711,7 +2732,7 @@ var script2 = new Script(
         },
         {
           unit: player0,
-          message: "Someone's trying to break into the hut! I have to stop him. There’s gotta be something around here I can use as a weapon..."
+          message: "Someone's trying to break into that house! I have to stop him. There’s gotta be something around here I can use as a weapon..."
         },
         {
           unit: null,
@@ -2801,7 +2822,15 @@ var script6 = new Script(
         },
         {
           unit: player1,
-          message: "Um, hi. I saw what you did... why are you helping me?"
+          message: "Um, hi, I'm Corbin."
+        },
+        {
+          unit: player0,
+          message: "I'm Lizzie. Nice to meet you."
+        },
+        {
+          unit: player1,
+          message: "I saw what you did... why are you helping me?"
         },
         {
           unit: player0,
@@ -3099,9 +3128,5 @@ function keyHandler () {
 }
 
 $( document ).keyup( keyHandler );
-
-// ----------------------------{  Start Game  }----------------------------
-
-window.setTimeout(function(){ Game.runScripts() }, 1000);
 
 });

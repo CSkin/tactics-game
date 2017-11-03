@@ -1,3 +1,8 @@
+@font-face {
+  font-family: "8-Bit Wonder";
+  src: url("fonts/8-Bit Wonder.ttf");
+}
+
 body {
   display: flex;
   justify-content: center;
@@ -7,12 +12,48 @@ body {
 }
 
 main {
+  position: relative;
   width: 1024px;
   height: 768px;
 }
 
+[v-cloak] {
+  display: none;
+}
+
 p {
   margin: 2px 0;
+}
+
+#splash {
+  position: absolute;
+  z-index: 100;
+  width: 100%;
+  height: 100%;
+  background: #708090;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.bit {
+  font-family: "8-Bit Wonder";
+  -webkit-font-smoothing: none;
+}
+
+.title {
+  font-size: 48px;
+  color: #e6c585;
+  text-shadow: 4px 4px 0 #4729a3;
+  margin-bottom: 100px;
+}
+
+.menu {
+  font-size: 24px;
+  color: #dfefff;
+  text-shadow: 1px 1px 0 black;
+  margin-bottom: 50px;
 }
 
 .panel {
@@ -687,11 +728,15 @@ p {
   transition: opacity 250ms ease-in-out;
 }
 
-.fade-long-enter-active, .fade-long-leave-active {
+.fade-slow-enter-active, .fade-slow-leave-active {
   transition: opacity 500ms ease-in-out;
 }
 
-.fade-enter, .fade-leave-to, .fade-long-enter, .fade-long-leave-to {
+.fade-glacial-enter-active, .fade-glacial-leave-active {
+  transition: opacity 2000ms ease-in-out;
+}
+
+.fade-enter, .fade-leave-to, .fade-slow-enter, .fade-slow-leave-to .fade-glacial-enter, .fade-glacial-leave-to {
   opacity: 0;
 }
 
