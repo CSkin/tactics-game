@@ -768,6 +768,7 @@ var TitleScreen = {
     },
     startGame: function () {
       Game.title = false;
+      if (!Game.tutorial) { Game.turnOffHints(Game.scripts) }
       window.setTimeout(function(){ Game.runScripts() }, 2000);
     },
     toggleTutorial: function () {
@@ -1714,6 +1715,16 @@ var Game = new Vue ({
         if (this.menu === 0 ) { this.menu = options - 1 }
         else { this.menu -= 1 }
       }
+    },
+    turnOffHints: function (scripts) {
+      for (var script of scripts) {
+        if (script.dialog) {
+          script.dialog = script.dialog.filter( el => typeof(el) === 'function' || el.unit );
+        }
+      }
+      scripts[0].dialog.splice(4, 1);
+      scripts[6].dialog.splice(0, 1);
+      this.scripts = scripts;
     },
 
 // ----------------------------{  Executive  }-----------------------------
@@ -2924,7 +2935,7 @@ var script7 = new Script(
         },
         {
           unit: enemy1,
-          message: "Two, I think. Watch out for the lass&mdash;she knows her way around a fight."
+          message: "Two, I think. Watch out for the lass—she knows her way around a fight."
         },
         {
           unit: enemy0,
@@ -2967,7 +2978,7 @@ var script8 = new Script(
 var script9 = new Script(
       function(){
         var unit = Game.getUnit('corbin');
-        return unit && unit.hp === 1 && unit.hasItem('salve1') && Game.faction === 'Player';
+        return unit && unit.hp === 1 && unit.hasItem('salve2') && Game.faction === 'Player';
       },
       [
         {
