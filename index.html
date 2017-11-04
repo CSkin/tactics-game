@@ -12,7 +12,7 @@
   <body>
     <main id='game' v-cloak>
       
-      <title-screen v-if='titleView'></title-screen>
+      <title-screen v-if='title' :menu='menu' :tutorial='tutorial'></title-screen>
       
       <div id='top-panel'>
       

@@ -748,16 +748,30 @@ var TitleScreen = {
     <transition name='fade-glacial'>
       <div id='splash'>
         <div class='title bit'>Tactics Game</div>
-        <div class='menu bit' style='cursor: pointer' @click='startGame'>Start Game</div>
-        <div class='menu bit'>Tutorial Hints</div>
+        <div class='menu bit'>
+          <div id='menu-0' class='option' @mouseover='menuNav(0)' @click='startGame'>
+            <span class='selector' v-if='menu === 0'>&#x25B6;</span>
+            <span>Start Game</span>
+          </div>
+          <div id='menu-1' class='option' @mouseover='menuNav(1)' @click='toggleTutorial'>
+            <span class='selector' v-if='menu === 1'>&#x25B6;</span>
+            <span class='sa'>Tutorial Hints</span><span :class='{ inverted : tutorial }'>{{ tutorial ? 'On' : 'Off' }}</span>
+          </div>
+        </div>
       </div>
     </transition>
   `,
-  props: [],
+  props: ['menu', 'tutorial'],
   methods: {
+    menuNav: function (option) {
+      Game.menu = option;
+    },
     startGame: function () {
-      Game.titleView = false;
+      Game.title = false;
       window.setTimeout(function(){ Game.runScripts() }, 2000);
+    },
+    toggleTutorial: function () {
+      Game.tutorial = !Game.tutorial
     }
   }
 }
@@ -1612,6 +1626,9 @@ var OutcomeBanner = {
 var Game = new Vue ({
   el:'#game',
   data: {
+    title: true,
+    menu: 0,
+    tutorial: true,
     mapImage: mapImage,
     map: loadLevel(),
     factions: loadFactions(),
@@ -1635,7 +1652,6 @@ var Game = new Vue ({
     scripts: null,
     checkpoint: 0,
     outcome: null,
-    titleView: true,
     topoView: false,
     factorials: []
   },
@@ -1687,6 +1703,19 @@ var Game = new Vue ({
   },
   methods: {
     
+// ---------------------------{  Title Screen  }---------------------------
+
+    menuNav: function (forward) {
+      var options = $( '.option' ).length;
+      if (forward) {
+        if (this.menu === options - 1) { this.menu = 0 }
+        else { this.menu += 1 }
+      } else {
+        if (this.menu === 0 ) { this.menu = options - 1 }
+        else { this.menu -= 1 }
+      }
+    },
+
 // ----------------------------{  Executive  }-----------------------------
     
     beginMove: function () {
@@ -3079,8 +3108,30 @@ enemy1.goodbye = [
 
 function keyHandler () {
   // console.log('keyCode: ' + event.keyCode); // Developer mode
-  if (Game.action === 'waiting') { Game.advanceDialog() }
-  if (event.keyCode !== 86) {
+  if (Game.title) {
+    switch (event.keyCode) {
+      case 13: // enter
+        $( '#menu-' + Game.menu ).trigger( 'click' );
+        break;
+      case 32: // space
+        $( '#menu-' + Game.menu ).trigger( 'click' );
+        break;
+      case 37: // left
+        Game.menuNav(false);
+        break;
+      case 38: // up
+        Game.menuNav(false);
+        break;
+      case 39: // right
+        Game.menuNav(true);
+        break;
+      case 40: // down
+        Game.menuNav(true);
+        break;
+    }
+  }
+  else { // if !Game.title
+    if (Game.action === 'waiting') { Game.advanceDialog() }
     if (Game.control === 'player' && Game.active && Game.active.unit) {
       switch (event.keyCode) {
         case 13: // enter
@@ -3122,8 +3173,9 @@ function keyHandler () {
           break;
       }
     }
-  } else { // v
-    $( '#tgl-topoview' ).trigger( 'click' );
+    if (event.keyCode === 86) { // v
+      $( '#tgl-topoview' ).trigger( 'click' );
+    }
   }
 }
 
