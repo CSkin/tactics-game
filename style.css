@@ -15,6 +15,7 @@ main {
   position: relative;
   width: 1024px;
   height: 768px;
+  overflow: hidden;
 }
 
 [v-cloak] {
@@ -30,11 +31,17 @@ p {
   z-index: 100;
   width: 100%;
   height: 100%;
-  background: #708090;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
+}
+
+#background {
+  position: absolute;
+  top: -10px;
+  left: -10px;
+  filter: blur(5px);
 }
 
 .bit {
@@ -43,6 +50,7 @@ p {
 }
 
 .title {
+  position: relative;
   font-size: 64px;
   color: #e6c585;
   text-shadow: 5px 5px 0 #4729a3;
@@ -50,6 +58,7 @@ p {
 }
 
 .menu {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;

@@ -747,6 +747,7 @@ var TitleScreen = {
   template: `
     <transition name='fade-glacial'>
       <div id='splash'>
+        <img id='background' src='maps/world-map.png'>
         <div class='title bit'>Tactics Game</div>
         <div class='menu bit'>
           <div id='menu-0' class='option' @mouseover='menuNav(0)' @click='startGame'>
