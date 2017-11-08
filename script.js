@@ -576,12 +576,12 @@ var itemPlan = [
 // posY, posX, friendly, control, behavior
 
 var player0 = new Unit(
-      'lizzie', 'Player', 'Lizzie',
+      'elise', 'Player', 'Elise',
       5, 5, 5, 4, 6, 5, 5, [salve1],
       null, null, true, 'player'
     ),
     player1 = new Unit(
-      'corbin', 'Player', 'Corbin',
+      'kale', 'Player', 'Kale',
       5, 3, 4, 6, 4, 8, 5, [shortbow1, ladle1, salve2],
       null, null, true, 'player'
     ),
@@ -766,8 +766,8 @@ var TitleScreen = {
   props: ['menu', 'tutorial'],
   data: function () {
     return {
-      isChrome: /Chrom(e|ium)\W\d|CriOS\W\d/.test(window.navigator.userAgent),
-      message: "It looks like you're using a browser other than Chrome. This game prototype hasn't been tested in other browsers; please open this page in Chrome to continue."
+      isChrome: !!window.chrome && !!window.chrome.webstore,
+      message: "It looks like you're using a mobile device or a browser other than Chrome. This game prototype hasn't been tested in other environments; please open this page in a desktop version of Chrome to continue."
     }
   },
   methods: {
@@ -2727,7 +2727,7 @@ var script0 = new Script(
         function(){ Game.setGoal(14, 15) },
         {
           unit: null,
-          message: "Help Lizzie reach the highlighted space. To move: select a unit, press M, then click where you want to go. Once you've moved all your units, end your turn by clicking End Turn."
+          message: "Help Elise reach the highlighted space. To move: select a unit, press M, then click where you want to go. Once you've moved all your units, end your turn by clicking End Turn."
         },
         function(){ Game.beginTurn() }
       ]
@@ -2790,11 +2790,11 @@ var script2 = new Script(
       ]
     );
 
-// Lizzie has picked up Heavy Stick but it's not equipped
+// Elise has picked up Heavy Stick but it's not equipped
 
 var script3 = new Script(
       function(){
-        var unit = Game.getUnit('lizzie');
+        var unit = Game.getUnit('elise');
         return unit && unit.hasItem('stick1') && unit.equipped.id !== 'stick1' && Game.faction === 'Player';
       },
       [
@@ -2806,11 +2806,11 @@ var script3 = new Script(
       ]
     );
 
-// Lizzie has equipped the Heavy Stick and the Ruffian is within striking distance
+// Elise has equipped the Heavy Stick and the Ruffian is within striking distance
 
 var script4 = new Script(
       function(){
-        var unit = Game.getUnit('lizzie'), distance;
+        var unit = Game.getUnit('elise'), distance;
         if (unit) { distance = Math.abs(unit.posY - 14) + Math.abs(unit.posX - 15) }
         else { return false }
         return unit.equipped.id === 'stick1' && distance <= 4 && Game.faction === 'Player';
@@ -2833,11 +2833,11 @@ var script4 = new Script(
       ]
     );
 
-// Lizzie's condition is Critical and she has a Salve
+// Elise's condition is Critical and she has a Salve
 
 var script5 = new Script(
       function(){
-        var unit = Game.getUnit('lizzie');
+        var unit = Game.getUnit('elise');
         return unit && unit.hp === 1 && unit.hasItem('salve1') && Game.faction === 'Player';
       },
       [
@@ -2848,17 +2848,17 @@ var script5 = new Script(
         },
         {
           unit: null,
-          message: "Salves are used to treat wounds in the heat of battle. To use Lizzie’s Salve, open the Equipment panel, then drag the Salve upward."
+          message: "Salves are used to treat wounds in the heat of battle. To use Elise’s Salve, open the Equipment panel, then drag the Salve upward."
         },
         function(){ Game.beginTurn() }
       ]
     );
 
-// Lizzie is at space 14, 15
+// Elise is at space 14, 15
 
 var script6 = new Script(
       function(){
-        var unit = Game.getUnit('lizzie');
+        var unit = Game.getUnit('elise');
         return unit && unit.posY === 14 && unit.posX === 15 && Game.faction === 'Player';
       },
       [
@@ -2870,11 +2870,11 @@ var script6 = new Script(
         },
         {
           unit: player1,
-          message: "Um, hi, I'm Corbin."
+          message: "Um, hi, I'm Kale."
         },
         {
           unit: player0,
-          message: "I'm Lizzie. Nice to meet you."
+          message: "I'm Elise. Nice to meet you."
         },
         {
           unit: player1,
@@ -2907,16 +2907,16 @@ var script6 = new Script(
         function(){ Game.spawnUnit(player1, 13, 14, 'west') },
         {
           unit: null,
-          message: "You can drop items by dragging them to the right and dropping them onto the map. Have Corbin drop the weapon he's carrying for Lizzie. Then move him out of the way so she can pick it up."
+          message: "You can drop items by dragging them to the right and dropping them onto the map. Have Kale drop the weapon he's carrying for Elise. Then move him out of the way so she can pick it up."
         },
         function(){ Game.beginTurn() }
       ]
     );
 
-// Corbin is in the game and it's the enemy's turn
+// Kale is in the game and it's the enemy's turn
 
 var script7 = new Script(
-      function(){ return Game.getUnit('corbin') && Game.faction === 'Enemy' },
+      function(){ return Game.getUnit('kale') && Game.faction === 'Enemy' },
       [
         function(){
           enemy1.restoreHealth(2);
@@ -2964,10 +2964,10 @@ var script7 = new Script(
       ]
     );
 
-// Corbin is in the game and it's the player's turn
+// Kale is in the game and it's the player's turn
 
 var script8 = new Script(
-      function(){ return Game.getUnit('corbin') && Game.faction === 'Player' },
+      function(){ return Game.getUnit('kale') && Game.faction === 'Player' },
       [
         {
           unit: null,
@@ -2975,17 +2975,17 @@ var script8 = new Script(
         },
         {
           unit: null,
-          message: "Defeat all enemy units to win. Good luck!"
+          message: "Defeat all enemy units to win. Elise and Kale must survive. Good luck!"
         },
         function(){ Game.beginTurn() }
       ]
     );
 
-// Corbin's condition is Critical and he has a Salve
+// Kale's condition is Critical and he has a Salve
 
 var script9 = new Script(
       function(){
-        var unit = Game.getUnit('corbin');
+        var unit = Game.getUnit('kale');
         return unit && unit.hp === 1 && unit.hasItem('salve2') && Game.faction === 'Player';
       },
       [
@@ -2996,7 +2996,7 @@ var script9 = new Script(
         },
         {
           unit: null,
-          message: "To use Corbin’s Salve, open the Equipment panel, then drag the Salve upward."
+          message: "To use Kale’s Salve, open the Equipment panel, then drag the Salve upward."
         },
         function(){ Game.beginTurn() }
       ]
@@ -3035,7 +3035,7 @@ var script11 = new Script(
         },
         {
           unit: player1,
-          message: "They're part of a group known as the Brazza. They abduct villagers and hold them for ransom. The ones they can't ransom they send away to be sold as slaves."
+          message: "They're part of an infamous group of kidnappers. They abduct villagers and hold them for ransom. The ones they can't ransom they send away to be sold as slaves."
         },
         {
           unit: player0,
@@ -3043,15 +3043,15 @@ var script11 = new Script(
         },
         {
           unit: player1,
-          message: "We... did a good thing today."
+          message: "We did a good thing today."
         },
         {
           unit: player1,
-          message: "I dunno about you, but I'm famished. Would you care to stay for dinner? It's the least I could do to repay you."
+          message: "I dunno about you, but I'm famished. Would you like to stay for dinner? It's the least I could do to repay you."
         },
         {
           unit: player0,
-          message: "Thanks, I'd like that!"
+          message: "I'd like that!"
         },
         function(){
           Game.outcome = 'victory';
@@ -3064,7 +3064,7 @@ var script11 = new Script(
     );
 
 var script12 = new Script(
-      function(){ return Game.checkpoint > 0 && Game.getUnits('Player').length === 0 },
+      function(){ return Game.checkpoint > 0 && Game.getUnits('Player').length < 2 },
       null,
       function(){
         Game.outcome = 'defeat';
@@ -3085,7 +3085,7 @@ player0.goodbye = [
     message: "Beaten by a bunch of ruffians..."
   },
   function(){
-    var u = Game.getUnit('lizzie');
+    var u = Game.getUnit('elise');
     Game.terminateUnit(u.posY, u.posX);
   }
 ];
@@ -3096,7 +3096,7 @@ player1.goodbye = [
     message: "...."
   },
   function(){
-    var u = Game.getUnit('corbin');
+    var u = Game.getUnit('kale');
     Game.terminateUnit(u.posY, u.posX);
   }
 ];
