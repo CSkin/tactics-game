@@ -85,6 +85,11 @@ p {
   -webkit-font-smoothing: auto;
 }
 
+#alert {
+  width: 600px;
+  line-height: 1.2;
+}
+
 .panel {
   border: 1px solid black;
   background: #dfefff;

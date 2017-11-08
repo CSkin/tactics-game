@@ -749,7 +749,7 @@ var TitleScreen = {
       <div id='splash'>
         <img id='background' src='maps/world-map.png'>
         <div class='title bit'>Tactics Game</div>
-        <div class='menu bit'>
+        <div v-if='isChrome' class='menu bit'>
           <div id='menu-0' class='option' @mouseover='menuNav(0)' @click='startGame'>
             <span class='selector' v-if='menu === 0'>&#x25B6;</span>
             <span>Start Game</span>
@@ -759,10 +759,17 @@ var TitleScreen = {
             <span class='sa'>Tutorial Hints</span><span :class='{ inverted : tutorial }'>{{ tutorial ? 'On' : 'Off' }}</span>
           </div>
         </div>
+        <div v-else id='alert' class='tutorial'><p>{{ message }}</p></div>
       </div>
     </transition>
   `,
   props: ['menu', 'tutorial'],
+  data: function () {
+    return {
+      isChrome: /Chrom(e|ium)\W\d|CriOS\W\d/.test(window.navigator.userAgent),
+      message: "It looks like you're using a browser other than Chrome. This game prototype hasn't been tested in other browsers; please open this page in Chrome to continue."
+    }
+  },
   methods: {
     menuNav: function (option) {
       Game.menu = option;
