@@ -1242,17 +1242,21 @@ var CombatInfo = {
       <div class='flex'>
         <div class='columns'>
           <template v-if="type === 'active'">
-            <p>Attack: <b>{{ combat.activeAtk }}</b></p>
-            <p v-if='combat.canCounter'>Defense: <b>{{ combat.activeDef }}</b></p>
+            <p>Power: <b>{{ combat.active.power }}</b></p>
+            <p>Accuracy: <b>{{ combat.active.accuracy }}</b></p>
+            <p v-if='combat.canCounter'>Evasion: <b>{{ combat.active.evasion }}</b></p>
+            <p v-if='combat.canCounter'>Resistance: <b>{{ combat.active.resistance }}</b></p>
           </template>
           <template v-else-if="type === 'target'">
-            <p v-if='combat.canCounter'>Attack: <b>{{ combat.targetAtk }}</b></p>
-            <p>Defense: <b>{{ combat.targetDef }}</b></p>
+            <p v-if='combat.canCounter'>Power: <b>{{ combat.target.power }}</b></p>
+            <p v-if='combat.canCounter'>Accuracy: <b>{{ combat.target.accuracy }}</b></p>
+            <p>Evasion: <b>{{ combat.target.evasion }}</b></p>
+            <p>Resistance: <b>{{ combat.target.resistance }}</b></p>
           </template>
         </div>
         <div class='columns flex'>
-          <template v-if="type === 'active'"><p>Hit:</p><p class='bold' :style='gradient'><span class='big'>{{ combat.activeHit }}</span>%</p></template>
-          <template v-else-if="type === 'target' && combat.canCounter"><p>Hit:</p><p class='bold':style='gradient'><span class='big'>{{ combat.targetHit }}</span>%</p></template>
+          <template v-if="type === 'active'"><p>Hit:</p><p class='bold' :style='gradient'><span class='big'>{{ combat.active.hit }}</span>%</p></template>
+          <template v-else-if="type === 'target' && combat.canCounter"><p>Hit:</p><p class='bold':style='gradient'><span class='big'>{{ combat.target.hit }}</span>%</p></template>
         </div>
       </div>
     </div>
@@ -1260,9 +1264,7 @@ var CombatInfo = {
   props: ['type', 'combat'],
   computed: {
     gradient: function () {
-      var hit;
-      if      (this.type === 'active') { hit = this.combat.activeHit }
-      else if (this.type === 'target') { hit = this.combat.targetHit }
+      var hit = this.type === 'active' ? this.combat.active.hit : this.combat.target.hit;
       if (hit < 10) { return { color: '#bf0000' } }
       else if (hit < 20) { return { color: '#d01b00' } }
       else if (hit < 30) { return { color: '#e13600' } }
@@ -1681,15 +1683,17 @@ var Game = new Vue ({
     },
     combat: function () {
       if (this.active && this.target && this.active.unit && this.target.unit) {
+        var active = this.calculateCombat(this.active, this.target),
+            target = this.calculateCombat(this.target, this.active);
+        active.hit = Math.round(this.calculateHitChance(active.accuracy, target.evasion) * 100);
+        target.hit = Math.round(this.calculateHitChance(target.accuracy, active.evasion) * 100);
+        active.damage = Math.floor(active.power / target.resistance);
+        target.damage = Math.floor(target.power / active.resistance);
+        active.crit = this.active.unit.sklSum;
+        target.crit = this.target.unit.sklSum;
         return {
-          activeAtk: this.calculateAttack(this.active),
-          activeDef: this.calculateDefense(this.active, this.target),
-          targetAtk: this.calculateAttack(this.target),
-          targetDef: this.calculateDefense(this.target, this.active),
-          get activeHit() { return Math.round(Game.calculateHitChance(this.activeAtk, this.targetDef) * 100) },
-          get targetHit() { return Math.round(Game.calculateHitChance(this.targetAtk, this.activeDef) * 100) },
-          get activeCrt() { return Game.active.unit.sklSum },
-          get targetCrt() { return Game.target.unit.sklSum },
+          active: active,
+          target: target,
           canCounter: this.inRange(this.distance, this.target.unit.range)
         }
       }
@@ -2034,36 +2038,31 @@ var Game = new Vue ({
       if (distance >= range[0] && distance <= range[1]) { return true }
       else { return false }
     },
-    calculateAttack: function (atkSpace) {
-      // attack = strength + skill + power - distance
+    calculateCombat: function (atkSpace, defSpace) {
       var attacker = atkSpace.unit,
-          attackType = attacker.equipped.type,
-          attack = 0;
-      if (attackType === 'melee' || attackType === 'throwing') { attack += attacker.strSum }
-      attack += attacker.sklSum + attacker.equipped.power - (this.distance - 1);
-      return attack;
+          strength = attacker.equipped.type == 'ranged' ? 0 : attacker.strSum,
+          cover = this.calculateCover(atkSpace, defSpace),
+          elevation = atkSpace.terrain.elevation - defSpace.terrain.elevation;
+      return {
+        power: strength + attacker.equipped.power,
+        accuracy: attacker.sklSum - (this.distance - 1),
+        evasion: attacker.agiSum + cover + elevation,
+        resistance: attacker.tghSum + attacker.armor
+      }
     },
-    calculateDefense: function (defSpace, atkSpace) {
-      // defense = agility + toughness + armor + cover + elevation
-      var defender = defSpace.unit,
-          attacker = atkSpace.unit,
-          attackType = attacker.equipped.type,
-          cover = defSpace.terrain.cover,
-          facing = defSpace.terrain.facing,
-          defense = 0;
-      if (attackType === 'melee' || attackType === 'throwing') { defense += defender.agiSum }
-      defense += defender.tghSum + defender.armor;
-      if (!facing) { defense += cover }
+    calculateCover: function (defSpace, atkSpace) {
+      var cover = defSpace.terrain.cover,
+          facing = defSpace.terrain.facing;
+      if (!facing) { return cover }
       else {
         switch (facing) {
-          case 'East':  if (attacker.posX > defender.posX) { defense += cover } break;
-          case 'South': if (attacker.posY > defender.posY) { defense += cover } break;
-          case 'West':  if (attacker.posX < defender.posX) { defense += cover } break;
-          case 'North': if (attacker.posY < defender.posY) { defense += cover } break;
+          case 'East':  if (atkSpace.posX > defSpace.posX) { return cover } break;
+          case 'South': if (atkSpace.posY > defSpace.posY) { return cover } break;
+          case 'West':  if (atkSpace.posX < defSpace.posX) { return cover } break;
+          case 'North': if (atkSpace.posY < defSpace.posY) { return cover } break;
         }
       }
-      defense += Math.max(defSpace.terrain.elevation - atkSpace.terrain.elevation, 0);
-      return defense;
+      return 0;
     },
     factorial: function (n) {
       if (typeof(this.factorials[n]) !== 'undefined') { return this.factorials[n] }
@@ -2073,21 +2072,21 @@ var Game = new Vue ({
       }
       return this.factorials[n] = ans;
     },
-    calculateHitChance: function (atk, def) {
-      if (atk <= 0) { return 0 }
-      if (def < 0) { def = 0 }
+    calculateHitChance: function (attackerFlips, defenderFlips) {
+      if (attackerFlips <= 0) { return 0 }
+      if (defenderFlips < 0) { defenderFlips = 0 }
       let x = 0, sum = 0,
           headsInFlips = (x, n) => this.factorial(n) / ( Math.pow(2,n) * this.factorial(x) * this.factorial(n - x) ),
-          successRate = function (x, atk) {
+          successRate = function (x, attackerFlips) {
             let sum = 0;
-            while (x + 1 <= atk) {
-              sum += headsInFlips(x + 1, atk);
+            while (x + 1 <= attackerFlips) {
+              sum += headsInFlips(x + 1, attackerFlips);
               x++;
             }
             return sum;
           };
-      while (x <= def) {
-        sum += headsInFlips(x, def) * successRate(x, atk);
+      while (x <= defenderFlips) {
+        sum += headsInFlips(x, defenderFlips) * successRate(x, attackerFlips);
         x++;
       }
       return sum;
