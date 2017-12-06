@@ -358,7 +358,7 @@ class Unit {
         hp--;
       }
     };
-    this.sustainDamage = function (damage) {
+    this.takeDamage = function (damage) {
       while (damage > 0) {
         if (this.hp > 0) {
           this.hp--;
@@ -448,7 +448,7 @@ class DialogEvent {
 }
 
 class CombatEvent {
-  constructor(unit, target, damage, activeTurn, counter) {
+  constructor(unit, target, counter, hit, damage, crit, activeTurn) {
     this.eventType = 'combat';
     this.subject = unit.name;
     this.subjectIcon = unit.sprites;
@@ -456,11 +456,8 @@ class CombatEvent {
     this.verbIcon = unit.equipped.icon;
     this.object = target.name;
     this.objectIcon = target.sprites;
-    switch (damage) {
-      case 0: this.result = 'Attack missed.'; break;
-      case 1: this.result = 'Attack hit.'; break;
-      case 2: this.result = 'Critical hit!'; break;
-    }
+    this.result = hit ? 'and hit for ' + damage + ' dmg.' : 'and missed.';
+    this.result2 = hit && crit ? 'Critical hit!' : null;
     this.activeTurn = activeTurn;
   }
 }
@@ -1449,8 +1446,10 @@ var EventAction = {
           <img v-if='event.verbIcon' class='icon' :src='event.verbIcon'>
           <span class='sa'>{{ event.verb }}</span>
           <img v-if='event.objectIcon' :class='objectIconClass' :src='event.objectIcon'>
-          <span class='bold' :class='objectClass'>{{ event.object }}</span><span class='sa'>.</span>
-          <span v-if='event.result' :class='resultClass'>{{ event.result }}</span>
+          <span class='bold' :class='objectClass'>{{ event.object }}</span>
+          <span v-if='event.eventType !== "combat"' class='sa'>.</span><span v-else>&nbsp;</span>
+          <span v-if='event.result' class='sa' :class='resultClass'>{{ event.result }}</span>
+          <span v-if='event.result2' class='red'>{{ event.result2 }}</span>
         </div>
       </div>
     </transition>
@@ -1480,11 +1479,8 @@ var EventAction = {
       }
     },
     resultClass: function () {
-      var type = this.event.eventType,
-          result = this.event.result;
       return {
-        red: type === 'combat' && result === 'Critical hit!',
-        debuff: type === 'condition'
+        debuff: this.event.eventType === 'condition'
       }
     }
   }
@@ -2091,29 +2087,35 @@ var Game = new Vue ({
       }
       return sum;
     },
-    attackUnit: function (counter) {
-      var attacker, defender, hitChance, crtChance, damage = 0;
+    attackUnit: function (counter = false) {
+      var attacker, defender, hit, damage = 0, crit;
       if (!counter) {
         this.map[this.target.posY][this.target.posX].distance = null;
         attacker = this.active.unit;
         defender = this.target.unit;
-        hitChance = this.combat.activeHit;
-        crtChance = this.combat.activeCrt;
+        hit = this.combat.active.hit;
+        baseDamage = this.combat.active.damage;
+        crit = this.combat.active.crit;
       } else {
         attacker = this.target.unit;
         defender = this.active.unit;
-        hitChance = this.combat.targetHit;
-        crtChance = this.combat.targetCrt;
+        hit = this.combat.target.hit;
+        baseDamage = this.combat.target.damage;
+        crit = this.combat.target.crit;
       }
-      if (Math.random()*100 <= hitChance) {
-        damage += 1;
-        if (Math.random()*100 <= crtChance) {
-          damage += 1;
+      if (Math.random()*100 <= hit) {
+        damage += baseDamage;
+        hit = true;
+        if (Math.random()*100 <= crit) {
+          damage *= 2;
+          crit = true;
         }
+        else { crit = false }
       }
-      this.animateCombat(attacker, defender, damage);
+      else { hit = false }
+      this.animateCombat(attacker, defender, hit, damage);
       window.setTimeout(function(){
-        Game.events.push(new CombatEvent(attacker, defender, damage, Game.faction, counter));
+        Game.events.push(new CombatEvent(attacker, defender, counter, hit, damage, crit, Game.faction));
         if (damage > 0) {
           Game.dealDamage(defender.posY, defender.posX, damage);
           Game.events.push(new ConditionEvent(defender, Game.faction));
@@ -2127,8 +2129,8 @@ var Game = new Vue ({
         }
       }, 500);
     },
-    animateCombat: function (attacker, defender, damage) {
-      var spacesY, spacesX, attackerFacing, defenderFacing, pixelsY, pixelsX, evadeSprite, attack, hit, defenderElement;
+    animateCombat: function (attacker, defender, hit, damage) {
+      var spacesY, spacesX, attackerFacing, defenderFacing, pixelsY, pixelsX, evadeSprite, strike, struck, defenderElement;
       spacesY = defender.posY - attacker.posY;
       spacesX = defender.posX - attacker.posX;
       switch (Math.sign(spacesX)) {
@@ -2140,7 +2142,7 @@ var Game = new Vue ({
       pixelsY = Math.round(16 * Math.sin(Math.atan2(spacesY, spacesX)));
       pixelsX = Math.round(16 * Math.cos(Math.atan2(spacesY, spacesX)));
       evadeSprite = "url('img/" + defender.id.replace(/\d/, '') + "-evade.png')";
-      attack = {
+      strike = {
         keyframes: {
           zIndex: [ 70, 70 ],
           top: [0, (pixelsY + 'px'), 0 ],
@@ -2151,7 +2153,7 @@ var Game = new Vue ({
           easing: 'ease-in-out'
         }
       };
-      hit = {
+      struck = {
         keyframes: {
           top: [0, (pixelsY / 3 + 'px'), 0 ],
           left: [0, (pixelsX / 3 + 'px'), 0 ]
@@ -2161,21 +2163,23 @@ var Game = new Vue ({
           easing: 'ease-in-out'
         }
       };
-      document.getElementById(attacker.id).animate(attack.keyframes, attack.options);
+      document.getElementById(attacker.id).animate(strike.keyframes, strike.options);
       defenderElement = document.getElementById(defender.id);
-      if (damage > 0) {
-        window.setTimeout(function(){
-          defenderElement.animate(hit.keyframes, hit.options);
-          defenderElement.firstElementChild.animate({ x: ['-64', '-64'] }, 250);
-        }, 250);
+      if (hit) {
+        if (damage > 0) {
+          window.setTimeout(function(){
+            defenderElement.animate(struck.keyframes, struck.options);
+            defenderElement.firstElementChild.animate({ x: ['-64', '-64'] }, 250); // take damage
+          }, 250);
+        }
       } else {
         window.setTimeout(function(){
-          defenderElement.firstElementChild.animate({ x: ['-32', '-32'] }, 350);
+          defenderElement.firstElementChild.animate({ x: ['-32', '-32'] }, 350); // dodge
         }, 150);
       }
     },
     dealDamage: function (y, x, damage) {
-      this.map[y][x].unit.sustainDamage(damage);
+      this.map[y][x].unit.takeDamage(damage);
       Vue.nextTick(function(){
         if (Game.map[y][x].unit.hp === 0) {
           window.setTimeout(function(){
