@@ -809,8 +809,8 @@ var Terrain = {
       <ground-icon v-if='itemsOfType(weapon).length' :itemType='weapon' :transform='transform'></ground-icon>
       <ground-icon v-if='itemsOfType(clothing).length' :itemType='clothing' :transform='transform'></ground-icon>
       <ground-icon v-if='itemsOfType(accessory).length' :itemType='accessory' :transform='transform'></ground-icon>
-      <transition name='fade'>
-        <img v-show='elevationShow' class='space terrain' :src='elevationSrc'>
+      <transition name='fade-slow'>
+        <img v-show='topoView' class='space terrain elevation' :style='elevationStyle' src='img/elevation.png'>
       </transition>
     </div>
   `,
@@ -830,11 +830,9 @@ var Terrain = {
       if (this.terrain.type === 'hut') { return { backgroundImage: "url('img/hut.gif')" } }
       return { backgroundImage: "url('img/" + this.terrain.type.replace(/\s/g, '') + ".png')" }
     },
-    elevationShow: function () {
-      return this.terrain.type !== 'barren' && this.topoView;
-    },
-    elevationSrc: function () {
-      return 'img/elevation' + this.terrain.elevation + '.png';
+    elevationStyle: function () {
+      var x = -(this.terrain.elevation * 32 + 128)
+      return { objectPosition: x + 'px' }
     }
   },
   methods: {
@@ -2133,7 +2131,7 @@ var Game = new Vue ({
       }, 500);
     },
     animateCombat: function (attacker, defender, hit, damage) {
-      var spacesY, spacesX, attackerFacing, defenderFacing, pixelsY, pixelsX, evadeSprite, strike, struck, defenderElement;
+      var spacesY, spacesX, attackerFacing, defenderFacing, pixelsY, pixelsX, strike, struck, defenderElement;
       spacesY = defender.posY - attacker.posY;
       spacesX = defender.posX - attacker.posX;
       switch (Math.sign(spacesX)) {
@@ -2144,7 +2142,6 @@ var Game = new Vue ({
       this.map[defender.posY][defender.posX].unit.facing = defenderFacing;
       pixelsY = Math.round(16 * Math.sin(Math.atan2(spacesY, spacesX)));
       pixelsX = Math.round(16 * Math.cos(Math.atan2(spacesY, spacesX)));
-      evadeSprite = "url('img/" + defender.id.replace(/\d/, '') + "-evade.png')";
       strike = {
         keyframes: {
           zIndex: [ 70, 70 ],

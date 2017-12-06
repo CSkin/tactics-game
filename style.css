@@ -172,6 +172,10 @@ p {
   position: absolute;
 }
 
+.elevation {
+  object-fit: none;
+}
+
 .highlight {
   position: absolute;
   z-index: 10;
