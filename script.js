@@ -1132,7 +1132,7 @@ var UnitInfo = {
     <div class='ui unit-info'>
       <div class='flex heading'>
         <div class='col70'><img class='icon sprite' :src='unit.sprites'>{{ unit.name }}</div>
-        <div class='col30'><img class='icon health sprite' :style='healthStyle' src='img/health.png'></div>
+        <div class='col30 heart-container'><img class='icon hearts sprite' :style='heartsStyle' src='img/hearts.png'></div>
       </div>
       <div class='flex'>
         <div class='col60'>
@@ -1156,7 +1156,7 @@ var UnitInfo = {
     skillIcon: function () {
       return 'img/skill-' + this.unit.equipped.type + '.png';
     },
-    healthStyle: function () {
+    heartsStyle: function () {
       var y = '0 ' + -(this.unit.hp * 18) + 'px';
       return { objectPosition: y }
     }

@@ -258,8 +258,14 @@ p {
   margin-right: 5px;
 }
 
-.health {
+.heart-container {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.hearts {
   width: 58px;
+  margin: 0;
 }
 
 .sprite {
