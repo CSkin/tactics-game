@@ -810,7 +810,7 @@ var Terrain = {
       <ground-icon v-if='itemsOfType(clothing).length' :itemType='clothing' :transform='transform'></ground-icon>
       <ground-icon v-if='itemsOfType(accessory).length' :itemType='accessory' :transform='transform'></ground-icon>
       <transition name='fade-slow'>
-        <img v-show='topoView' class='space terrain elevation' :style='elevationStyle' src='img/elevation.png'>
+        <img v-show='topoView' class='space terrain sprite' :style='elevationStyle' src='img/elevation.png'>
       </transition>
     </div>
   `,
@@ -831,8 +831,8 @@ var Terrain = {
       return { backgroundImage: "url('img/" + this.terrain.type.replace(/\s/g, '') + ".png')" }
     },
     elevationStyle: function () {
-      var x = -(this.terrain.elevation * 32 + 128)
-      return { objectPosition: x + 'px' }
+      var x = -(this.terrain.elevation * 32 + 128) + 'px 0'
+      return { objectPosition: x }
     }
   },
   methods: {
@@ -1130,8 +1130,10 @@ var Modifier = {
 var UnitInfo = {
   template: `
     <div class='ui unit-info'>
-      <p class='heading'><img class='icon sprite' :src='unit.sprites'>{{ unit.name }}</p>
-      <p>Condition: <b :class='unit.condition.toLowerCase()'>{{ unit.condition }}</b></p>
+      <div class='flex heading'>
+        <div class='col70'><img class='icon sprite' :src='unit.sprites'>{{ unit.name }}</div>
+        <div class='col30'><img class='icon health sprite' :style='healthStyle' src='img/health.png'></div>
+      </div>
       <div class='flex'>
         <div class='col60'>
           <p>Strength: <b>{{ unit.strength }}</b> <modifier :mod='unit.strMod'></modifier></p>
@@ -1153,6 +1155,10 @@ var UnitInfo = {
   computed: {
     skillIcon: function () {
       return 'img/skill-' + this.unit.equipped.type + '.png';
+    },
+    healthStyle: function () {
+      var y = '0 ' + -(this.unit.hp * 18) + 'px';
+      return { objectPosition: y }
     }
   },
   components: {

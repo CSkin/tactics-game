@@ -172,10 +172,6 @@ p {
   position: absolute;
 }
 
-.elevation {
-  object-fit: none;
-}
-
 .highlight {
   position: absolute;
   z-index: 10;
@@ -262,6 +258,10 @@ p {
   margin-right: 5px;
 }
 
+.health {
+  width: 58px;
+}
+
 .sprite {
   object-fit: none;
   object-position: 0 -160px;
@@ -277,12 +277,20 @@ p {
   width: 50%;
 }
 
+.col70 {
+  width: 70%;
+}
+
 .col60 {
   width: 60%;
 }
 
 .col40 {
   width: 40%;
+}
+
+.col30 {
+  width: 30%;
 }
 
 .col40 .icon {
