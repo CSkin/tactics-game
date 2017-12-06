@@ -237,13 +237,13 @@ class Stones extends Throwing {
 
 class Slingshot extends Ranged {
   constructor(id, slot) {
-    super(6, id, 'bow', 'Slingshot', 'Packs a sting, fits in a pocket.', 1, 3, null, [0], slot);
+    super(6, id, 'bow', 'Slingshot', 'Packs a sting, fits in a pocket.', 4, 3, null, [0], slot);
   }
 }
 
 class ShortBow extends Ranged {
   constructor(id, slot) {
-    super(7, id, 'bow', 'Short Bow', 'This compact bow is powerful for its size.', 2, 4, null, [0, 2], slot);
+    super(7, id, 'bow', 'Short Bow', 'This compact bow is powerful for its size.', 6, 4, null, [0, 2], slot);
   }
 }
 
@@ -359,11 +359,12 @@ class Unit {
       }
     };
     this.takeDamage = function (damage) {
+      var attributes = ['strength', 'skill', 'agility', 'toughness', 'movement'],
+          impaired = shuffle(attributes).pop();
       while (damage > 0) {
         if (this.hp > 0) {
           this.hp--;
-          var attributes = ['strength', 'skill', 'agility', 'toughness', 'movement'];
-          this.impaired.push(shuffle(attributes).pop());
+          this.impaired.push(impaired);
         }
         damage--;
       }
@@ -470,7 +471,9 @@ class ConditionEvent {
     if (unit.hp > 0) { this.verb = 'is' } else { this.verb = 'was' }
     this.object = unit.condition.toLowerCase();
     if (this.object === 'wounded' || this.object === 'critical') {
-      this.result = capitalize(unit.impaired[unit.impaired.length - 1]) + ' -50%';
+      var impairment = unit.impaired[unit.impaired.length - 1],
+          amount = 50 * unit.impaired.filter( i => i === impairment ).length;
+      this.result = capitalize(impairment) + ' -' + amount + '%';
     }
     this.activeTurn = activeTurn;
   }
@@ -574,32 +577,32 @@ var itemPlan = [
 
 var player0 = new Unit(
       'elise', 'Player', 'Elise',
-      5, 5, 5, 4, 6, 5, 5, [salve1],
+      5, 6, 5, 4, 5, 4, 5, [salve1],
       null, null, true, 'player'
     ),
     player1 = new Unit(
       'kale', 'Player', 'Kale',
-      5, 3, 4, 6, 4, 8, 5, [shortbow1, ladle1, salve2],
+      5, 3, 4, 7, 4, 6, 5, [shortbow1, ladle1, salve2],
       null, null, true, 'player'
     ),
     enemy0 = new Unit(
       'ruffian-leader', 'Enemy', 'Ruffian Leader',
-      8, 5, 4, 2, 4, 4, 5, [club2, stones1, boots1],
+      8, 6, 5, 2, 4, 4, 5, [club2, stones1, boots1],
       null, null, false, 'ai', 'sentry'
     ),
     enemy1 = new Unit(
       'ruffian1', 'Enemy', 'Ruffian',
-      6, 4, 3, 2, 3, 5, 5, [club1],
+      6, 5, 4, 2, 3, 5, 5, [club1],
       null, null, false, 'ai', 'sentry'
     ),
     enemy2 = new Unit(
       'ruffian2', 'Enemy', 'Ruffian',
-      5, 4, 5, 2, 3, 5, 5, [stones2, tunic1],
+      5, 4, 6, 2, 3, 5, 5, [stones2, tunic1],
       null, null, false, 'ai', 'sentry'
     ),
     enemy3 = new Unit(
       'ruffian3', 'Enemy', 'Ruffian',
-      4, 4, 3, 5, 4, 2, 5, [slingshot1],
+      4, 4, 3, 5, 2, 3, 5, [slingshot1],
       null, null, false, 'ai', 'sentry'
     );
 
@@ -2765,7 +2768,7 @@ var script1 = new Script(
         },
         {
           unit: enemy1,
-          message: "Fine, smart guy. I aren't that nice. But I am comin' in. So you best stand back or you're gonna get hurt."
+          message: "Fine, smart guy. I aren't that nice. But I am comin' in. So stand back or you're gonna get hurt!"
         },
         function(){ Game.beginTurn() }
       ]
