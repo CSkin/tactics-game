@@ -766,8 +766,8 @@ var TitleScreen = {
   props: ['menu', 'tutorial'],
   data: function () {
     return {
-      isChrome: !!window.chrome && !!window.chrome.webstore,
-      message: "It looks like you're using a mobile device or a browser other than Chrome. This game prototype hasn't been tested in other environments; please open this page in a desktop version of Chrome to continue."
+      isChrome: !!window.chrome,
+      message: "It looks like you may be using a mobile device or a browser other than Chrome. This game prototype hasn't been tested in other environments; please open this page in a desktop version of Chrome to continue."
     }
   },
   methods: {
